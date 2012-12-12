@@ -1,0 +1,60 @@
+javac.source 			= 1.5
+javac.target 			= 1.5
+-make                   =  \
+  (*).(jar);                             type=bnd;  recipe="bnd/$1.bnd", \
+  (*).(war);                             type=bnd;  recipe="bnd/$1.bnd"
+  
+Bundle-Description: OSGi Web Application Specification Compliance Test
+Bundle-Version: 4.2.0.${project.build}
+Bundle-RequiredExecutionEnvironment = J2SE-1.5
+
+Private-Package						= org.osgi.test.support.*, \
+	${p}.handler.*, \
+	${p}.junit.*, \
+	${p}.util.*
+
+Include-Resource					= \
+	tw1.war, \
+	tw4.war, \
+	tw5.war, \
+	tw6.war, \
+	tw8.war, \
+	fragment.tw8.jar, \
+	wmtw1.war, \
+	wmtw4.war, \
+	wmtw5.war, \
+	wm2tw5.war, \
+	wm3tw5.war, \
+	util.jar, \
+	eventHandler.jar
+	
+Import-Package = \
+	javax.servlet; version=2.5, \
+	javax.servlet.http; version=2.5, \
+ 	*
+ 	
+Export-Package =\
+	${p}.util;version=1.0, \
+	${p}.util.validate;version=1.0
+	
+-buildpath							= ee.j2se; version=1.5, \
+    org.apache.geronimo.specs.geronimo-servlet_2.5_spec;			version=latest, \
+    org.apache.geronimo.specs.geronimo-annotation_1.0_spec; version=latest, \
+	osgi.core;									version=4.2, \
+	osgi.enterprise; 							version=4.2, \
+	org.osgi.test.support;						version=project, \
+	${junit}
+	
+-runbundles						= \
+	osgi.enterprise; version=${enterprise.published.version};strategy=lowest, \
+	org.osgi.impl.service.log; 			version=latest
+	
+#	osgi.resolverMode=strict, \
+-runproperties = report=true, \
+jboss.home="@jboss-as-dir@/build/target/@jboss-as-buildname@", \
+	osgi.compatibility.bootdelegation=false, \
+	osgi.support.multipleHosts=true, \
+	org.osgi.service.webcontainer.hostname=127.0.0.1, \
+	org.osgi.service.webcontainer.http.port=8080
+
+Test-Cases						= ${testcases}
