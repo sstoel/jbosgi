@@ -100,15 +100,17 @@ junit.package			= junit.framework;version=3.8
 junit					= com.springsource.junit;version=3.8;export="${junit.package}"
 
 -runpath							= \
-    @jboss-as-embedded@;version=file, \
-    @jboss-modules@;version=file, \
-    @jboss-logging@;version=file, \
+    @jbosgi-resolver-api@;version=file, \
     @jboss-as-controller-client@;version=file, \
+    @jboss-as-embedded@;version=file, \
+    @jboss-as-osgi-launcher@;version=file, \
+    @jboss-logging@;version=file, \
     @jboss-logmanager@;version=file, \
     @jboss-dmr@;version=file, \
+    @jboss-modules@;version=file, \
     @jboss-msc@;version=file, \
-    @jboss-osgi-core@;version=file, \
-    @jboss-osgi-launcher@;version=file, \
+    @jboss-threads@;version=file, \
+    @osgi-core@;version=file, \
     @tck-integration-dir@/lib/osgix.jar;version=file, \
 	${junit}
 
