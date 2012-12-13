@@ -35,6 +35,7 @@
     <!-- Modules -->
     <modules>
         <module>reactor</module>
+        <module>tcksetup</module>
         <module>testsuite</module>
     </modules>
 

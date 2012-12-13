@@ -1,34 +1,35 @@
 <project default="setup.vi">
+  
   <target name="init">
-  	<property file="${basedir}/ant.properties" />
+    <property file="${basedir}/ant.properties" />
     <property environment="env" />
-  	
+
     <!-- Check if the tck.checkout.di is available -->
     <property name="tck.checkout.dir" value="${env.TCKCHECKOUT}" />
     <available property="tck.checkout.dir.available" file="${tck.checkout.dir}" />
     <fail message="Cannot find: ${tck.checkout.dir}" unless="tck.checkout.dir.available" />
-  	
+
   </target>
 
   <target name="setup.vi" description="Set up AS7 to run in the OSGi TCK" depends="init">
-    
+
     <!-- Overlay the TCK setup -->
     <copy todir="${tck.checkout.dir}" overwrite="true">
-      <fileset dir="${basedir}/overlay"/> 
+      <fileset dir="${basedir}/src/main/resources/overlay" />
       <filterset>
-        <filter token="tck-integration-dir" value="${basedir}"/>
-        <filter token="jbosgi-resolver-api" value="${env.JBOSGI_RESOLVER_API}"/>
-        <filter token="jboss-as-build-location" value="${env.JBOSS_AS_LOCATION}"/>
-        <filter token="jboss-as-controller-client" value="${env.JBOSS_AS_CONTROLLER_CLIENT}"/>
-        <filter token="jboss-as-embedded" value="${env.JBOSS_AS_EMBEDDED}"/>
-        <filter token="jboss-as-osgi-launcher" value="${env.JBOSS_AS_OSGI_LAUNCHER}"/>
-        <filter token="jboss-dmr" value="${env.JBOSS_DMR}"/>
-        <filter token="jboss-logging" value="${env.JBOSS_LOGGING}"/>
-        <filter token="jboss-logmanager" value="${env.JBOSS_LOGMANAGER}"/>
-        <filter token="jboss-modules" value="${env.JBOSS_MODULES}"/>
-        <filter token="jboss-msc" value="${env.JBOSS_MSC}"/>
-        <filter token="jboss-threads" value="${env.JBOSS_THREADS}"/>
-        <filter token="osgi-core" value="${env.OSGI_CORE}"/>
+        <filter token="tck-integration-dir" value="${basedir}" />
+        <filter token="jbosgi-resolver-api" value="${env.JBOSGI_RESOLVER_API}" />
+        <filter token="jboss-as-build-location" value="${env.JBOSS_AS_LOCATION}" />
+        <filter token="jboss-as-controller-client" value="${env.JBOSS_AS_CONTROLLER_CLIENT}" />
+        <filter token="jboss-as-embedded" value="${env.JBOSS_AS_EMBEDDED}" />
+        <filter token="jboss-as-osgi-launcher" value="${env.JBOSS_AS_OSGI_LAUNCHER}" />
+        <filter token="jboss-dmr" value="${env.JBOSS_DMR}" />
+        <filter token="jboss-logging" value="${env.JBOSS_LOGGING}" />
+        <filter token="jboss-logmanager" value="${env.JBOSS_LOGMANAGER}" />
+        <filter token="jboss-modules" value="${env.JBOSS_MODULES}" />
+        <filter token="jboss-msc" value="${env.JBOSS_MSC}" />
+        <filter token="jboss-threads" value="${env.JBOSS_THREADS}" />
+        <filter token="osgi-core" value="${env.OSGI_CORE}" />
       </filterset>
     </copy>
   </target>
@@ -37,5 +38,29 @@
     <ant dir="${tck.checkout.dir}/org.osgi.test.cases.http" target="clean" />
     <ant dir="${tck.checkout.dir}/org.osgi.test.cases.http" target="publish" />
     <ant dir="${tck.checkout.dir}/org.osgi.test.cases.http" target="test" />
+    <!-- [TODO] We never get here because the previous task fails -->
+    <generate-test-reports 
+      paramInputFile="${tck.checkout.dir}/org.osgi.test.cases.http/generated/org.osgi.test.cases.http.xml" 
+      paramOutputDir="${tck.checkout.dir}/org.osgi.test.cases.http/generated/reports" />
   </target>
+
+  <target name="run-httpservice-reports" description="Generate HTTP Service test reports" depends="init">
+    <generate-test-reports 
+      paramInputFile="${tck.checkout.dir}/org.osgi.test.cases.http/generated/org.osgi.test.cases.http.xml" 
+      paramOutputDir="${tck.checkout.dir}/org.osgi.test.cases.http/generated/reports" />
+  </target>
+
+  <macrodef name="generate-test-reports">
+    <attribute name="paramInputFile" />
+    <attribute name="paramOutputDir" />
+    <sequential>
+      <echo>Generating test reports </echo>
+      <echo> input: @{paramInputFile}</echo>
+      <echo> output: @{paramOutputDir}</echo>
+      <java classname="org.jboss.osgi.tcksetup.TestReportTransformer" classpath="${basedir}/target/classes">
+        <arg value="@{paramInputFile}" />
+        <arg value="@{paramOutputDir}" />
+      </java>
+    </sequential>
+  </macrodef>
 </project>

@@ -111,7 +111,7 @@ junit					= com.springsource.junit;version=3.8;export="${junit.package}"
     @jboss-msc@;version=file, \
     @jboss-threads@;version=file, \
     @osgi-core@;version=file, \
-    @tck-integration-dir@/lib/osgix.jar;version=file, \
+    @tck-integration-dir@/src/main/resources/lib/osgix.jar;version=file, \
 	${junit}
 
 # Use the following for 4.3 framework RI development	

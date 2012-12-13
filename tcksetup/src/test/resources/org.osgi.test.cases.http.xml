@@ -1,0 +1,344 @@
+<?xml version='1.0'?>
+<testreport
+    target='/Users/tdiesler/git/org.osgi.build/org.osgi.test.cases.http/generated/org.osgi.test.cases.http.jar'
+    time='Thu Dec 13 00:05:23 CET 2012' 
+    framework='org.jboss.as.osgi.launcher.FrameworkProxy@b12ce69'>
+  <bundle location='javax.jws.api' 
+     modified='1355353521801' 
+     state='4' 
+     id='2' 
+     bsn='javax.jws.api' 
+     version='null' 
+  />
+  <bundle location='org.jboss.osgi.framework' 
+     modified='1355353521668' 
+     state='32' 
+     id='0' 
+     bsn='org.jboss.osgi.framework' 
+     version='0.0.0' 
+  />
+  <bundle location='javax.servlet.api' 
+     modified='1355353521806' 
+     state='4' 
+     id='4' 
+     bsn='javax.servlet.api' 
+     version='null' 
+  />
+  <bundle location='javax.xml.ws.api' 
+     modified='1355353521820' 
+     state='4' 
+     id='8' 
+     bsn='javax.xml.ws.api' 
+     version='null' 
+  />
+  <bundle location='org.jboss.as.osgi.http' 
+     modified='1355353521847' 
+     state='32' 
+     id='10' 
+     bsn='org.jboss.as.osgi.http' 
+     version='null' 
+  />
+  <bundle location='org.jboss.as.osgi.configadmin' 
+     modified='1355353521881' 
+     state='32' 
+     id='14' 
+     bsn='jboss-as-osgi-configadmin' 
+     version='7.2.0.Alpha1-SNAPSHOT' 
+  />
+  <bundle location='javax.ws.rs.api' 
+     modified='1355353521810' 
+     state='4' 
+     id='6' 
+     bsn='javax.ws.rs.api' 
+     version='null' 
+  />
+  <bundle location='/Users/tdiesler/git/org.osgi.build/cnf/repo/org.osgi.impl.service.log/org.osgi.impl.service.log-1.3.2.jar' 
+     modified='1355353522971' 
+     state='32' 
+     id='16' 
+     bsn='org.osgi.impl.service.log' 
+     version='1.3.2.200809250727' 
+  />
+  <bundle location='org.jboss.osgi.logging' 
+     modified='1355353521870' 
+     state='32' 
+     id='12' 
+     bsn='jboss-osgi-logging' 
+     version='1.0.0' 
+  />
+  <bundle location='javax.annotation.api' 
+     modified='1355353521796' 
+     state='4' 
+     id='1' 
+     bsn='javax.annotation.api' 
+     version='null' 
+  />
+  <bundle location='javax.xml.bind.api' 
+     modified='1355353521814' 
+     state='4' 
+     id='7' 
+     bsn='javax.xml.bind.api' 
+     version='null' 
+  />
+  <bundle location='javax.transaction.api' 
+     modified='1355353521808' 
+     state='4' 
+     id='5' 
+     bsn='javax.transaction.api' 
+     version='null' 
+  />
+  <bundle location='javax.persistence.api' 
+     modified='1355353521804' 
+     state='4' 
+     id='3' 
+     bsn='javax.persistence.api' 
+     version='null' 
+  />
+  <bundle location='/Users/tdiesler/git/org.osgi.build/org.osgi.test.cases.http/generated/org.osgi.test.cases.http.jar' 
+     modified='1355353523141' 
+     state='32' 
+     id='17' 
+     bsn='org.osgi.test.cases.http' 
+     version='4.2.0.201212131205' 
+  />
+  <bundle location='org.slf4j' 
+     modified='1355353521835' 
+     state='4' 
+     id='9' 
+     bsn='org.slf4j' 
+     version='null' 
+  />
+  <bundle location='org.apache.felix.log' 
+     modified='1355353521866' 
+     state='32' 
+     id='11' 
+     bsn='org.apache.felix.log' 
+     version='1.0.0' 
+  />
+  <bundle location='/Users/tdiesler/git/org.osgi.build/cnf/repo/osgi.cmpn/osgi.cmpn-4.2.0.jar' 
+     modified='1355353522853' 
+     state='32' 
+     id='15' 
+     bsn='osgi.cmpn' 
+     version='4.2.0.200908310645' 
+  />
+  <bundle location='org.apache.felix.configadmin' 
+     modified='1355353521876' 
+     state='32' 
+     id='13' 
+     bsn='org.apache.felix.configadmin' 
+     version='1.2.8' 
+  />
+  <test name='testSimpleServletRegistration' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testSimpleServletUnregistration' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testOverlappingRegistrationPaths' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testUnregistringOverlapping' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testBundleStopping' class='org.osgi.test.cases.http.junit.HttpTestBundle1'> <error name='testBundleStopping(org.osgi.test.cases.http.junit.HttpTestBundle1)' type='org.osgi.framework.BundleException: JBOSGI011250: Cannot resolve bundle: tb1:4.2.0'>
+<![CDATA[
+org.osgi.framework.BundleException: JBOSGI011250: Cannot resolve bundle: tb1:4.2.0
+	at org.jboss.as.osgi.service.BundleLifecycleIntegration$BundleLifecycleImpl.activateDeferredPhase(BundleLifecycleIntegration.java:299)
+	at org.jboss.as.osgi.service.BundleLifecycleIntegration$BundleLifecycleImpl.start(BundleLifecycleIntegration.java:229)
+	at org.jboss.osgi.framework.internal.AbstractBundleState.start(AbstractBundleState.java:527)
+	at org.osgi.test.cases.http.junit.HttpTestBundle1.testBundleStopping(HttpTestBundle1.java:271)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at junit.framework.TestCase.runTest(TestCase.java:164)
+	at junit.framework.TestCase.runBare(TestCase.java:130)
+	at junit.framework.TestResult$1.protect(TestResult.java:106)
+	at junit.framework.TestResult.runProtected(TestResult.java:124)
+	at junit.framework.TestResult.run(TestResult.java:109)
+	at junit.framework.TestCase.run(TestCase.java:120)
+	at junit.framework.TestSuite.runTest(TestSuite.java:230)
+	at junit.framework.TestSuite.run(TestSuite.java:225)
+	at junit.framework.TestSuite.runTest(TestSuite.java:230)
+	at junit.framework.TestSuite.run(TestSuite.java:225)
+	at aQute.junit.runtime.Target.doTesting(Target.java:234)
+	at aQute.junit.runtime.Target.run(Target.java:57)
+	at aQute.junit.runtime.Target.main(Target.java:37)
+Caused by: org.osgi.service.resolver.ResolutionException: Unable to resolve HostBundleRevision[tb1:4.2.0]: missing requirement XPackageRequirement[atts={osgi.wiring.package=javax.servlet, version=[2.1,3)},[tb1:4.2.0]]
+	at org.apache.felix.resolver.Candidates.populateResource(Candidates.java:285)
+	at org.apache.felix.resolver.Candidates.populate(Candidates.java:153)
+	at org.apache.felix.resolver.ResolverImpl.resolve(ResolverImpl.java:96)
+	at org.jboss.osgi.resolver.felix.StatelessResolver.resolve(StatelessResolver.java:56)
+	at org.jboss.osgi.framework.internal.ResolverImpl.resolveAndApply(ResolverImpl.java:137)
+	at org.jboss.as.osgi.service.BundleLifecycleIntegration$BundleLifecycleImpl.activateDeferredPhase(BundleLifecycleIntegration.java:296)
+	... 20 more
+]]>
+ </error>
+  </test>
+  <test name='testLongRegistrationName' class='org.osgi.test.cases.http.junit.HttpTestBundle1'> <error name='testLongRegistrationName(org.osgi.test.cases.http.junit.HttpTestBundle1)' type='java.io.FileNotFoundException: http://localhost:8080/abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz?TestCase=6'>
+<![CDATA[
+java.io.FileNotFoundException: http://localhost:8080/abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz?TestCase=6
+	at sun.net.www.protocol.http.HttpURLConnection.getInputStream(HttpURLConnection.java:1434)
+	at java.net.URL.openStream(URL.java:1010)
+	at org.osgi.test.cases.http.junit.HttpTestBundle1.testLongRegistrationName(HttpTestBundle1.java:343)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at junit.framework.TestCase.runTest(TestCase.java:164)
+	at junit.framework.TestCase.runBare(TestCase.java:130)
+	at junit.framework.TestResult$1.protect(TestResult.java:106)
+	at junit.framework.TestResult.runProtected(TestResult.java:124)
+	at junit.framework.TestResult.run(TestResult.java:109)
+	at junit.framework.TestCase.run(TestCase.java:120)
+	at junit.framework.TestSuite.runTest(TestSuite.java:230)
+	at junit.framework.TestSuite.run(TestSuite.java:225)
+	at junit.framework.TestSuite.runTest(TestSuite.java:230)
+	at junit.framework.TestSuite.run(TestSuite.java:225)
+	at aQute.junit.runtime.Target.doTesting(Target.java:234)
+	at aQute.junit.runtime.Target.run(Target.java:57)
+	at aQute.junit.runtime.Target.main(Target.java:37)
+]]>
+ </error>
+  </test>
+  <test name='testNullServlet' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testCaseSensitivity' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testGenericServletRegistration' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testRegisterResources' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testMultipleRegistrations' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testMultipleUnregistrations' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testEndingSlash' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testRootAlias' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testServletRegDefaultContext' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testResourceRegDefaultContext' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testRegisterMultipleAliases' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testEmpty_doGet' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testSecurity' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testLargeOutput' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testLargeURL' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testOddURL' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testMultipleNamesURL' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testMultipleNamesURL2' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testMIMEtypes' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testResourceName' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testAuthentication' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testServletContextSharing' class='org.osgi.test.cases.http.junit.HttpTestBundle1'>  </test>
+  <test name='testSignature' class='org.osgi.test.cases.http.junit.SignatureTestCase'>  </test>
+  <coverage>
+
+<coverage>
+  <class name='org.osgi.service.http.HttpContext' package='org.osgi.service.http' short='HttpContext'>
+    <method pretty='String HttpContext.getMimeType(String)' public='true' constructor='false' name='getMimeType' descriptor='(Ljava/lang/String;)Ljava/lang/String;'>
+      <ref pretty='void 3.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+      <ref pretty='void 4.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+      <ref pretty='void 2.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+      <ref pretty='void 1.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+    </method>
+    <method pretty='URL HttpContext.getResource(String)' public='true' constructor='false' name='getResource' descriptor='(Ljava/lang/String;)Ljava/net/URL;'>
+      <ref pretty='void 3.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+      <ref pretty='void 4.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+      <ref pretty='void 2.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+      <ref pretty='void 1.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+    </method>
+    <method pretty='boolean HttpContext.handleSecurity(HttpServletRequest,HttpServletResponse)' public='true' constructor='false' name='handleSecurity' descriptor='(Ljavax/servlet/http/HttpServletRequest;Ljavax/servlet/http/HttpServletResponse;)Z'>
+      <ref pretty='void 3.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+      <ref pretty='void 4.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+      <ref pretty='void 2.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+      <ref pretty='void 1.&lt;implements&gt;()' constructor='false' name='&lt;implements&gt;' descriptor='()V'/>
+    </method>
+  </class>
+  <class name='org.osgi.service.http.HttpService' package='org.osgi.service.http' short='HttpService'>
+    <method pretty='HttpContext HttpService.createDefaultHttpContext()' public='true' constructor='false' name='createDefaultHttpContext' descriptor='()Lorg/osgi/service/http/HttpContext;'>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+    </method>
+    <method pretty='void HttpService.registerResources(String,String,HttpContext)' public='true' constructor='false' name='registerResources' descriptor='(Ljava/lang/String;Ljava/lang/String;Lorg/osgi/service/http/HttpContext;)V'>
+      <ref pretty='void HttpTestBundle1.testRegisterResources()' public='true' constructor='false' name='testRegisterResources' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMultipleRegistrations()' public='true' constructor='false' name='testMultipleRegistrations' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMultipleRegistrations()' public='true' constructor='false' name='testMultipleRegistrations' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMultipleUnregistrations()' public='true' constructor='false' name='testMultipleUnregistrations' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testEndingSlash()' public='true' constructor='false' name='testEndingSlash' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testRootAlias()' public='true' constructor='false' name='testRootAlias' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testResourceRegDefaultContext()' public='true' constructor='false' name='testResourceRegDefaultContext' descriptor='()V'/>
+    </method>
+    <method pretty='void HttpService.registerServlet(String,Servlet,Dictionary,HttpContext)' public='true' constructor='false' name='registerServlet' descriptor='(Ljava/lang/String;Ljavax/servlet/Servlet;Ljava/util/Dictionary;Lorg/osgi/service/http/HttpContext;)V'>
+      <ref pretty='void HttpTestBundle1.testSimpleServletRegistration()' public='true' constructor='false' name='testSimpleServletRegistration' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testSimpleServletUnregistration()' public='true' constructor='false' name='testSimpleServletUnregistration' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testOverlappingRegistrationPaths()' public='true' constructor='false' name='testOverlappingRegistrationPaths' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testOverlappingRegistrationPaths()' public='true' constructor='false' name='testOverlappingRegistrationPaths' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testUnregistringOverlapping()' public='true' constructor='false' name='testUnregistringOverlapping' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testUnregistringOverlapping()' public='true' constructor='false' name='testUnregistringOverlapping' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testLongRegistrationName()' public='true' constructor='false' name='testLongRegistrationName' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testNullServlet()' public='true' constructor='false' name='testNullServlet' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testCaseSensitivity()' public='true' constructor='false' name='testCaseSensitivity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testCaseSensitivity()' public='true' constructor='false' name='testCaseSensitivity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testGenericServletRegistration()' public='true' constructor='false' name='testGenericServletRegistration' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletRegDefaultContext()' public='true' constructor='false' name='testServletRegDefaultContext' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testRegisterMultipleAliases()' public='true' constructor='false' name='testRegisterMultipleAliases' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testRegisterMultipleAliases()' public='true' constructor='false' name='testRegisterMultipleAliases' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testEmpty_doGet()' public='true' constructor='false' name='testEmpty_doGet' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testSecurity()' public='true' constructor='false' name='testSecurity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testSecurity()' public='true' constructor='false' name='testSecurity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testLargeOutput()' public='true' constructor='false' name='testLargeOutput' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testLargeURL()' public='true' constructor='false' name='testLargeURL' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testOddURL()' public='true' constructor='false' name='testOddURL' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMultipleNamesURL()' public='true' constructor='false' name='testMultipleNamesURL' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMultipleNamesURL2()' public='true' constructor='false' name='testMultipleNamesURL2' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMIMEtypes()' public='true' constructor='false' name='testMIMEtypes' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testResourceName()' public='true' constructor='false' name='testResourceName' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testAuthentication()' public='true' constructor='false' name='testAuthentication' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+    </method>
+    <method pretty='void HttpService.unregister(String)' public='true' constructor='false' name='unregister' descriptor='(Ljava/lang/String;)V'>
+      <ref pretty='void HttpTestBundle1.testSimpleServletRegistration()' public='true' constructor='false' name='testSimpleServletRegistration' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testSimpleServletUnregistration()' public='true' constructor='false' name='testSimpleServletUnregistration' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testOverlappingRegistrationPaths()' public='true' constructor='false' name='testOverlappingRegistrationPaths' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testOverlappingRegistrationPaths()' public='true' constructor='false' name='testOverlappingRegistrationPaths' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testUnregistringOverlapping()' public='true' constructor='false' name='testUnregistringOverlapping' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testUnregistringOverlapping()' public='true' constructor='false' name='testUnregistringOverlapping' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testLongRegistrationName()' public='true' constructor='false' name='testLongRegistrationName' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testCaseSensitivity()' public='true' constructor='false' name='testCaseSensitivity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testCaseSensitivity()' public='true' constructor='false' name='testCaseSensitivity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testGenericServletRegistration()' public='true' constructor='false' name='testGenericServletRegistration' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testRegisterResources()' public='true' constructor='false' name='testRegisterResources' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMultipleRegistrations()' public='true' constructor='false' name='testMultipleRegistrations' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMultipleUnregistrations()' public='true' constructor='false' name='testMultipleUnregistrations' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMultipleUnregistrations()' public='true' constructor='false' name='testMultipleUnregistrations' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testRootAlias()' public='true' constructor='false' name='testRootAlias' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletRegDefaultContext()' public='true' constructor='false' name='testServletRegDefaultContext' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testResourceRegDefaultContext()' public='true' constructor='false' name='testResourceRegDefaultContext' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testRegisterMultipleAliases()' public='true' constructor='false' name='testRegisterMultipleAliases' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testRegisterMultipleAliases()' public='true' constructor='false' name='testRegisterMultipleAliases' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testEmpty_doGet()' public='true' constructor='false' name='testEmpty_doGet' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testSecurity()' public='true' constructor='false' name='testSecurity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testSecurity()' public='true' constructor='false' name='testSecurity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testSecurity()' public='true' constructor='false' name='testSecurity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testSecurity()' public='true' constructor='false' name='testSecurity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testSecurity()' public='true' constructor='false' name='testSecurity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testSecurity()' public='true' constructor='false' name='testSecurity' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testLargeOutput()' public='true' constructor='false' name='testLargeOutput' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testLargeURL()' public='true' constructor='false' name='testLargeURL' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testOddURL()' public='true' constructor='false' name='testOddURL' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMultipleNamesURL()' public='true' constructor='false' name='testMultipleNamesURL' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMultipleNamesURL2()' public='true' constructor='false' name='testMultipleNamesURL2' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testMIMEtypes()' public='true' constructor='false' name='testMIMEtypes' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testResourceName()' public='true' constructor='false' name='testResourceName' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testAuthentication()' public='true' constructor='false' name='testAuthentication' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testAuthentication()' public='true' constructor='false' name='testAuthentication' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testAuthentication()' public='true' constructor='false' name='testAuthentication' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+      <ref pretty='void HttpTestBundle1.testServletContextSharing()' public='true' constructor='false' name='testServletContextSharing' descriptor='()V'/>
+    </method>
+  </class>
+  <class name='org.osgi.service.http.NamespaceException' package='org.osgi.service.http' short='NamespaceException'>
+    <method pretty='NamespaceException(String)' public='true' constructor='true' descriptor='(Ljava/lang/String;)V'/>
+    <method pretty='NamespaceException(String,Throwable)' public='true' constructor='true' descriptor='(Ljava/lang/String;Ljava/lang/Throwable;)V'/>
+    <method pretty='Throwable NamespaceException.getCause()' public='true' constructor='false' name='getCause' descriptor='()Ljava/lang/Throwable;'/>
+    <method pretty='Throwable NamespaceException.getException()' public='true' constructor='false' name='getException' descriptor='()Ljava/lang/Throwable;'/>
+    <method pretty='Throwable NamespaceException.initCause(Throwable)' public='true' constructor='false' name='initCause' descriptor='(Ljava/lang/Throwable;)Ljava/lang/Throwable;'/>
+  </class>
+</coverage>
+  </coverage>
+</testreport>
