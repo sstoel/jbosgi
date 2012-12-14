@@ -21,6 +21,7 @@
  */
 package org.jboss.osgi.tcksetup;
 
+import java.beans.XMLEncoder;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
@@ -79,7 +80,7 @@ public class TestReportTransformer {
 
     public void process() throws Exception {
         outputDir.mkdirs();
-        
+
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         Element doc = builder.parse(inputFile).getDocumentElement();
@@ -96,7 +97,7 @@ public class TestReportTransformer {
                 current = new TestSuiteInfo(testClass);
                 Properties sysprops = System.getProperties();
                 for (Entry<Object, Object> entry : sysprops.entrySet()) {
-                    PropertyInfo prop = new PropertyInfo((String)entry.getKey(), (String)entry.getValue());
+                    PropertyInfo prop = new PropertyInfo((String) entry.getKey(), (String) entry.getValue());
                     current.addProperty(prop);
                 }
                 suites.add(current);
@@ -104,7 +105,7 @@ public class TestReportTransformer {
             NodeList errors = item.getElementsByTagName("error");
             NodeList failures = item.getElementsByTagName("failure");
             NodeList skipped = item.getElementsByTagName("skipped");
-            
+
             TestInfo test;
             if (errors.getLength() > 0) {
                 Element failure = (Element) errors.item(0);
@@ -127,13 +128,41 @@ public class TestReportTransformer {
             }
             current.addTest(test);
         }
-        
+
         for (TestSuiteInfo suite : suites) {
             File outputFile = new File(outputDir + File.separator + "TEST-" + suite.name + ".xml");
             PrintWriter out = new PrintWriter(new FileWriter(outputFile));
             suite.print(out);
             out.close();
         }
+    }
+
+    private static String encodeXmlAttribute(String str) {
+        if (str == null)
+            return null;
+
+        int len = str.length();
+        if (len == 0)
+            return str;
+
+        StringBuffer encoded = new StringBuffer();
+        for (int i = 0; i < len; i++) {
+            char c = str.charAt(i);
+            if (c == '<')
+                encoded.append("&lt;");
+            else if (c == '\"')
+                encoded.append("&quot;");
+            else if (c == '>')
+                encoded.append("&gt;");
+            else if (c == '\'')
+                encoded.append("&apos;");
+            else if (c == '&')
+                encoded.append("&amp;");
+            else
+                encoded.append(c);
+        }
+
+        return encoded.toString();
     }
 
     static class TestSuiteInfo {
@@ -149,11 +178,11 @@ public class TestReportTransformer {
         TestSuiteInfo(String name) {
             this.name = name;
         }
-        
+
         void addProperty(PropertyInfo prop) {
             properties.add(prop);
         }
-        
+
         void addTest(TestInfo test) {
             tests.add(test);
             totalTime += test.testTime;
@@ -170,7 +199,7 @@ public class TestReportTransformer {
         void print(PrintWriter out) {
             out.println("<?xml version='1.0' encoding='UTF-8' ?>");
             out.print("<testsuite");
-            out.print(" time='" + ((double)totalTime/1000) + "'");
+            out.print(" time='" + ((double) totalTime / 1000) + "'");
             out.print(" failures='" + totalFailures + "'");
             out.print(" errors='" + totalErrors + "'");
             out.print(" skipped='" + totalSkipped + "'");
@@ -188,9 +217,12 @@ public class TestReportTransformer {
         }
 
     }
-    
+
     static class TestInfo {
-        enum Type { failure, error, skipped, good }
+        enum Type {
+            failure, error, skipped, good
+        }
+
         final String classname;
         final String name;
         final Type type;
@@ -206,8 +238,15 @@ public class TestReportTransformer {
         }
 
         void print(PrintWriter out) {
-            if (failureType != null && failureType.indexOf(":") > 0) {
-                failureType = failureType.substring(0, failureType.indexOf(":"));
+            if (failureMessage != null) {
+                failureMessage = encodeXmlAttribute(failureMessage);
+            }
+            if (failureType != null) {
+                int index = failureType.indexOf(":");
+                if (index > 0) {
+                    failureType = failureType.substring(0, index);
+                }
+                failureType = encodeXmlAttribute(failureType);
             }
             out.print("<testcase");
             out.print(" time='" + ((double)testTime/1000) + "'");
@@ -240,7 +279,7 @@ public class TestReportTransformer {
             return "TestInfo [name=" + name + ", type=" + type + "]";
         }
     }
-    
+
     static class PropertyInfo {
         final String name;
         final String value;
@@ -251,7 +290,7 @@ public class TestReportTransformer {
         }
 
         void print(PrintWriter out) {
-            out.println("<property name='" + name + "' value='" + value + "'/>");
+            out.println("<property name='" + encodeXmlAttribute(name) + "' value='" + encodeXmlAttribute(value) + "'/>");
         }
     }
 }
