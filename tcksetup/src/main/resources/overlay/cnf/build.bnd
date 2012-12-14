@@ -100,18 +100,7 @@ junit.package			= junit.framework;version=3.8
 junit					= com.springsource.junit;version=3.8;export="${junit.package}"
 
 -runpath							= \
-    @jbosgi-resolver-api@;version=file, \
-    @jboss-as-controller-client@;version=file, \
-    @jboss-as-embedded@;version=file, \
-    @jboss-as-osgi-launcher@;version=file, \
-    @jboss-logging@;version=file, \
-    @jboss-logmanager@;version=file, \
-    @jboss-dmr@;version=file, \
-    @jboss-modules@;version=file, \
-    @jboss-msc@;version=file, \
-    @jboss-threads@;version=file, \
-    @osgi-core@;version=file, \
-    @tck-integration-dir@/src/main/resources/lib/osgix.jar;version=file, \
+	org.osgi.impl.framework;		version=latest, \
 	${junit}
 
 # Use the following for 4.3 framework RI development	
@@ -130,7 +119,6 @@ junit					= com.springsource.junit;version=3.8;export="${junit.package}"
 #	${junit}
 
 runproperties = report=true, \
-    jboss.home="@jboss-as-build-location@", \
 	osgi.compatibility.bootdelegation=false, \
 	osgi.resolverMode=strict, \
 	osgi.support.multipleHosts=true
