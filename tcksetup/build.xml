@@ -1,7 +1,7 @@
 <project default="setup.vi">
 
   <!--
-  	$ ant -Dtck.section=http tun-tests
+  	$ ant -Dtck.section=http run-tests
   	$ ant -Dtck.section=http test-reports
   -->
   
