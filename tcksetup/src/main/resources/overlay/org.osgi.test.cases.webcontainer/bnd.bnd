@@ -47,12 +47,11 @@ Export-Package =\
 	
 -runbundles						= \
 	osgi.enterprise; version=${enterprise.published.version};strategy=lowest, \
-	org.osgi.impl.service.log; 			version=latest, \
-	org.osgi.impl.service.event; 			version=latest, \
-    org.osgi.impl.bundle.webcontainer; version=latest
+	org.osgi.impl.service.log; 			version=latest
 	
 #	osgi.resolverMode=strict, \
 -runproperties = report=true, \
+    jboss.home="@jboss-as-build-location@", \
 	osgi.compatibility.bootdelegation=false, \
 	osgi.support.multipleHosts=true, \
 	org.osgi.service.webcontainer.hostname=127.0.0.1, \
