@@ -1,7 +1,7 @@
 if [ "$2" == "" ] 
 then
     echo Please provide the OSGi TCK location and the jboss-as build location
-    echo  $0 ./osgitck/ /jboss-as/jboss-as-7.2.0
+    echo  $0 ~/git/org.osgi.build ~/git/jboss-as/build/target/jboss-as-7.2.0.Alpha1-SNAPSHOT
     exit
 fi
 

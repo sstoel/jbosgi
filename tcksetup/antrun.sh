@@ -6,7 +6,7 @@
 tname=$1
  
 echo "ANT: Running $tname task..."
-ant $tname
+ant -Dtck.section=$2 $tname
  
 antReturnCode=$?
  

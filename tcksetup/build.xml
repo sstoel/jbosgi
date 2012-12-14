@@ -1,4 +1,9 @@
 <project default="setup.vi">
+
+  <!--
+  	$ ant -Dtck.section=http tun-tests
+  	$ ant -Dtck.section=http test-reports
+  -->
   
   <target name="init">
     <property file="${basedir}/ant.properties" />
@@ -34,20 +39,22 @@
     </copy>
   </target>
 
-  <target name="run-httpservice-tests" description="Run the TCK HTTP Service tests" depends="init">
-    <ant dir="${tck.checkout.dir}/org.osgi.test.cases.http" target="clean" />
-    <ant dir="${tck.checkout.dir}/org.osgi.test.cases.http" target="publish" />
-    <ant dir="${tck.checkout.dir}/org.osgi.test.cases.http" target="test" />
-    <!-- [TODO] We never get here because the previous task fails -->
-    <generate-test-reports 
-      paramInputFile="${tck.checkout.dir}/org.osgi.test.cases.http/generated/org.osgi.test.cases.http.xml" 
-      paramOutputDir="${tck.checkout.dir}/org.osgi.test.cases.http/generated/reports" />
+  <target name="check-section-property" depends="init">
+    <property name="org.osgi.test.cases.dir" value="${tck.checkout.dir}/org.osgi.test.cases.${tck.section}" />
+    <available property="org.osgi.test.cases.dir.available" file="${org.osgi.test.cases.dir}" />
+    <fail message="Cannot find: ${org.osgi.test.cases.dir}" unless="org.osgi.test.cases.dir.available" />
   </target>
 
-  <target name="run-httpservice-reports" description="Generate HTTP Service test reports" depends="init">
+  <target name="run-tests" description="Run the TCK tests for a given section" depends="check-section-property">
+    <ant dir="${org.osgi.test.cases.dir}" target="clean" />
+    <ant dir="${org.osgi.test.cases.dir}" target="publish" />
+    <ant dir="${org.osgi.test.cases.dir}" target="test" />
+  </target>
+
+  <target name="test-reports" description="Generate the test reports for a given section" depends="check-section-property">
     <generate-test-reports 
-      paramInputFile="${tck.checkout.dir}/org.osgi.test.cases.http/generated/org.osgi.test.cases.http.xml" 
-      paramOutputDir="${tck.checkout.dir}/org.osgi.test.cases.http/generated/reports" />
+      paramInputFile="${org.osgi.test.cases.dir}/generated/org.osgi.test.cases.${tck.section}.xml" 
+      paramOutputDir="${org.osgi.test.cases.dir}/generated/reports" />
   </target>
 
   <macrodef name="generate-test-reports">
