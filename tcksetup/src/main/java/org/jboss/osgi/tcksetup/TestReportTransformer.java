@@ -137,14 +137,14 @@ public class TestReportTransformer {
     }
 
     static class TestSuiteInfo {
+        final List<PropertyInfo> properties = new ArrayList<PropertyInfo>();
+        final List<TestInfo> tests = new ArrayList<TestInfo>();
         final String name;
         long totalTime;
         int totalFailures;
         int totalErrors;
         int totalSkipped;
         int totalTests;
-        List<PropertyInfo> properties = new ArrayList<PropertyInfo>();
-        List<TestInfo> tests = new ArrayList<TestInfo>();
 
         TestSuiteInfo(String name) {
             this.name = name;
@@ -206,6 +206,9 @@ public class TestReportTransformer {
         }
 
         void print(PrintWriter out) {
+            if (failureType != null && failureType.indexOf(":") > 0) {
+                failureType = failureType.substring(0, failureType.indexOf(":"));
+            }
             out.print("<testcase");
             out.print(" time='" + ((double)testTime/1000) + "'");
             out.print(" classname='" + classname + "'");
@@ -213,13 +216,13 @@ public class TestReportTransformer {
             if (type == Type.error) {
                 out.println(">");
                 out.println("<error message='" + failureMessage + "' type='" + failureType + "'>");
-                out.println(failureBody);
+                out.println("<![CDATA[" + failureBody + "]]>");
                 out.println("</error>");
                 out.println("</testcase>");
             } else if (type == Type.failure) {
                 out.println(">");
                 out.println("<failure message='" + failureMessage + "' type='" + failureType + "'>");
-                out.println(failureBody);
+                out.println("<![CDATA[" + failureBody + "]]>");
                 out.println("</failure>");
                 out.println("</testcase>");
             } else if (type == Type.skipped) {
