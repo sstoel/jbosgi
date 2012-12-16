@@ -46,7 +46,7 @@ Include-Resource 					= \
 -runbundles						= \
 	osgi.enterprise; version=${enterprise.published.version};strategy=lowest
 		
--runproperties					= ${runproperties}
+-runproperties = ${runproperties}, \
     jboss.home="@jboss-as-build-location@", \
     logging.configuration=@logging.configuration@, \
     java.util.logging.manager=org.jboss.logmanager.LogManager
