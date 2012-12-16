@@ -52,6 +52,8 @@ Export-Package =\
 #	osgi.resolverMode=strict, \
 -runproperties = report=true, \
     jboss.home="@jboss-as-build-location@", \
+    logging.configuration=@logging.configuration@, \
+    java.util.logging.manager=org.jboss.logmanager.LogManager, \
 	osgi.compatibility.bootdelegation=false, \
 	osgi.support.multipleHosts=true, \
 	org.osgi.service.webcontainer.hostname=127.0.0.1, \

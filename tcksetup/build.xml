@@ -34,6 +34,7 @@
         <filter token="jboss-modules" value="${env.JBOSS_MODULES}" />
         <filter token="jboss-msc" value="${env.JBOSS_MSC}" />
         <filter token="jboss-threads" value="${env.JBOSS_THREADS}" />
+        <filter token="logging.configuration" value="file://${env.TCKCHECKOUT}/logging.properties" />
         <filter token="osgi-core" value="${env.OSGI_CORE}" />
       </filterset>
     </copy>

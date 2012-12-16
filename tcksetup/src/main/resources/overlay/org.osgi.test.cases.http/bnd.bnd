@@ -26,5 +26,7 @@ Test-Cases							= ${testcases}
 
 
 -runproperties = ${runproperties}, \
+    logging.configuration=@logging.configuration@, \
+    java.util.logging.manager=org.jboss.logmanager.LogManager, \
 	org.osgi.service.http.hostname=127.0.0.1, \
 	org.osgi.service.http.port=8080
