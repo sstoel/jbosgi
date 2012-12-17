@@ -11,8 +11,9 @@ Private-Package						= \
 	${p}.*
 	
 Import-Package						= \
-	javax.persistence;			version="[1.0,2.0)" , \
-	javax.persistence.spi;		version="[1.0,2.0)" , \
+    org.osgi.service.jpa;       version="[1.0,2.0)", \
+	javax.persistence;			version="1.0" , \
+	javax.persistence.spi;		version="1.0" , \
 	*
 	
 Include-Resource 					= \
