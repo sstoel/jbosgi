@@ -38,14 +38,19 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.test.osgi.FrameworkUtils;
+import org.jboss.test.osgi.ds.sub.ServiceA;
 import org.jboss.test.osgi.ds.sub.ServiceT;
+import org.jboss.test.osgi.scr.AbstractComponent;
+import org.jboss.test.osgi.scr.InvalidComponentException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.namespace.IdentityNamespace;
 import org.osgi.resource.Resource;
+import org.osgi.service.component.ComponentContext;
 import org.osgi.service.repository.Repository;
 import org.osgi.util.tracker.ServiceTracker;
 
@@ -71,6 +76,7 @@ public class DeclarativeServiceReferenceTestCase {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, "reference-tests");
         archive.addClasses(FrameworkUtils.class);
         archive.addPackage(ServiceT.class.getPackage());
+        archive.addPackage(AbstractComponent.class.getPackage());
         archive.addAsResource("repository/felix.scr.feature.xml");
         archive.setManifest(new Asset() {
             @Override
@@ -81,6 +87,7 @@ public class DeclarativeServiceReferenceTestCase {
                 builder.addExportPackages(ServiceT.class);
                 builder.addImportPackages(XRepository.class, Repository.class, XResource.class, Resource.class, XResourceProvisioner.class);
                 builder.addImportPackages(ServiceTracker.class, Logger.class);
+                builder.addDynamicImportPackages(ComponentContext.class);
                 return builder.openStream();
             }
         });
@@ -97,13 +104,56 @@ public class DeclarativeServiceReferenceTestCase {
 
     @Test
     @InSequence(1)
+    public void testActiveServices() throws Exception {
+        InputStream input = deployer.getDeployment(BUNDLE_A);
+        Bundle bundle = context.installBundle(BUNDLE_A, input);
+        try {
+            bundle.start();
+
+            ServiceT srvT = FrameworkUtils.waitForService(context, ServiceT.class);
+            Assert.assertNotNull("ServiceT#1:ServiceA#1:Hello", srvT.doStuff("Hello"));
+
+            ServiceA srvA = srvT.getServiceA();
+            Assert.assertNotNull("ServiceA#1:Hello", srvA.doStuff("Hello"));
+
+            ServiceReference<ServiceT> srefT = context.getServiceReference(ServiceT.class);
+            Assert.assertSame(srvT, context.getService(srefT));
+
+            ServiceReference<ServiceA> srefA = context.getServiceReference(ServiceA.class);
+            Assert.assertSame(srvA, context.getService(srefA));
+        } finally {
+            bundle.uninstall();
+        }
+    }
+
+    @Test
+    @InSequence(1)
     public void testImmediateService() throws Exception {
         InputStream input = deployer.getDeployment(BUNDLE_A);
         Bundle bundle = context.installBundle(BUNDLE_A, input);
         try {
             bundle.start();
+
             ServiceT srvT = FrameworkUtils.waitForService(context, ServiceT.class);
-            Assert.assertNotNull("ServiceT not null", srvT);
+            Assert.assertNotNull("ServiceT#1:ServiceA#1:Hello", srvT.doStuff("Hello"));
+
+            ServiceA srvA = srvT.getServiceA();
+            Assert.assertNotNull("ServiceA#1:Hello", srvA.doStuff("Hello"));
+
+            srvA.getComponentContext().getComponentInstance().dispose();
+            try {
+                srvA.doStuff("Hello");
+                Assert.fail("InvalidComponentException expected");
+            } catch (InvalidComponentException ex) {
+                // expected
+            }
+
+            try {
+                srvT.getServiceA();
+                Assert.fail("InvalidComponentException expected");
+            } catch (InvalidComponentException ex) {
+                // expected
+            }
         } finally {
             bundle.uninstall();
         }

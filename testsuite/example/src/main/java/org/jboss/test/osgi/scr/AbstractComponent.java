@@ -19,41 +19,45 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.test.osgi.ds.sub;
+package org.jboss.test.osgi.scr;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Service;
-import org.jboss.test.osgi.scr.AbstractComponent;
+import org.jboss.logging.Logger;
 import org.osgi.service.component.ComponentContext;
 
-@Component
-@Service({ ServiceA.class })
-public class ServiceA extends AbstractComponent {
+public class AbstractComponent implements Validatable {
 
-    static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
-    final String name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
+    public final static Logger LOGGER = Logger.getLogger(AbstractComponent.class);
 
-    @Activate
-    void activate(ComponentContext context) {
-        activateComponent(context);
+    private final AtomicBoolean active = new AtomicBoolean();
+    private ComponentContext context;
+
+    public synchronized void activateComponent(ComponentContext context) {
+        LOGGER.infof("activate: %s", this);
+        this.context = context;
+        active.set(true);
     }
 
-    @Deactivate
-    void deactivate() {
-        deactivateComponent();
+    public synchronized void deactivateComponent() {
+        active.set(false);
+        context = null;
+        LOGGER.infof("deactivate: %s", this);
     }
 
-    public String doStuff(String msg) {
+    public synchronized ComponentContext getComponentContext() {
         assertValid();
-        return name + ":" + msg;
+        return context;
     }
 
     @Override
-    public String toString() {
-        return name;
+    public synchronized boolean isValid() {
+        return active.get();
+    }
+
+    @Override
+    public synchronized void assertValid() {
+        if (isValid() == false)
+            throw new InvalidComponentException();
     }
 }

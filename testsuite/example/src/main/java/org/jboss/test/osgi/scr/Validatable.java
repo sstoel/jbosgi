@@ -19,41 +19,12 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.test.osgi.ds.sub;
+package org.jboss.test.osgi.scr;
 
-import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Service;
-import org.jboss.test.osgi.scr.AbstractComponent;
-import org.osgi.service.component.ComponentContext;
+public interface Validatable {
 
-@Component
-@Service({ ServiceA.class })
-public class ServiceA extends AbstractComponent {
+    boolean isValid();
 
-    static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
-    final String name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
-
-    @Activate
-    void activate(ComponentContext context) {
-        activateComponent(context);
-    }
-
-    @Deactivate
-    void deactivate() {
-        deactivateComponent();
-    }
-
-    public String doStuff(String msg) {
-        assertValid();
-        return name + ":" + msg;
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
+    void assertValid();
 }

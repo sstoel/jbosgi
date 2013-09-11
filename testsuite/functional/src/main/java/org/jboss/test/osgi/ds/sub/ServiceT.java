@@ -28,40 +28,48 @@ import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
 import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
-import org.jboss.logging.Logger;
+import org.jboss.test.osgi.scr.AbstractComponent;
+import org.jboss.test.osgi.scr.ValidatingReference;
+import org.osgi.service.component.ComponentContext;
 
 @Component
 @Service({ ServiceT.class })
-public class ServiceT {
+public class ServiceT extends AbstractComponent {
 
-    static Logger LOGGER = Logger.getLogger(ServiceT.class);
     static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
+    final String name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
 
-    final String name;
-
-    public ServiceT() {
-        name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
-    }
-
-    @Reference(bind = "bindServiceA", unbind = "unbindServiceA")
-    ServiceA serviceA;
+    @Reference(bind = "bindServiceA", unbind = "unbindServiceA", referenceInterface = ServiceA.class)
+    final ValidatingReference<ServiceA> refA = new ValidatingReference<ServiceA>(this);
 
     @Activate
-    void activate() {
-        LOGGER.infof("activate: %s", this);
+    void activate(ComponentContext context) {
+        activateComponent(context);
     }
 
     @Deactivate
     void deactivate() {
-        LOGGER.infof("deactivate: %s", this);
+        deactivateComponent();
     }
 
     void bindServiceA(ServiceA service) {
         LOGGER.infof("bindServiceA: %s", this);
+        refA.set(service);
     }
 
     void unbindServiceA(ServiceA service) {
         LOGGER.infof("unbindServiceA: %s", this);
+        refA.set(null);
+    }
+
+    public ServiceA getServiceA() {
+        return refA.get();
+    }
+
+    public String doStuff(String msg) {
+        assertValid();
+        ServiceA serviceA = refA.get();
+        return name + ":" + serviceA.doStuff(msg);
     }
 
     @Override
