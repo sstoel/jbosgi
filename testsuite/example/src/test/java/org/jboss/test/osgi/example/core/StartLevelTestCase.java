@@ -38,10 +38,11 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.startlevel.BundleStartLevel;
 import org.osgi.framework.startlevel.FrameworkStartLevel;
+import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * Test framework/bundle start level
- * 
+ *
  * @author thomas.diesler@jboss.com
  * @since 07-Jun-2011
  */
@@ -68,7 +69,7 @@ public class StartLevelTestCase {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
-                builder.addImportPackages(FrameworkStartLevel.class);
+                builder.addImportPackages(FrameworkStartLevel.class, ServiceTracker.class);
                 return builder.openStream();
             }
         });

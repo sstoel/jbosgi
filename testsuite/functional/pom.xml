@@ -27,7 +27,7 @@
     <name>JBossOSGi Testsuite Functional</name>
     
     <artifactId>jbosgi-testsuite-functional</artifactId>
-    <packaging>jar</packaging>
+    <packaging>bundle</packaging>
 
     <!-- Properties -->
     <properties>
@@ -41,6 +41,33 @@
             <artifactId>jbosgi-testsuite-example</artifactId>
             <version>${project.version}</version>
         </dependency>
+        
+        <!-- Provided -->
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.log</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.osgi.logging</groupId>
+            <artifactId>jboss-osgi-logging</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.metatype</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.scr</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.scr.annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Test -->
         <dependency>
@@ -51,6 +78,12 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -71,6 +104,33 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-scr-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>scrdescriptor</id>
+                        <goals>
+                            <goal>scr</goal>
+                        </goals>
+                        <configuration>
+                            <generateSeparateDescriptors>false</generateSeparateDescriptors>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                            <specVersion>1.2</specVersion>
+                            <strictMode>true</strictMode>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <configuration>
+                    <instructions>
+                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                    </instructions>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -21,10 +21,6 @@
                 <include>*:jbosgi-repository-bundle:jar</include>
                 <include>*:jbosgi-provision-bundle:jar</include>
                 <include>*:jboss-osgi-logging:jar</include>
-                <!--  
-                <include>*:jboss-annotations-api_1.1_spec:jar</include>
-                <include>*:jboss-servlet-api_3.0_spec:jar</include>
-                -->
             </includes>
             <useStrictFiltering>true</useStrictFiltering>
             <scope>provided</scope>
