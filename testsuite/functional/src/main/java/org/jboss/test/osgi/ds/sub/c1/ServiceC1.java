@@ -32,6 +32,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 
 @Component(service = { ServiceC1.class })
 public class ServiceC1 extends AbstractComponent {
@@ -51,7 +52,7 @@ public class ServiceC1 extends AbstractComponent {
         deactivateComponent();
     }
 
-    @Reference(cardinality = ReferenceCardinality.OPTIONAL)
+    @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
     void bindServiceC1(ServiceC service) {
         LOGGER.infof("bindService: %s", this);
         ref.set(service);

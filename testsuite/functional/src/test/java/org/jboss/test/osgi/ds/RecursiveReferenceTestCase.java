@@ -161,6 +161,7 @@ public class RecursiveReferenceTestCase {
                 builder.addManifestHeader("Service-Component", "OSGI-INF/org.jboss.test.osgi.ds.sub.c1.ServiceC1.xml");
                 builder.addExportPackages(ServiceC1.class);
                 builder.addImportPackages(AbstractComponent.class, ComponentContext.class, Logger.class);
+                builder.addImportPackages(ServiceC.class);
                 return builder.openStream();
             }
         });
