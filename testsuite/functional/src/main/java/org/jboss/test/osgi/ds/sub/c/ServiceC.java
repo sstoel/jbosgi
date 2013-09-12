@@ -19,11 +19,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.test.osgi.ds.subt;
+package org.jboss.test.osgi.ds.sub.c;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jboss.test.osgi.ds.suba.ServiceA;
+import org.jboss.test.osgi.ds.sub.c1.ServiceC1;
 import org.jboss.test.osgi.ds.support.AbstractComponent;
 import org.jboss.test.osgi.ds.support.ValidatingReference;
 import org.osgi.service.component.ComponentContext;
@@ -32,13 +32,13 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
-@Component(service = { ServiceT.class })
-public class ServiceT extends AbstractComponent {
+@Component(service = { ServiceC.class })
+public class ServiceC extends AbstractComponent {
 
     static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
     final String name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
 
-    final ValidatingReference<ServiceA> refA = new ValidatingReference<ServiceA>();
+    final ValidatingReference<ServiceC1> ref = new ValidatingReference<ServiceC1>();
 
     @Activate
     void activate(ComponentContext context) {
@@ -51,23 +51,23 @@ public class ServiceT extends AbstractComponent {
     }
 
     @Reference
-    void bindServiceA(ServiceA service) {
-        LOGGER.infof("bindServiceA: %s", this);
-        refA.set(service);
+    void bindServiceC1(ServiceC1 service) {
+        LOGGER.infof("bindService: %s", this);
+        ref.set(service);
     }
 
-    void unbindServiceA(ServiceA service) {
-        LOGGER.infof("unbindServiceA: %s", this);
-        refA.set(null);
+    void unbindServiceC1(ServiceC1 service) {
+        LOGGER.infof("unbindService: %s", this);
+        ref.set(null);
     }
 
-    public ServiceA getServiceA() {
-        return refA.get();
+    public ServiceC1 getServiceC1() {
+        return ref.get();
     }
 
     public String doStuff(String msg) {
         assertValid();
-        ServiceA serviceA = refA.get();
+        ServiceC1 serviceA = ref.get();
         return name + ":" + serviceA.doStuff(msg);
     }
 
