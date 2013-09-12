@@ -30,14 +30,9 @@ import java.util.concurrent.TimeUnit;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.arquillian.junit.InSequence;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.logging.Logger;
 import org.jboss.osgi.metadata.OSGiManifestBuilder;
-import org.jboss.osgi.provision.ProvisionerSupport;
-import org.jboss.osgi.provision.XResourceProvisioner;
-import org.jboss.osgi.repository.XRepository;
-import org.jboss.osgi.resolver.XResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -52,12 +47,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.namespace.IdentityNamespace;
-import org.osgi.resource.Resource;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.ComponentContext;
-import org.osgi.service.repository.Repository;
 import org.osgi.util.tracker.ServiceTracker;
 
 /**
@@ -83,8 +75,6 @@ public class ConfiguredReferenceTestCase {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, "reference-tests");
         archive.addClasses(FrameworkUtils.class, ConfigurationAdminSupport.class);
         archive.addPackage(AbstractComponent.class.getPackage());
-        archive.addAsResource("repository/felix.scr.feature.xml");
-        archive.addAsResource("repository/felix.configadmin.feature.xml");
         archive.setManifest(new Asset() {
             @Override
             public InputStream openStream() {
@@ -92,22 +82,12 @@ public class ConfiguredReferenceTestCase {
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
                 builder.addExportPackages(AbstractComponent.class);
-                builder.addImportPackages(XRepository.class, Repository.class, XResource.class, Resource.class, XResourceProvisioner.class);
-                builder.addImportPackages(ServiceTracker.class, Logger.class);
-                builder.addDynamicImportPackages(ConfigurationAdmin.class, ServiceD1.class, ServiceD.class);
+                builder.addImportPackages(ServiceTracker.class, ConfigurationAdmin.class, Logger.class);
+                builder.addDynamicImportPackages(ServiceD1.class, ServiceD.class);
                 return builder.openStream();
             }
         });
         return archive;
-    }
-
-    @Test
-    @InSequence(0)
-    public void addDeclarativeServicesSupport() throws Exception {
-        ProvisionerSupport provisioner = new ProvisionerSupport(context);
-        provisioner.populateRepository(getClass().getClassLoader(), "felix.scr.feature");
-        provisioner.populateRepository(getClass().getClassLoader(), "felix.configadmin.feature");
-        provisioner.installCapabilities(IdentityNamespace.IDENTITY_NAMESPACE, "felix.configadmin.feature", "felix.scr.feature");
     }
 
     @Test
@@ -135,7 +115,7 @@ public class ConfiguredReferenceTestCase {
             configProps.put("foo", "bar");
             config.update(configProps);
 
-            latch.await(2000, TimeUnit.MILLISECONDS);
+            latch.await(4000, TimeUnit.MILLISECONDS);
 
             try {
                 srvD1.doStuff("Hello");
@@ -144,10 +124,7 @@ public class ConfiguredReferenceTestCase {
                 // expected
             }
 
-            srvD = FrameworkUtils.waitForService(context, ServiceD.class);
-            Assert.assertEquals("ServiceD#2:ServiceD1#2:bar:Hello", srvD.doStuff("Hello"));
-
-            srvD1 = srvD.getServiceD1();
+            srvD1 = FrameworkUtils.waitForService(context, ServiceD1.class);
             Assert.assertEquals("ServiceD1#2:bar:Hello", srvD1.doStuff("Hello"));
 
         } finally {
@@ -190,7 +167,7 @@ public class ConfiguredReferenceTestCase {
                 builder.addBundleManifestVersion(2);
                 builder.addManifestHeader("Service-Component", "OSGI-INF/org.jboss.test.osgi.ds.sub.d1.ServiceD1.xml");
                 builder.addExportPackages(ServiceD1.class);
-                builder.addImportPackages(AbstractComponent.class, ComponentContext.class, ConfigurationAdmin.class, Logger.class);
+                builder.addImportPackages(AbstractComponent.class, ComponentContext.class, Logger.class);
                 return builder.openStream();
             }
         });

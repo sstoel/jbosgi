@@ -59,7 +59,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.metatype</artifactId>
+            <artifactId>org.apache.felix.configadmin</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -21,20 +21,18 @@
  */
 package org.jboss.test.osgi.ds.sub.d1;
 
-import java.util.Dictionary;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.test.osgi.ds.support.AbstractComponent;
-import org.osgi.service.cm.ManagedService;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 
-@Component(service = { ServiceD1.class, ManagedService.class })
-public class ServiceD1 extends AbstractComponent implements ManagedService {
+@Component(service = { ServiceD1.class })
+public class ServiceD1 extends AbstractComponent {
 
     static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
     final String name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
@@ -58,11 +56,6 @@ public class ServiceD1 extends AbstractComponent implements ManagedService {
     public CountDownLatch getDeactivateLatch() {
         deactivateLatch = new CountDownLatch(1);
         return deactivateLatch;
-    }
-
-    @Override
-    public void updated(Dictionary<String, ?> properties) {
-        LOGGER.infof("config updated: %s", properties);
     }
 
     public String doStuff(String msg) {
