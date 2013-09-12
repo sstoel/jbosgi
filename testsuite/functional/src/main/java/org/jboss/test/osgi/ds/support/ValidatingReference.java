@@ -19,27 +19,22 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.test.osgi.ds.sub;
+package org.jboss.test.osgi.ds.support;
 
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Deactivate;
+import java.util.concurrent.atomic.AtomicReference;
 
-@Component(service = { ServiceB.class })
-public class ServiceB {
+public class ValidatingReference<T> {
 
-    @Activate
-    void activate() {
-        System.out.println("activate: " + this);
+    final AtomicReference<T> reference = new AtomicReference<>();
+
+    public synchronized void set(T ref) {
+        reference.set(ref);
     }
 
-    @Deactivate
-    void deactivate() {
-        System.out.println("deactivate: " + this);
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getSimpleName();
+    public synchronized T get() {
+        T result = reference.get();
+        if (result == null)
+            throw new InvalidComponentException();
+        return result;
     }
 }

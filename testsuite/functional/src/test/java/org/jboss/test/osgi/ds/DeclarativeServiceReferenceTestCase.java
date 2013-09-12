@@ -38,10 +38,10 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.test.osgi.FrameworkUtils;
-import org.jboss.test.osgi.ds.sub.ServiceA;
-import org.jboss.test.osgi.ds.sub.ServiceT;
-import org.jboss.test.osgi.scr.AbstractComponent;
-import org.jboss.test.osgi.scr.InvalidComponentException;
+import org.jboss.test.osgi.ds.suba.ServiceA;
+import org.jboss.test.osgi.ds.suba.ServiceT;
+import org.jboss.test.osgi.ds.support.AbstractComponent;
+import org.jboss.test.osgi.ds.support.InvalidComponentException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -162,14 +162,15 @@ public class DeclarativeServiceReferenceTestCase {
     @Deployment(name = BUNDLE_A, managed = false, testable = false)
     public static JavaArchive testBundle() {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, BUNDLE_A);
-        archive.addAsResource("OSGI-INF/serviceComponents.xml");
+        archive.addAsResource("OSGI-INF/org.jboss.test.osgi.ds.suba.ServiceA.xml");
+        archive.addAsResource("OSGI-INF/org.jboss.test.osgi.ds.suba.ServiceT.xml");
         archive.setManifest(new Asset() {
             @Override
             public InputStream openStream() {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
-                builder.addManifestHeader("Service-Component", "OSGI-INF/serviceComponents.xml");
+                builder.addManifestHeader("Service-Component", "OSGI-INF/org.jboss.test.osgi.ds.suba.*.xml");
                 builder.addImportPackages(ServiceT.class);
                 return builder.openStream();
             }

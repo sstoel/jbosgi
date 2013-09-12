@@ -19,25 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.test.osgi.scr;
+package org.jboss.test.osgi.ds.support;
 
-import java.util.concurrent.atomic.AtomicReference;
 
-public class ValidatingReference<T> {
+@SuppressWarnings("serial")
+public class InvalidComponentException extends RuntimeException {
 
-    final AtomicReference<T> reference = new AtomicReference<>();
-    final Validatable validatable;
-
-    public ValidatingReference(Validatable validatable) {
-        this.validatable = validatable;
+    public InvalidComponentException() {
     }
 
-    public synchronized void set(T ref) {
-        reference.set(ref);
+    public InvalidComponentException(String message) {
+        super(message);
     }
 
-    public synchronized T get() {
-        validatable.assertValid();
-        return reference.get();
+    public InvalidComponentException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

@@ -19,19 +19,17 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.test.osgi.ds.sub;
+package org.jboss.test.osgi.ds.suba;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Service;
-import org.jboss.test.osgi.scr.AbstractComponent;
+import org.jboss.test.osgi.ds.support.AbstractComponent;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 
-@Component
-@Service({ ServiceA.class })
+@Component(service = { ServiceA.class })
 public class ServiceA extends AbstractComponent {
 
     static AtomicInteger INSTANCE_COUNT = new AtomicInteger();

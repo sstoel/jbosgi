@@ -39,8 +39,6 @@
 
     <!-- Properties -->
     <properties>
-        <plugin.version.apache.felix.scr>1.9.0</plugin.version.apache.felix.scr>
-        
         <version.apache.ant>1.7.0</version.apache.ant>
         <version.apache.aries.blueprint>1.0.0</version.apache.aries.blueprint>
         <version.apache.aries.jmx>1.0.0</version.apache.aries.jmx>
@@ -53,6 +51,7 @@
         <version.apache.felix.metatype>1.0.6</version.apache.felix.metatype>
         <version.apache.felix.scr>1.6.2</version.apache.felix.scr>
         <version.apache.felix.scr.annotations>1.9.6</version.apache.felix.scr.annotations>
+        <version.apache.felix.scr.generator>1.8.0</version.apache.felix.scr.generator>
         <version.apache.felix.webconsole>3.1.8</version.apache.felix.webconsole>
         <version.codehaus.izpack>4.3.5</version.codehaus.izpack>
         <version.javax.annotations.api>1.0.1.Final</version.javax.annotations.api>
@@ -379,6 +378,17 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.felix</groupId>
+                <artifactId>org.apache.felix.scr.generator</artifactId>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.osgi</groupId>
+                        <artifactId>org.osgi.compendium</artifactId>
+                    </exclusion>
+                </exclusions>
+                <version>${version.apache.felix.scr.generator}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.felix</groupId>
                 <artifactId>org.apache.felix.webconsole</artifactId>
                 <version>${version.apache.felix.webconsole}</version>
             </dependency>
@@ -448,7 +458,7 @@
                 <plugin>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-scr-plugin</artifactId>
-                    <version>${plugin.version.apache.felix.scr}</version>
+                    <version>${version.apache.felix.scr.generator}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -19,28 +19,25 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.test.osgi.ds.sub;
+package org.jboss.test.osgi.ds.suba;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.felix.scr.annotations.Activate;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.Service;
-import org.jboss.test.osgi.scr.AbstractComponent;
-import org.jboss.test.osgi.scr.ValidatingReference;
+import org.jboss.test.osgi.ds.support.AbstractComponent;
+import org.jboss.test.osgi.ds.support.ValidatingReference;
 import org.osgi.service.component.ComponentContext;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 
-@Component
-@Service({ ServiceT.class })
+@Component(service = { ServiceT.class })
 public class ServiceT extends AbstractComponent {
 
     static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
     final String name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
 
-    @Reference(bind = "bindServiceA", unbind = "unbindServiceA", referenceInterface = ServiceA.class)
-    final ValidatingReference<ServiceA> refA = new ValidatingReference<ServiceA>(this);
+    final ValidatingReference<ServiceA> refA = new ValidatingReference<ServiceA>();
 
     @Activate
     void activate(ComponentContext context) {
@@ -52,6 +49,7 @@ public class ServiceT extends AbstractComponent {
         deactivateComponent();
     }
 
+    @Reference
     void bindServiceA(ServiceA service) {
         LOGGER.infof("bindServiceA: %s", this);
         refA.set(service);
