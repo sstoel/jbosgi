@@ -19,56 +19,56 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.test.osgi.ds.sub.c;
+package org.jboss.test.osgi.ds.sub.d1;
 
+import java.util.Dictionary;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jboss.test.osgi.ds.sub.c1.ServiceC1;
 import org.jboss.test.osgi.ds.support.AbstractComponent;
-import org.jboss.test.osgi.ds.support.ValidatingReference;
+import org.osgi.service.cm.ManagedService;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Reference;
 
-@Component(service = { ServiceC.class })
-public class ServiceC extends AbstractComponent {
+@Component(service = { ServiceD1.class, ManagedService.class })
+public class ServiceD1 extends AbstractComponent implements ManagedService {
 
     static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
     final String name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
 
-    final ValidatingReference<ServiceC1> ref = new ValidatingReference<ServiceC1>();
+    private CountDownLatch deactivateLatch;
+    private Map<String, String> config;
 
     @Activate
-    void activate(ComponentContext context) {
+    void activate(ComponentContext context, Map<String, String> config) {
+        this.config = config;
         activateComponent(context);
+        LOGGER.infof("activate: %s", config);
     }
 
     @Deactivate
     void deactivate() {
         deactivateComponent();
+        deactivateLatch.countDown();
     }
 
-    @Reference
-    void bindServiceC1(ServiceC1 service) {
-        LOGGER.infof("bindService: %s:%s", this, service);
-        ref.set(service);
+    public CountDownLatch getDeactivateLatch() {
+        deactivateLatch = new CountDownLatch(1);
+        return deactivateLatch;
     }
 
-    void unbindServiceC1(ServiceC1 service) {
-        LOGGER.infof("unbindService: %s:%s", this, service);
-        ref.set(null);
-    }
-
-    public ServiceC1 getServiceC1() {
-        return ref.get();
+    @Override
+    public void updated(Dictionary<String, ?> properties) {
+        LOGGER.infof("config updated: %s", properties);
     }
 
     public String doStuff(String msg) {
         assertValid();
-        ServiceC1 serviceA = ref.get();
-        return name + ":" + serviceA.doStuff(msg);
+        String fooval = config.get("foo");
+        return name + ":" + fooval + ":" + msg;
     }
 
     @Override

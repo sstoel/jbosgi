@@ -118,12 +118,6 @@ public class RecursiveReferenceTestCase {
             ServiceC1 srvC1 = srvC.getServiceC1();
             Assert.assertEquals("ServiceC1#1:Hello", srvC1.doStuff("Hello"));
 
-            ServiceReference<ServiceC> srefT = context.getServiceReference(ServiceC.class);
-            Assert.assertSame(srvC, context.getService(srefT));
-
-            ServiceReference<ServiceC1> srefA = context.getServiceReference(ServiceC1.class);
-            Assert.assertSame(srvC1, context.getService(srefA));
-
             bundleC1.stop();
             try {
                 srvC1.doStuff("Hello");

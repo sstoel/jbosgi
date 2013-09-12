@@ -22,6 +22,10 @@
 package org.jboss.test.osgi.ds;
 
 import java.io.InputStream;
+import java.util.Dictionary;
+import java.util.Hashtable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -37,9 +41,10 @@ import org.jboss.osgi.resolver.XResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jboss.test.osgi.ConfigurationAdminSupport;
 import org.jboss.test.osgi.FrameworkUtils;
-import org.jboss.test.osgi.ds.sub.b.ServiceB;
-import org.jboss.test.osgi.ds.sub.b1.ServiceB1;
+import org.jboss.test.osgi.ds.sub.d.ServiceD;
+import org.jboss.test.osgi.ds.sub.d1.ServiceD1;
 import org.jboss.test.osgi.ds.support.AbstractComponent;
 import org.jboss.test.osgi.ds.support.InvalidComponentException;
 import org.junit.Assert;
@@ -47,24 +52,25 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.osgi.framework.namespace.IdentityNamespace;
 import org.osgi.resource.Resource;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.repository.Repository;
 import org.osgi.util.tracker.ServiceTracker;
 
 /**
- * Test dynamic service references
+ * Test static service references
  *
  * @author thomas.diesler@jboss.com
  * @since 11-Sep-2013
  */
 @RunWith(Arquillian.class)
-public class DynamicReferenceTestCase {
+public class ConfiguredReferenceTestCase {
 
-    static final String BUNDLE_B = "bundleB";
-    static final String BUNDLE_B1 = "bundleB1";
+    static final String BUNDLE_D = "bundleD";
+    static final String BUNDLE_D1 = "bundleD1";
 
     @ArquillianResource
     Deployer deployer;
@@ -75,9 +81,10 @@ public class DynamicReferenceTestCase {
     @Deployment
     public static JavaArchive dsProvider() {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, "reference-tests");
-        archive.addClasses(FrameworkUtils.class);
+        archive.addClasses(FrameworkUtils.class, ConfigurationAdminSupport.class);
         archive.addPackage(AbstractComponent.class.getPackage());
         archive.addAsResource("repository/felix.scr.feature.xml");
+        archive.addAsResource("repository/felix.configadmin.feature.xml");
         archive.setManifest(new Asset() {
             @Override
             public InputStream openStream() {
@@ -87,7 +94,7 @@ public class DynamicReferenceTestCase {
                 builder.addExportPackages(AbstractComponent.class);
                 builder.addImportPackages(XRepository.class, Repository.class, XResource.class, Resource.class, XResourceProvisioner.class);
                 builder.addImportPackages(ServiceTracker.class, Logger.class);
-                builder.addDynamicImportPackages(ServiceB1.class, ServiceB.class);
+                builder.addDynamicImportPackages(ConfigurationAdmin.class, ServiceD1.class, ServiceD.class);
                 return builder.openStream();
             }
         });
@@ -99,87 +106,91 @@ public class DynamicReferenceTestCase {
     public void addDeclarativeServicesSupport() throws Exception {
         ProvisionerSupport provisioner = new ProvisionerSupport(context);
         provisioner.populateRepository(getClass().getClassLoader(), "felix.scr.feature");
-        provisioner.installCapabilities(IdentityNamespace.IDENTITY_NAMESPACE, "felix.scr.feature");
+        provisioner.populateRepository(getClass().getClassLoader(), "felix.configadmin.feature");
+        provisioner.installCapabilities(IdentityNamespace.IDENTITY_NAMESPACE, "felix.configadmin.feature", "felix.scr.feature");
     }
 
     @Test
     public void testServiceAccess() throws Exception {
-        Bundle bundleB1 = context.installBundle(BUNDLE_B1, deployer.getDeployment(BUNDLE_B1));
-        Bundle bundleB = context.installBundle(BUNDLE_B, deployer.getDeployment(BUNDLE_B));
+        Bundle bundleD1 = context.installBundle(BUNDLE_D1, deployer.getDeployment(BUNDLE_D1));
+        Bundle bundleD = context.installBundle(BUNDLE_D, deployer.getDeployment(BUNDLE_D));
         try {
-            bundleB1.start();
-            bundleB.start();
+            bundleD1.start();
+            bundleD.start();
 
-            ServiceB srvB = FrameworkUtils.waitForService(context, ServiceB.class);
-            Assert.assertEquals("ServiceB#1:ServiceB1#1:Hello", srvB.doStuff("Hello"));
+            ServiceD srvD = FrameworkUtils.waitForService(context, ServiceD.class);
+            Assert.assertEquals("ServiceD#1:ServiceD1#1:null:Hello", srvD.doStuff("Hello"));
 
-            ServiceB1 srvB1 = srvB.getServiceB1();
-            Assert.assertEquals("ServiceB1#1:Hello", srvB1.doStuff("Hello"));
+            ServiceD1 srvD1 = srvD.getServiceD1();
+            Assert.assertEquals("ServiceD1#1:null:Hello", srvD1.doStuff("Hello"));
 
-            bundleB1.stop();
+            ConfigurationAdmin configAdmin = ConfigurationAdminSupport.getConfigurationAdmin(bundleD1);
+            Configuration config = configAdmin.getConfiguration(ServiceD1.class.getName());
+            Assert.assertNotNull("Config not null", config);
+            Assert.assertNull("Config is empty, but was: " + config.getProperties(), config.getProperties());
+
+            CountDownLatch latch = srvD1.getDeactivateLatch();
+
+            Dictionary<String, String> configProps = new Hashtable<String, String>();
+            configProps.put("foo", "bar");
+            config.update(configProps);
+
+            latch.await(2000, TimeUnit.MILLISECONDS);
+
             try {
-                srvB1.doStuff("Hello");
+                srvD1.doStuff("Hello");
                 Assert.fail("InvalidComponentException expected");
             } catch (InvalidComponentException ex) {
                 // expected
             }
 
-            try {
-                srvB.getServiceB1();
-                Assert.fail("InvalidComponentException expected");
-            } catch (InvalidComponentException ex) {
-                // expected
-            }
+            srvD = FrameworkUtils.waitForService(context, ServiceD.class);
+            Assert.assertEquals("ServiceD#2:ServiceD1#2:bar:Hello", srvD.doStuff("Hello"));
 
-            // The dynamic policy is ignored, we still get a new instance of ServiceB
+            srvD1 = srvD.getServiceD1();
+            Assert.assertEquals("ServiceD1#2:bar:Hello", srvD1.doStuff("Hello"));
 
-            bundleB1.start();
-            srvB = FrameworkUtils.waitForService(context, ServiceB.class);
-            Assert.assertEquals("ServiceB#2:ServiceB1#2:Hello", srvB.doStuff("Hello"));
-
-            srvB1 = FrameworkUtils.waitForService(context, ServiceB1.class);
-            Assert.assertEquals("ServiceB1#2:Hello", srvB1.doStuff("Hello"));
         } finally {
-            bundleB.uninstall();
-            bundleB1.uninstall();
+            bundleD.uninstall();
+            bundleD1.uninstall();
         }
     }
 
-    @Deployment(name = BUNDLE_B, managed = false, testable = false)
-    public static JavaArchive testBundleB() {
-        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, BUNDLE_B);
-        archive.addClasses(ServiceB.class);
-        archive.addAsResource("OSGI-INF/org.jboss.test.osgi.ds.sub.b.ServiceB.xml");
+    @Deployment(name = BUNDLE_D, managed = false, testable = false)
+    public static JavaArchive testBundleD() {
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, BUNDLE_D);
+        archive.addClasses(ServiceD.class);
+        archive.addAsResource("OSGI-INF/org.jboss.test.osgi.ds.sub.d.ServiceD.xml");
         archive.setManifest(new Asset() {
             @Override
             public InputStream openStream() {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
-                builder.addManifestHeader("Service-Component", "OSGI-INF/org.jboss.test.osgi.ds.sub.b.ServiceB.xml");
-                builder.addExportPackages(ServiceB.class);
+                builder.addManifestHeader("Service-Component", "OSGI-INF/org.jboss.test.osgi.ds.sub.d.ServiceD.xml");
+                builder.addExportPackages(ServiceD.class);
                 builder.addImportPackages(AbstractComponent.class, ComponentContext.class, Logger.class);
-                builder.addImportPackages(ServiceB1.class);
+                builder.addImportPackages(ServiceD1.class);
                 return builder.openStream();
             }
         });
         return archive;
     }
 
-    @Deployment(name = BUNDLE_B1, managed = false, testable = false)
-    public static JavaArchive testBundleB1() {
-        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, BUNDLE_B1);
-        archive.addClasses(ServiceB1.class);
-        archive.addAsResource("OSGI-INF/org.jboss.test.osgi.ds.sub.b1.ServiceB1.xml");
+    @Deployment(name = BUNDLE_D1, managed = false, testable = false)
+    public static JavaArchive testBundleD1() {
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, BUNDLE_D1);
+        archive.addClasses(ServiceD1.class);
+        archive.addAsResource("OSGI-INF/org.jboss.test.osgi.ds.sub.d1.ServiceD1.xml");
         archive.setManifest(new Asset() {
             @Override
             public InputStream openStream() {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
-                builder.addManifestHeader("Service-Component", "OSGI-INF/org.jboss.test.osgi.ds.sub.b1.ServiceB1.xml");
-                builder.addExportPackages(ServiceB1.class);
-                builder.addImportPackages(AbstractComponent.class, ComponentContext.class, Logger.class);
+                builder.addManifestHeader("Service-Component", "OSGI-INF/org.jboss.test.osgi.ds.sub.d1.ServiceD1.xml");
+                builder.addExportPackages(ServiceD1.class);
+                builder.addImportPackages(AbstractComponent.class, ComponentContext.class, ConfigurationAdmin.class, Logger.class);
                 return builder.openStream();
             }
         });

@@ -53,12 +53,12 @@ public class ServiceB extends AbstractComponent {
 
     @Reference(policy = ReferencePolicy.DYNAMIC)
     void bindServiceB1(ServiceB1 service) {
-        LOGGER.infof("bindService: %s", this);
+        LOGGER.infof("bindService: %s:%s", this, service);
         ref.set(service);
     }
 
     void unbindServiceB1(ServiceB1 service) {
-        LOGGER.infof("unbindService: %s", this);
+        LOGGER.infof("unbindService: %s:%s", this, service);
         ref.set(null);
     }
 
