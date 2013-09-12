@@ -146,10 +146,6 @@ public final class FrameworkUtils {
         tracker.open();
         try {
             latch.await(timeout, unit);
-            if (sref[0] != null) {
-                // We need to get the service, otherwise SCR will trigger another component activation cycle
-                context.getService(sref[0]);
-            }
         } catch (InterruptedException e) {
             // ignore
         } finally {

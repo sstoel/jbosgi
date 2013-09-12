@@ -32,7 +32,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 
-@Component(service = { ServiceC.class })
+@Component(service = { ServiceC.class }, immediate = true)
 public class ServiceC extends AbstractComponent {
 
     static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
@@ -67,8 +67,8 @@ public class ServiceC extends AbstractComponent {
 
     public String doStuff(String msg) {
         assertValid();
-        ServiceC1 serviceA = ref.get();
-        return name + ":" + serviceA.doStuff(msg);
+        ServiceC1 srv = ref.get();
+        return name + ":" + srv.doStuff(msg);
     }
 
     @Override
