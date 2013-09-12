@@ -135,15 +135,21 @@ public final class FrameworkUtils {
         final ServiceReference<T>[] sref = new ServiceReference[1];
         ServiceTracker<T, T> tracker = new ServiceTracker<T, T>(context, clazz.getName(), null) {
             @Override
-            public T addingService(ServiceReference<T> reference) {
-                sref[0] = reference;
-                latch.countDown();
-                return super.addingService(reference);
+            public T addingService(ServiceReference<T> ref) {
+                if (sref[0] == null) {
+                    sref[0] = ref;
+                    latch.countDown();
+                }
+                return super.addingService(ref);
             }
         };
         tracker.open();
         try {
             latch.await(timeout, unit);
+            if (sref[0] != null) {
+                // We need to get the service, otherwise SCR will trigger another component activation cycle
+                context.getService(sref[0]);
+            }
         } catch (InterruptedException e) {
             // ignore
         } finally {

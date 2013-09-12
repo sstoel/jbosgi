@@ -19,10 +19,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.test.osgi.ds.suba;
+package org.jboss.test.osgi.ds.subt;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.jboss.test.osgi.ds.suba.ServiceA;
 import org.jboss.test.osgi.ds.support.AbstractComponent;
 import org.jboss.test.osgi.ds.support.ValidatingReference;
 import org.osgi.service.component.ComponentContext;
