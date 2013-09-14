@@ -31,6 +31,7 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 
 @Component(service = { ServiceB.class }, immediate = true)
@@ -51,7 +52,7 @@ public class ServiceB extends AbstractComponent {
         deactivateComponent();
     }
 
-    @Reference(policy = ReferencePolicy.DYNAMIC)
+    @Reference(cardinality=ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
     void bindServiceB1(ServiceB1 service) {
         LOGGER.infof("bindService: %s:%s", this, service);
         ref.set(service);
@@ -68,8 +69,8 @@ public class ServiceB extends AbstractComponent {
 
     public String doStuff(String msg) {
         assertValid();
-        ServiceB1 srv = ref.get();
-        return name + ":" + srv.doStuff(msg);
+        ServiceB1 srv = ref.getOptional();
+        return name + ":" + (srv != null ? srv.doStuff(msg) : msg);
     }
 
     @Override

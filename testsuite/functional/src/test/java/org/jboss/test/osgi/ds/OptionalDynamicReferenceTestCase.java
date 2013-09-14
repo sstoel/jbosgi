@@ -52,7 +52,7 @@ import org.osgi.util.tracker.ServiceTracker;
  * @since 11-Sep-2013
  */
 @RunWith(Arquillian.class)
-public class DynamicReferenceTestCase {
+public class OptionalDynamicReferenceTestCase {
 
     static final String BUNDLE_B = "bundleB";
     static final String BUNDLE_B1 = "bundleB1";
@@ -98,15 +98,10 @@ public class DynamicReferenceTestCase {
             Assert.assertEquals("ServiceB1#1:Hello", srvB1.doStuff("Hello"));
 
             bundleB1.stop();
-            try {
-                srvB1.doStuff("Hello");
-                Assert.fail("InvalidComponentException expected");
-            } catch (InvalidComponentException ex) {
-                // expected
-            }
+            Assert.assertEquals("ServiceB#1:Hello", srvB.doStuff("Hello"));
 
             try {
-                srvB.getServiceB1();
+                srvB1.doStuff("Hello");
                 Assert.fail("InvalidComponentException expected");
             } catch (InvalidComponentException ex) {
                 // expected
@@ -116,7 +111,7 @@ public class DynamicReferenceTestCase {
 
             bundleB1.start();
             srvB = FrameworkUtils.waitForService(context, ServiceB.class);
-            Assert.assertEquals("ServiceB#2:ServiceB1#2:Hello", srvB.doStuff("Hello"));
+            Assert.assertEquals("ServiceB#1:ServiceB1#2:Hello", srvB.doStuff("Hello"));
 
             srvB1 = FrameworkUtils.waitForService(context, ServiceB1.class);
             Assert.assertEquals("ServiceB1#2:Hello", srvB1.doStuff("Hello"));

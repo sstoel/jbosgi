@@ -23,7 +23,7 @@ package org.jboss.test.osgi.ds.support;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ValidatingReference<T> {
+public final class ValidatingReference<T> implements Validatable {
 
     final AtomicReference<T> reference = new AtomicReference<>();
 
@@ -32,9 +32,22 @@ public class ValidatingReference<T> {
     }
 
     public synchronized T get() {
-        T result = reference.get();
-        if (result == null)
+        assertValid();
+        return reference.get();
+    }
+
+    public synchronized T getOptional() {
+        return reference.get();
+    }
+
+    @Override
+    public synchronized boolean isValid() {
+        return reference.get() != null;
+    }
+
+    @Override
+    public synchronized void assertValid() {
+        if (!isValid())
             throw new InvalidComponentException();
-        return result;
     }
 }
