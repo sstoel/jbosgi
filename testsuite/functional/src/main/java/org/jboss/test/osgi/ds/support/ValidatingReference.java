@@ -1,53 +1,57 @@
-/*
- * JBoss, Home of Professional Open Source
- * Copyright 2005, JBoss Inc., and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+/**
+ * Copyright (C) FuseSource, Inc.
+ * http://fusesource.com
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.jboss.test.osgi.ds.support;
 
-import java.util.concurrent.atomic.AtomicReference;
+/**
+ * A reference that validates its content on {@link #get()}
+ *
+ * @author Thomas.Diesler@jboss.com
+ * @since 13-Sep-2013
+ */
+public class ValidatingReference<T> {
 
-public final class ValidatingReference<T> implements Validatable {
+    private T reference;
 
-    final AtomicReference<T> reference = new AtomicReference<>();
-
+    /**
+     * Set the reference to the given instance
+     */
     public synchronized void set(T ref) {
-        reference.set(ref);
+        reference = ref;
     }
 
+    /**
+     * Get the referenced instance
+     * @throws InvalidComponentException If the reference is not valid
+     */
     public synchronized T get() {
-        assertValid();
-        return reference.get();
+        if (reference == null) {
+            RuntimeException rte = new InvalidComponentException();
+            rte.printStackTrace();
+            throw rte;
+        }
+        return reference;
     }
 
+    /**
+     * Get the referenced instance
+     * @return The references instance or null
+     */
     public synchronized T getOptional() {
-        return reference.get();
+        return reference;
     }
 
-    @Override
-    public synchronized boolean isValid() {
-        return reference.get() != null;
-    }
-
-    @Override
-    public synchronized void assertValid() {
-        if (!isValid())
-            throw new InvalidComponentException();
-    }
 }

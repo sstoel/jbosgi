@@ -42,7 +42,7 @@ public class ServiceA extends AbstractComponent {
 
     @Activate
     void activate(ComponentContext context) {
-        activateComponent(context);
+        activateComponent();
     }
 
     @Deactivate

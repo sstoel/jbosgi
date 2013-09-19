@@ -43,7 +43,7 @@ public class ServiceD1 extends AbstractComponent {
     @Activate
     void activate(ComponentContext context, Map<String, String> config) {
         this.config = config;
-        activateComponent(context);
+        activateComponent();
         LOGGER.infof("activate: %s", config);
     }
 

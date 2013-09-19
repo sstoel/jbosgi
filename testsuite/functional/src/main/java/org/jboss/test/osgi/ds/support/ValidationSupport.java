@@ -16,23 +16,39 @@
  */
 package org.jboss.test.osgi.ds.support;
 
+
 /**
- * An interface implemented by validatable components.
+ * Provides validation support.
  *
  * @author Thomas.Diesler@jboss.com
  * @since 13-Sep-2013
  */
-public interface Validatable {
+public final class ValidationSupport implements Validatable {
 
-    /**
-     * True if the component is valid.
-     */
-    boolean isValid();
-
-    /**
-     * Assert that the component is valid
+    /* This uses volatile to make sure that every thread sees the last written value
      *
-     * @throws InvalidComponentException If the instance is not valid
+     * - The use of AtomicBoolean would be wrong because it does not guarantee that
+     *   prior written state is also seen by other threads
      */
-    void assertValid();
+    private volatile boolean valid;
+
+    public void setValid() {
+        valid = true;
+    }
+
+    public void setInvalid() {
+        valid = false;
+    }
+
+    @Override
+    public boolean isValid() {
+        return valid;
+    }
+
+    @Override
+    public void assertValid() {
+        if (!valid) {
+            throw new InvalidComponentException();
+        }
+    }
 }

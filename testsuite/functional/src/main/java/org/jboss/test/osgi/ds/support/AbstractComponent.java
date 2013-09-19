@@ -1,63 +1,61 @@
-/*
- * JBoss, Home of Professional Open Source
- * Copyright 2005, JBoss Inc., and individual contributors as indicated
- * by the @authors tag. See the copyright.txt in the distribution for a
- * full listing of individual contributors.
+/**
+ * Copyright (C) FuseSource, Inc.
+ * http://fusesource.com
  *
- * This is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This software is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.jboss.test.osgi.ds.support;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.jboss.logging.Logger;
-import org.osgi.service.component.ComponentContext;
 
-public class AbstractComponent implements Validatable {
+
+/**
+ * An abstract base class for validatable components.
+ * {@link}
+ * @author Thomas.Diesler@jboss.com
+ * @since 13-Sep-2013
+ */
+public abstract class AbstractComponent implements Validatable {
 
     public final static Logger LOGGER = Logger.getLogger(AbstractComponent.class);
 
-    private final AtomicBoolean active = new AtomicBoolean();
-    private ComponentContext context;
+    /* This uses volatile to make sure that every thread sees the last written value
+     *
+     * - The use of AtomicBoolean would be wrong because it does not guarantee that
+     *   prior written state is also seen by other threads
+     *
+     * - Synchronizing all methods in here would also work, but would effectively cause
+     *   a lock acquisition on every public method in every component
+     */
+    private ValidationSupport active = new ValidationSupport();
 
-    public synchronized void activateComponent(ComponentContext context) {
+    public void activateComponent() {
         LOGGER.infof("activate: %s", this);
-        this.context = context;
-        active.set(true);
+        active.setValid();
     }
 
-    public synchronized void deactivateComponent() {
-        active.set(false);
-        context = null;
+    public void deactivateComponent() {
         LOGGER.infof("deactivate: %s", this);
-    }
-
-    public synchronized ComponentContext getComponentContext() {
-        assertValid();
-        return context;
+        active.setInvalid();
     }
 
     @Override
-    public synchronized boolean isValid() {
-        return active.get();
+    public boolean isValid() {
+        return active.isValid();
     }
 
     @Override
-    public synchronized void assertValid() {
-        if (isValid() == false)
-            throw new InvalidComponentException();
+    public void assertValid() {
+        active.assertValid();
     }
 }
