@@ -53,12 +53,12 @@ public class ServiceA extends AbstractComponent {
     @Reference
     void bindServiceA1(ServiceA1 service) {
         LOGGER.infof("bindService: %s:%s", this, service);
-        ref.set(service);
+        ref.bind(service);
     }
 
     void unbindServiceA1(ServiceA1 service) {
         LOGGER.infof("unbindService: %s:%s", this, service);
-        ref.set(null);
+        ref.unbind(service);
     }
 
     public ServiceA1 getServiceA1() {

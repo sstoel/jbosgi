@@ -16,6 +16,8 @@
  */
 package org.jboss.test.osgi.ds.support;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * A reference that validates its content on {@link #get()}
  *
@@ -24,34 +26,39 @@ package org.jboss.test.osgi.ds.support;
  */
 public class ValidatingReference<T> {
 
-    private T reference;
+    private final AtomicReference<T> reference = new AtomicReference<T>();
 
     /**
-     * Set the reference to the given instance
+     * Bind the given reference
      */
-    public synchronized void set(T ref) {
-        reference = ref;
+    public void bind(T ref) {
+        reference.set(ref);
+    }
+
+    /**
+     * Unbind the given reference
+     */
+    public void unbind(T ref) {
+        reference.compareAndSet(ref, null);
     }
 
     /**
      * Get the referenced instance
      * @throws InvalidComponentException If the reference is not valid
      */
-    public synchronized T get() {
-        if (reference == null) {
-            RuntimeException rte = new InvalidComponentException();
-            rte.printStackTrace();
-            throw rte;
-        }
-        return reference;
+    public T get() {
+        T ref = reference.get();
+        if (ref == null)
+            throw new InvalidComponentException();
+        return ref;
     }
 
     /**
      * Get the referenced instance
      * @return The references instance or null
      */
-    public synchronized T getOptional() {
-        return reference;
+    public T getOptional() {
+        return reference.get();
     }
 
 }

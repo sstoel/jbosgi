@@ -55,12 +55,12 @@ public class ServiceC1 extends AbstractComponent {
     @Reference(cardinality = ReferenceCardinality.OPTIONAL, policy = ReferencePolicy.DYNAMIC)
     void bindServiceC1(ServiceC service) {
         LOGGER.infof("bindService: %s", this);
-        ref.set(service);
+        ref.bind(service);
     }
 
     void unbindServiceC1(ServiceC service) {
         LOGGER.infof("unbindService: %s", this);
-        ref.set(null);
+        ref.unbind(service);
     }
 
     public ServiceC getServiceC() {
