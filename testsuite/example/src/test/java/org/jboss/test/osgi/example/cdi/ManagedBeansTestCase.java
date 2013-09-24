@@ -87,6 +87,7 @@ public class ManagedBeansTestCase {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(jar.getName());
                 builder.addBundleManifestVersion(2);
+                builder.addImportPackages(ServiceTracker.class);
                 return builder.openStream();
             }
         });

@@ -106,6 +106,7 @@ public class WebAppSpecTestCase {
                 builder.addBundleSymbolicName(jar.getName());
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(ManagementClient.class);
+                builder.addImportPackages(ServiceTracker.class);
                 return builder.openStream();
             }
         });

@@ -47,6 +47,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleReference;
 import org.osgi.framework.wiring.FrameworkWiring;
+import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * Test simple OSGi bundle refresh
@@ -81,7 +82,7 @@ public class BundleRefreshTestCase {
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(ClientConstants.class, ModelControllerClient.class, ManagementClient.class, DeploymentPlanBuilder.class);
-                builder.addImportPackages(FrameworkWiring.class);
+                builder.addImportPackages(FrameworkWiring.class, ServiceTracker.class);
                 return builder.openStream();
             }
         });

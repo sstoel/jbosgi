@@ -56,6 +56,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.wiring.FrameworkWiring;
+import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * Test simple OSGi bundle redeployment
@@ -93,7 +94,7 @@ public class BundleReplaceTestCase {
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(ClientConstants.class, ModelControllerClient.class, ManagementClient.class, DeploymentPlanBuilder.class);
-                builder.addImportPackages(FrameworkWiring.class);
+                builder.addImportPackages(FrameworkWiring.class, ServiceTracker.class);
                 return builder.openStream();
             }
         });
@@ -245,6 +246,7 @@ public class BundleReplaceTestCase {
         archive.addClasses(ServletV200.class);
         archive.addAsWebResource(new StringAsset("Resource V2.0.0"), "message.txt");
         archive.setManifest(new Asset() {
+            @Override
             public InputStream openStream() {
                 ManifestBuilder builder = ManifestBuilder.newInstance();
                 builder.addManifestHeader("Dependencies", "deployment.v200.jar");
@@ -275,6 +277,7 @@ public class BundleReplaceTestCase {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, V200_JAR);
         archive.addClasses(ResourceRevisionAccess.class);
         archive.setManifest(new Asset() {
+            @Override
             public InputStream openStream() {
                 ManifestBuilder builder = ManifestBuilder.newInstance();
                 builder.addManifestHeader("Dependencies", "org.jboss.modules");
@@ -289,6 +292,7 @@ public class BundleReplaceTestCase {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, V201_JAR);
         archive.addClasses(ResourceRevisionAccess.class);
         archive.setManifest(new Asset() {
+            @Override
             public InputStream openStream() {
                 ManifestBuilder builder = ManifestBuilder.newInstance();
                 builder.addManifestHeader("Dependencies", "org.jboss.modules");

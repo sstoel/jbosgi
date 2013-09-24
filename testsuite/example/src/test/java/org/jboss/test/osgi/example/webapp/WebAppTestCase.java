@@ -54,6 +54,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
+import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * Test webapp deployemnts as OSGi bundles
@@ -91,6 +92,7 @@ public class WebAppTestCase {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(jar.getName());
                 builder.addBundleManifestVersion(2);
+                builder.addImportPackages(ServiceTracker.class);
                 return builder.openStream();
             }
         });

@@ -52,6 +52,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleReference;
 import org.osgi.framework.wiring.BundleRevision;
 import org.osgi.framework.wiring.FrameworkWiring;
+import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * Test OSGi bundle uninstall
@@ -85,7 +86,7 @@ public class BundleUninstallTestCase {
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(ClientConstants.class, ModelControllerClient.class, ManagementClient.class, DeploymentPlanBuilder.class);
-                builder.addImportPackages(FrameworkWiring.class, XResource.class);
+                builder.addImportPackages(FrameworkWiring.class, XResource.class, ServiceTracker.class);
                 return builder.openStream();
             }
         });
