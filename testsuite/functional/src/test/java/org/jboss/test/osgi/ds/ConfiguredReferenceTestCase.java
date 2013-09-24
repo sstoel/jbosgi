@@ -40,7 +40,6 @@ import org.jboss.test.osgi.FrameworkUtils;
 import org.jboss.test.osgi.ds.sub.d.ServiceD;
 import org.jboss.test.osgi.ds.sub.d1.ServiceD1;
 import org.jboss.test.osgi.ds.support.AbstractComponent;
-import org.jboss.test.osgi.ds.support.InvalidComponentException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -114,22 +113,10 @@ public class ConfiguredReferenceTestCase {
             configProps.put("foo", "bar");
             config.update(configProps);
 
-            srvD1.awaitDeactivate(4000, TimeUnit.MILLISECONDS);
+            Assert.assertTrue(srvD1.awaitModified(4000, TimeUnit.MILLISECONDS));
 
-            try {
-                srvD1.doStuff("Hello");
-                Assert.fail("InvalidComponentException expected");
-            } catch (InvalidComponentException ex) {
-                // expected
-            }
-
-            srvD = FrameworkUtils.waitForService(context, ServiceD.class);
-
-            srvD.awaitActivate(4000, TimeUnit.MILLISECONDS);
-            srvD1 = srvD.getServiceD1();
-
-            Assert.assertEquals("ServiceD#2:ServiceD1#2:bar:Hello", srvD.doStuff("Hello"));
-            Assert.assertEquals("ServiceD1#2:bar:Hello", srvD1.doStuff("Hello"));
+            Assert.assertEquals("ServiceD#1:ServiceD1#1:bar:Hello", srvD.doStuff("Hello"));
+            Assert.assertEquals("ServiceD1#1:bar:Hello", srvD1.doStuff("Hello"));
 
         } finally {
             bundleD.uninstall();

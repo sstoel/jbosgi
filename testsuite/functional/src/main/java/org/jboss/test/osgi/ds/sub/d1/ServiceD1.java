@@ -31,6 +31,7 @@ import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Modified;
 
 @Component(service = { ServiceD1.class })
 public class ServiceD1 extends AbstractComponent {
@@ -38,29 +39,28 @@ public class ServiceD1 extends AbstractComponent {
     static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
     final String name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
 
-    final CountDownLatch activateLatch = new CountDownLatch(1);
-    final CountDownLatch deactivateLatch = new CountDownLatch(1);
-    private Map<String, String> config;
+    final CountDownLatch modifiedLatch = new CountDownLatch(1);
+    private volatile Map<String, String> config;
 
     @Activate
     void activate(ComponentContext context, Map<String, String> config) {
         this.config = config;
         activateComponent(config);
-        activateLatch.countDown();
+    }
+
+    @Modified
+    void modified(Map<String, String> config) {
+        this.config = config;
+        modifiedLatch.countDown();
     }
 
     @Deactivate
     void deactivate() {
         deactivateComponent();
-        deactivateLatch.countDown();
     }
 
-    public boolean awaitActivate(long timeout, TimeUnit unit) throws InterruptedException {
-        return activateLatch.await(timeout, unit);
-    }
-
-    public boolean awaitDeactivate(long timeout, TimeUnit unit) throws InterruptedException {
-        return deactivateLatch.await(timeout, unit);
+    public boolean awaitModified(long timeout, TimeUnit unit) throws InterruptedException {
+        return modifiedLatch.await(timeout, unit);
     }
 
     public String doStuff(String msg) {
