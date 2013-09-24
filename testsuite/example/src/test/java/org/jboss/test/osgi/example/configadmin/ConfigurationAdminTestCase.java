@@ -29,13 +29,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.arquillian.junit.InSequence;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.osgi.metadata.OSGiManifestBuilder;
-import org.jboss.osgi.provision.ProvisionerSupport;
-import org.jboss.osgi.provision.XResourceProvisioner;
-import org.jboss.osgi.repository.XRepository;
-import org.jboss.osgi.resolver.XResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -47,12 +42,9 @@ import org.junit.runner.RunWith;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
-import org.osgi.framework.namespace.IdentityNamespace;
-import org.osgi.resource.Resource;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.cm.ManagedService;
-import org.osgi.service.repository.Repository;
 
 /**
  * A test that shows how an OSGi {@link ManagedService} can be configured through the {@link ConfigurationAdmin}.
@@ -74,14 +66,12 @@ public class ConfigurationAdminTestCase {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, "configadmin-tests");
         archive.addClasses(ConfigurationAdminSupport.class);
         archive.addClasses(ConfiguredService.class);
-        archive.addAsResource("repository/felix.configadmin.feature.xml");
         archive.setManifest(new Asset() {
             @Override
             public InputStream openStream() {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
-                builder.addImportPackages(XRepository.class, Repository.class, XResource.class, Resource.class, XResourceProvisioner.class);
                 builder.addDynamicImportPackages(ConfigurationAdmin.class);
                 return builder.openStream();
             }
@@ -90,19 +80,10 @@ public class ConfigurationAdminTestCase {
     }
 
     @Test
-    @InSequence(0)
-    public void addConfigurationAdminSupport() throws Exception {
-        ProvisionerSupport provisioner = new ProvisionerSupport(context);
-        provisioner.populateRepository(getClass().getClassLoader(), "felix.configadmin.feature");
-        provisioner.installCapabilities(IdentityNamespace.IDENTITY_NAMESPACE, "felix.configadmin.feature");
-    }
-
-    @Test
-    @InSequence(1)
     public void testManagedService(@ArquillianResource Bundle bundle) throws Exception {
 
         bundle.start();
-        
+
         // Get the {@link Configuration} for the given PID
         ConfigurationAdmin configAdmin = ConfigurationAdminSupport.getConfigurationAdmin(bundle);
         Configuration config = configAdmin.getConfiguration(PID_A);

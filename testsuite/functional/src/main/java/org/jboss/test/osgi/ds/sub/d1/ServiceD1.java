@@ -43,14 +43,14 @@ public class ServiceD1 extends AbstractComponent {
     @Activate
     void activate(ComponentContext context, Map<String, String> config) {
         this.config = config;
-        activateComponent();
-        LOGGER.infof("activate: %s", config);
+        activateComponent(config);
     }
 
     @Deactivate
     void deactivate() {
         deactivateComponent();
-        deactivateLatch.countDown();
+        if (deactivateLatch != null)
+            deactivateLatch.countDown();
     }
 
     public CountDownLatch getDeactivateLatch() {

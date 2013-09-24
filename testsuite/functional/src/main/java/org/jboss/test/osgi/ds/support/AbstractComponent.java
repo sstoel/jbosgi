@@ -16,6 +16,8 @@
  */
 package org.jboss.test.osgi.ds.support;
 
+import java.util.Map;
+
 import org.jboss.logging.Logger;
 
 
@@ -41,6 +43,11 @@ public abstract class AbstractComponent implements Validatable {
 
     public void activateComponent() {
         LOGGER.infof("activate: %s", this);
+        active.setValid();
+    }
+
+    public void activateComponent(Map<String, String> config) {
+        LOGGER.infof("activate %s with config: %s", this, config);
         active.setValid();
     }
 

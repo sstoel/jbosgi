@@ -49,17 +49,12 @@
         <!-- Provided -->
         <dependency>
             <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.log</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.osgi.logging</groupId>
-            <artifactId>jboss-osgi-logging</artifactId>
+            <artifactId>org.apache.felix.configadmin</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.configadmin</artifactId>
+            <artifactId>org.apache.felix.log</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -76,6 +71,11 @@
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.scr.ant</artifactId>
             <version>${version.apache.felix.scr.generator}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.osgi.logging</groupId>
+            <artifactId>jboss-osgi-logging</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

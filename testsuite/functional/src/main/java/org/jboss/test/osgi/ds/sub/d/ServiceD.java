@@ -50,7 +50,8 @@ public class ServiceD extends AbstractComponent {
     @Deactivate
     void deactivate() {
         deactivateComponent();
-        deactivateLatch.countDown();
+        if (deactivateLatch != null)
+            deactivateLatch.countDown();
     }
 
     @Reference
