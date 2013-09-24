@@ -23,6 +23,7 @@ package org.jboss.test.osgi.ds.sub.d1;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.test.osgi.ds.support.AbstractComponent;
@@ -37,25 +38,29 @@ public class ServiceD1 extends AbstractComponent {
     static AtomicInteger INSTANCE_COUNT = new AtomicInteger();
     final String name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
 
-    private CountDownLatch deactivateLatch;
+    final CountDownLatch activateLatch = new CountDownLatch(1);
+    final CountDownLatch deactivateLatch = new CountDownLatch(1);
     private Map<String, String> config;
 
     @Activate
     void activate(ComponentContext context, Map<String, String> config) {
         this.config = config;
         activateComponent(config);
+        activateLatch.countDown();
     }
 
     @Deactivate
     void deactivate() {
         deactivateComponent();
-        if (deactivateLatch != null)
-            deactivateLatch.countDown();
+        deactivateLatch.countDown();
     }
 
-    public CountDownLatch getDeactivateLatch() {
-        deactivateLatch = new CountDownLatch(1);
-        return deactivateLatch;
+    public boolean awaitActivate(long timeout, TimeUnit unit) throws InterruptedException {
+        return activateLatch.await(timeout, unit);
+    }
+
+    public boolean awaitDeactivate(long timeout, TimeUnit unit) throws InterruptedException {
+        return deactivateLatch.await(timeout, unit);
     }
 
     public String doStuff(String msg) {

@@ -22,6 +22,7 @@
 package org.jboss.test.osgi.ds.sub.d;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jboss.test.osgi.ds.sub.d1.ServiceD1;
@@ -40,18 +41,27 @@ public class ServiceD extends AbstractComponent {
     final String name = getClass().getSimpleName() + "#" + INSTANCE_COUNT.incrementAndGet();
 
     final ValidatingReference<ServiceD1> ref = new ValidatingReference<ServiceD1>();
-    CountDownLatch deactivateLatch;
+    final CountDownLatch activateLatch = new CountDownLatch(1);
+    final CountDownLatch deactivateLatch = new CountDownLatch(1);
 
     @Activate
     void activate(ComponentContext context) {
         activateComponent();
+        activateLatch.countDown();
     }
 
     @Deactivate
     void deactivate() {
         deactivateComponent();
-        if (deactivateLatch != null)
-            deactivateLatch.countDown();
+        deactivateLatch.countDown();
+    }
+
+    public boolean awaitActivate(long timeout, TimeUnit unit) throws InterruptedException {
+        return activateLatch.await(timeout, unit);
+    }
+
+    public boolean awaitDeactivate(long timeout, TimeUnit unit) throws InterruptedException {
+        return deactivateLatch.await(timeout, unit);
     }
 
     @Reference
@@ -63,11 +73,6 @@ public class ServiceD extends AbstractComponent {
     void unbindServiceD1(ServiceD1 service) {
         LOGGER.infof("unbindService: %s:%s", this, service);
         ref.set(null);
-    }
-
-    public CountDownLatch getDeactivateLatch() {
-        deactivateLatch = new CountDownLatch(1);
-        return deactivateLatch;
     }
 
     public ServiceD1 getServiceD1() {

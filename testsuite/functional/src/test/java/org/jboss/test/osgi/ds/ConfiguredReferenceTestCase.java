@@ -24,7 +24,6 @@ package org.jboss.test.osgi.ds;
 import java.io.InputStream;
 import java.util.Dictionary;
 import java.util.Hashtable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.jboss.arquillian.container.test.api.Deployer;
@@ -99,9 +98,11 @@ public class ConfiguredReferenceTestCase {
             bundleD.start();
 
             ServiceD srvD = FrameworkUtils.waitForService(context, ServiceD.class);
-            Assert.assertEquals("ServiceD#1:ServiceD1#1:null:Hello", srvD.doStuff("Hello"));
 
+            srvD.awaitActivate(4000, TimeUnit.MILLISECONDS);
             ServiceD1 srvD1 = srvD.getServiceD1();
+
+            Assert.assertEquals("ServiceD#1:ServiceD1#1:null:Hello", srvD.doStuff("Hello"));
             Assert.assertEquals("ServiceD1#1:null:Hello", srvD1.doStuff("Hello"));
 
             ConfigurationAdmin configAdmin = ConfigurationAdminSupport.getConfigurationAdmin(bundleD1);
@@ -109,13 +110,11 @@ public class ConfiguredReferenceTestCase {
             Assert.assertNotNull("Config not null", config);
             Assert.assertNull("Config is empty, but was: " + config.getProperties(), config.getProperties());
 
-            CountDownLatch latch = srvD1.getDeactivateLatch();
-
             Dictionary<String, String> configProps = new Hashtable<String, String>();
             configProps.put("foo", "bar");
             config.update(configProps);
 
-            latch.await(4000, TimeUnit.MILLISECONDS);
+            srvD1.awaitDeactivate(4000, TimeUnit.MILLISECONDS);
 
             try {
                 srvD1.doStuff("Hello");
@@ -124,12 +123,13 @@ public class ConfiguredReferenceTestCase {
                 // expected
             }
 
-            String result = FrameworkUtils.waitForService(context, ServiceD1.class).doStuff("Hello");
-            Assert.assertTrue(result.startsWith("ServiceD1#") && result.endsWith(":bar:Hello"));
+            srvD = FrameworkUtils.waitForService(context, ServiceD.class);
 
-            // [FIXME] ServiceD1 is intermittently deactivated/activated twice ?!? We get 'ServiceD1#3:bar:Hello' in that case
-            // https://issues.apache.org/jira/browse/FELIX-4237
-            //Assert.assertEquals("ServiceD1#2:bar:Hello", srvD1.doStuff("Hello"));
+            srvD.awaitActivate(4000, TimeUnit.MILLISECONDS);
+            srvD1 = srvD.getServiceD1();
+
+            Assert.assertEquals("ServiceD#2:ServiceD1#2:bar:Hello", srvD.doStuff("Hello"));
+            Assert.assertEquals("ServiceD1#2:bar:Hello", srvD1.doStuff("Hello"));
 
         } finally {
             bundleD.uninstall();

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Assert;
 import org.osgi.framework.Bundle;
@@ -118,29 +119,45 @@ public final class FrameworkUtils {
         return waitForService(context, clazz, 10, TimeUnit.SECONDS);
     }
 
-    public static <T> T waitForService(BundleContext context, Class<T> clazz, long timeout, TimeUnit unit) {
-        ServiceReference<T> sref = waitForServiceReference(context, clazz, timeout, unit);
-        T service = sref != null ? context.getService(sref) : null;
-        Assert.assertNotNull("Service registered: " + clazz.getName(), service);
-        return service;
+    public static <T> T waitForService(final BundleContext context, final Class<T> clazz, long timeout, TimeUnit unit) {
+        final AtomicReference<T> atomicref = new AtomicReference<T>();
+        final ServiceReferenceHandler<T> handler = new ServiceReferenceHandler<T>() {
+            @Override
+            public void addingService(ServiceReference<T> sref, T service) {
+                atomicref.set(service);
+            }
+        };
+        trackService(context, clazz, handler, timeout, unit);
+        Assert.assertNotNull("Service registered: " + clazz.getName(), atomicref.get());
+        return atomicref.get();
     }
 
     public static <T> ServiceReference<T> waitForServiceReference(BundleContext context, Class<T> clazz) {
         return waitForServiceReference(context, clazz, 10, TimeUnit.SECONDS);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> ServiceReference<T> waitForServiceReference(BundleContext context, Class<T> clazz, long timeout, TimeUnit unit) {
+    public static <T> ServiceReference<T> waitForServiceReference(final BundleContext context, final Class<T> clazz, long timeout, TimeUnit unit) {
+        final AtomicReference<ServiceReference<T>> atomicref = new AtomicReference<ServiceReference<T>>();
+        final ServiceReferenceHandler<T> handler = new ServiceReferenceHandler<T>() {
+            @Override
+            public void addingService(ServiceReference<T> sref, T service) {
+                atomicref.set(sref);
+            }
+        };
+        trackService(context, clazz, handler, timeout, unit);
+        Assert.assertNotNull("Service registered: " + clazz.getName(), atomicref.get());
+        return atomicref.get();
+    }
+
+    private static <T> void trackService(final BundleContext context, final Class<T> clazz, final ServiceReferenceHandler<T> handler, long timeout, TimeUnit unit) {
         final CountDownLatch latch = new CountDownLatch(1);
-        final ServiceReference<T>[] sref = new ServiceReference[1];
         ServiceTracker<T, T> tracker = new ServiceTracker<T, T>(context, clazz.getName(), null) {
             @Override
-            public T addingService(ServiceReference<T> ref) {
-                if (sref[0] == null) {
-                    sref[0] = ref;
-                    latch.countDown();
-                }
-                return super.addingService(ref);
+            public T addingService(ServiceReference<T> sref) {
+                T service = super.addingService(sref);
+                handler.addingService(sref, service);
+                latch.countDown();
+                return service;
             }
         };
         tracker.open();
@@ -151,7 +168,9 @@ public final class FrameworkUtils {
         } finally {
             tracker.close();
         }
-        Assert.assertNotNull("Service registered: " + clazz.getName(), sref[0]);
-        return sref[0];
+    }
+
+    private static interface ServiceReferenceHandler<T> {
+        void addingService(ServiceReference<T> sref, T service);
     }
 }
