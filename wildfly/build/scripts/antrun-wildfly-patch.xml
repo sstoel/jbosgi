@@ -99,6 +99,9 @@
     <copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/log/main" overwrite="true">
         <fileset file="${deploy.artifacts.lib}/org.apache.felix.log-*.jar" />
     </copy>
+    <copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/metatype/main" overwrite="true">
+        <fileset file="${deploy.artifacts.lib}/org.apache.felix.metatype-*.jar" />
+    </copy>
     <copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/scr/main" overwrite="true">
         <fileset file="${deploy.artifacts.lib}/org.apache.felix.scr-*.jar" />
     </copy>
