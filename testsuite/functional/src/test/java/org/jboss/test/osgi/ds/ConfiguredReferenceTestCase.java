@@ -128,7 +128,7 @@ public class ConfiguredReferenceTestCase {
             Assert.assertTrue(result.startsWith("ServiceD1#") && result.endsWith(":bar:Hello"));
 
             // [FIXME] ServiceD1 is intermittently deactivated/activated twice ?!? We get 'ServiceD1#3:bar:Hello' in that case
-            // This is concerning because it ripples up the entire dependency chain
+            // https://issues.apache.org/jira/browse/FELIX-4237
             //Assert.assertEquals("ServiceD1#2:bar:Hello", srvD1.doStuff("Hello"));
 
         } finally {
