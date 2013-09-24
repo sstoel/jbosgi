@@ -64,13 +64,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.scr.annotations</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.scr.ant</artifactId>
-            <version>${version.apache.felix.scr.generator}</version>
+            <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -121,19 +115,18 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-scr-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>scr-descriptor</id>
-                        <phase>generate-test-resources</phase>
+                        <id>scrdescriptor</id>
                         <goals>
-                            <goal>run</goal>
+                            <goal>scr</goal>
                         </goals>
                         <configuration>
-                            <target>
-                                <property name="testset" value="testset1" />
-                                <ant antfile="scripts/antrun-scr-plugin.xml" target="generate" />
-                            </target>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                            <specVersion>1.2</specVersion>
+                            <strictMode>true</strictMode>
                         </configuration>
                     </execution>
                 </executions>
@@ -158,7 +151,6 @@
                 </dependency>
             </dependencies>
         </profile>
-
         <profile>
             <id>wildfly800-testing</id>
             <activation>

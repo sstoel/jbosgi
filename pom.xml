@@ -50,8 +50,8 @@
         <version.apache.felix.log>1.0.1</version.apache.felix.log>
         <version.apache.felix.metatype>1.0.6</version.apache.felix.metatype>
         <version.apache.felix.scr>1.6.2</version.apache.felix.scr>
-        <version.apache.felix.scr.annotations>1.9.6</version.apache.felix.scr.annotations>
-        <version.apache.felix.scr.generator>1.8.0</version.apache.felix.scr.generator>
+        <version.apache.felix.scr.ds.annotations>1.2.4</version.apache.felix.scr.ds.annotations>
+        <version.apache.felix.scr.generator>1.9.0</version.apache.felix.scr.generator>
         <version.apache.felix.webconsole>3.1.8</version.apache.felix.webconsole>
         <version.codehaus.izpack>4.3.5</version.codehaus.izpack>
         <version.javax.annotations.api>1.0.1.Final</version.javax.annotations.api>
@@ -373,8 +373,8 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.felix</groupId>
-                <artifactId>org.apache.felix.scr.annotations</artifactId>
-                <version>${version.apache.felix.scr.annotations}</version>
+                <artifactId>org.apache.felix.scr.ds-annotations</artifactId>
+                <version>${version.apache.felix.scr.ds.annotations}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.felix</groupId>
