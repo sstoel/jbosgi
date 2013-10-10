@@ -19,7 +19,7 @@ Build with Maven
 The command below builds all modules and runs the embedded suite.
 
 <pre>
-$ mvn clean install
+$ mvn -Dembedded clean install
 ...
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary:
@@ -43,7 +43,7 @@ Build/Test the WildFly OSGi subsystem
 To build the OSGi subsystem specify the target container like this
 
 <pre>
-$ mvn -Dtarget.container=wildfly800 clean install
+$ mvn clean install
 ...
 [INFO] ------------------------------------------------------------------------
 [INFO] Reactor Summary:

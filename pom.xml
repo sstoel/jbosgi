@@ -32,11 +32,6 @@
         <url>http://github.com/jbosgi/jbosgi</url>
     </scm>
 
-    <!-- Modules -->
-    <modules>
-        <module>testsuite</module>
-    </modules>
-
     <!-- Properties -->
     <properties>
         <version.apache.ant>1.7.0</version.apache.ant>
@@ -90,6 +85,11 @@
         <wildfly.dist.dir>${project.root.dir}/../wildfly/build/target/wildfly-${version.jboss.wildfly}</wildfly.dist.dir>
         -->
     </properties>
+
+    <!-- Modules -->
+    <modules>
+        <module>testsuite</module>
+    </modules>
 
     <!-- DependencyManagement -->
     <dependencyManagement>
@@ -501,11 +501,10 @@
         </profile>
         
         <profile>
-            <id>wildfly800</id>
+            <id>wildfly</id>
             <activation>
                 <property>
-                    <name>target.container</name>
-                    <value>wildfly800</value>
+                    <name>!embedded</name>
                 </property>
             </activation>
             <modules>
