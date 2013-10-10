@@ -15,7 +15,7 @@
     <parent>
         <groupId>org.jboss.osgi.wildfly</groupId>
         <artifactId>jbosgi-wildfly</artifactId>
-        <version>2.1.1-SNAPSHOT</version>
+        <version>2.1.1</version>
     </parent>
 
     <name>JBossOSGi WildFly Build</name>
@@ -181,7 +181,7 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <target>
-                                <ant antfile="${basedir}/scripts/antrun-wildfly-patch.xml" inheritRefs="true"/>
+                                <ant antfile="${basedir}/scripts/antrun-wildfly-patch.xml" inheritRefs="true" />
                             </target>
                         </configuration>
                     </execution>
@@ -194,18 +194,18 @@
                           <configuration>
                             <target>
                                 <!-- Enabled when working with a WildFly SNAPSHOT -->
-                                <mkdir dir="${jboss.home}/standalone/deployments"/>
+                                <mkdir dir="${jboss.home}/standalone/deployments" />
                                 <copy todir="${jboss.home}" failonerror="false" overwrite="true">
                                     <fileset dir="${wildfly.dist.dir}">
-                                        <include name="bin/**"/>
-                                        <include name="modules/**"/>
-                                        <include name="standalone/configuration/**"/>
-                                        <include name="standalone/lib/**"/>
-                                        <include name="jboss-modules.jar"/>
+                                        <include name="bin/**" />
+                                        <include name="modules/**" />
+                                        <include name="standalone/configuration/**" />
+                                        <include name="standalone/lib/**" />
+                                        <include name="jboss-modules.jar" />
                                     </fileset>
                                 </copy>
-                                <chmod dir="${jboss.home}/bin" includes="*.sh" perm="+x"/>
-                                <unzip src="${wildfly.patch.file}" dest="${jboss.home}"/>
+                                <chmod dir="${jboss.home}/bin" includes="*.sh" perm="+x" />
+                                <unzip src="${wildfly.patch.file}" dest="${jboss.home}" />
                             </target>
                         </configuration>
                     </execution>
