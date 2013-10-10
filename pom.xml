@@ -497,7 +497,6 @@
             <id>distro</id>
             <modules>
                 <module>distribution</module>
-                <module>wildfly</module>
             </modules>
         </profile>
         
