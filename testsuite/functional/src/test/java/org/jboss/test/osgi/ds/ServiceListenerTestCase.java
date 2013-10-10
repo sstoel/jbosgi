@@ -55,7 +55,7 @@ import org.osgi.util.tracker.ServiceTracker;
 @RunWith(Arquillian.class)
 public class ServiceListenerTestCase {
 
-    static final String BUNDLE_A1 = "bundleA1";
+    static final String BUNDLE_SL = "bundleSL";
 
     @ArquillianResource
     Deployer deployer;
@@ -85,7 +85,7 @@ public class ServiceListenerTestCase {
 
     @Test
     public void testServiceAccess() throws Exception {
-        Bundle bundleA1 = context.installBundle(BUNDLE_A1, deployer.getDeployment(BUNDLE_A1));
+        Bundle bundle = context.installBundle(BUNDLE_SL, deployer.getDeployment(BUNDLE_SL));
         try {
             final StringBuffer result = new StringBuffer();
             ServiceListener listener = new ServiceListener() {
@@ -104,24 +104,24 @@ public class ServiceListenerTestCase {
                 }
             };
             context.addServiceListener(listener, "(objectClass=" + ServiceA1.class.getName() + ")");
-            bundleA1.start();
+            bundle.start();
 
             Assert.assertEquals("ServiceA1#1:Hello", result.toString());
 
             result.setLength(0);
             Assert.assertEquals("", result.toString());
 
-            bundleA1.stop();
+            bundle.stop();
 
             Assert.assertEquals("ServiceA1#1:Hello", result.toString());
         } finally {
-            bundleA1.uninstall();
+            bundle.uninstall();
         }
     }
 
-    @Deployment(name = BUNDLE_A1, managed = false, testable = false)
+    @Deployment(name = BUNDLE_SL, managed = false, testable = false)
     public static JavaArchive testBundleA1() {
-        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, BUNDLE_A1);
+        final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, BUNDLE_SL);
         archive.addClasses(ServiceA1.class);
         archive.addAsResource("OSGI-INF/org.jboss.test.osgi.ds.sub.a1.ServiceA1.xml");
         archive.setManifest(new Asset() {

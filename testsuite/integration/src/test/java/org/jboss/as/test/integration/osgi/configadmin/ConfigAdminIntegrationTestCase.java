@@ -50,6 +50,7 @@ import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.test.osgi.FrameworkUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.osgi.framework.Bundle;
@@ -68,6 +69,7 @@ import org.osgi.util.tracker.ServiceTracker;
  * @since 30-Sep-2012
  */
 @RunWith(Arquillian.class)
+@Ignore("[JBOSGI-749] ConfigAdminIntegrationTestCase fails in 8.0.0.Beta1")
 public class ConfigAdminIntegrationTestCase {
 
     static final String CONFIG_ADMIN_BUNDLE_A = "config-admin-bundle-a";

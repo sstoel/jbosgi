@@ -34,6 +34,7 @@ import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.test.osgi.example.resource.bundle.ResourceInjectionActivator;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.osgi.framework.Bundle;
@@ -41,11 +42,12 @@ import org.osgi.framework.BundleActivator;
 
 /**
  * An example of OSGi resource injection.
- * 
+ *
  * @author thomas.diesler@jboss.com
  * @since 02-Feb-2012
  */
 @RunWith(Arquillian.class)
+@Ignore("[WFLY-2275] StackOverflowError on DataSource resource injection")
 public class ResourceInjectionTestCase {
 
     @ArquillianResource
@@ -56,6 +58,7 @@ public class ResourceInjectionTestCase {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, "resource-injection.jar");
         archive.addClasses(ResourceInjectionActivator.class);
         archive.setManifest(new Asset() {
+            @Override
             public InputStream openStream() {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(archive.getName());

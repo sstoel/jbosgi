@@ -32,15 +32,17 @@ import org.osgi.framework.BundleContext;
  */
 public class ResourceInjectionActivator implements BundleActivator {
 
-    @Resource(name = "java:jboss/datasources/ExampleDS")
+    @Resource(name = "java:comp/DefaultDataSource")
     public DataSource ds;
 
     public static String productName;
 
+    @Override
     public void start(BundleContext context) throws Exception {
         productName = ds.getConnection().getMetaData().getDatabaseProductName();
     }
 
+    @Override
     public void stop(BundleContext context) {
         productName = null;
     }

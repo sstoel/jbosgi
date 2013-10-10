@@ -86,6 +86,7 @@ public class StaticReferenceTestCase {
 
     @Test
     public void testServiceAccess() throws Exception {
+
         Bundle bundleA1 = context.installBundle(BUNDLE_A1, deployer.getDeployment(BUNDLE_A1));
         Bundle bundleA = context.installBundle(BUNDLE_A, deployer.getDeployment(BUNDLE_A));
         try {

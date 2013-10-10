@@ -90,6 +90,7 @@ public class ConfiguredReferenceTestCase {
 
     @Test
     public void testServiceAccess() throws Exception {
+
         Bundle bundleD1 = context.installBundle(BUNDLE_D1, deployer.getDeployment(BUNDLE_D1));
         Bundle bundleD = context.installBundle(BUNDLE_D, deployer.getDeployment(BUNDLE_D));
         try {

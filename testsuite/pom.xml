@@ -178,7 +178,7 @@
             </dependencies>
             <build>
                 <plugins>
-                	<!-- Enabled when working with a WildFly SNAPSHOT -->
+                	<!-- Enabled when working with a WildFly SNAPSHOT - ->
 		            <plugin>
 		                <artifactId>maven-antrun-plugin</artifactId>
 		                <executions>
@@ -206,10 +206,11 @@
 		                    </execution>
 		                </executions>
 		            </plugin>
+                    -->
                     <plugin>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
-                            <!-- Enabled when working with a WildFly release - ->
+                            <!-- Enabled when working with a WildFly release -->
                             <execution>
                                 <id>unpack-wildfly</id>
                                 <phase>process-test-resources</phase>
@@ -229,7 +230,6 @@
                                     </artifactItems>
                                 </configuration>
                             </execution>
-                            -->
                             <execution>
                                 <id>unpack-wildfly-patch</id>
                                 <phase>process-test-resources</phase>

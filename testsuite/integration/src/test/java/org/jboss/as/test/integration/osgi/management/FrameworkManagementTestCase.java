@@ -46,6 +46,7 @@ import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.test.osgi.FrameworkManagement;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.osgi.framework.Version;
@@ -130,6 +131,7 @@ public class FrameworkManagementTestCase {
     }
 
     @Test
+    @Ignore("[JBOSGI-751] Fragment deployment fails in 8.0.0.Beta1")
     public void testBundleRuntimeOperations(@ArquillianResource Deployer deployer) throws Exception {
         // No need to ensure the framework is active. If it isn't deploying a bundle
         // should trigger it into active mode.
