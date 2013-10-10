@@ -47,7 +47,6 @@ import org.osgi.framework.BundleActivator;
  * @since 02-Feb-2012
  */
 @RunWith(Arquillian.class)
-@Ignore("[WFLY-2275] StackOverflowError on DataSource resource injection")
 public class ResourceInjectionTestCase {
 
     @ArquillianResource

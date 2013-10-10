@@ -32,7 +32,7 @@ import org.osgi.framework.BundleContext;
  */
 public class ResourceInjectionActivator implements BundleActivator {
 
-    @Resource(name="java:comp/DefaultDataSource")
+    @Resource(lookup = "java:jboss/datasources/ExampleDS")
     public DataSource ds;
 
     public static String productName;
