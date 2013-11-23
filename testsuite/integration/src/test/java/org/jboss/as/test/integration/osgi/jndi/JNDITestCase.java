@@ -46,6 +46,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.Asset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.test.osgi.FrameworkUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.osgi.framework.Bundle;
@@ -71,6 +72,7 @@ public class JNDITestCase {
         final JavaArchive archive = ShrinkWrap.create(JavaArchive.class, "example-jndi");
         archive.addClasses(FrameworkUtils.class);
         archive.setManifest(new Asset() {
+            @Override
             public InputStream openStream() {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(archive.getName());
@@ -110,6 +112,7 @@ public class JNDITestCase {
     }
 
     @Test
+    @Ignore("[WFLY-2555] StackOverflowError with ObjectFactory OSGi service")
     public void testObjectFactoryOSGiService() throws Exception {
         InitialContext ictx = new InitialContext();
 

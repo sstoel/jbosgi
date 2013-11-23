@@ -40,6 +40,7 @@
 	        <filter token="project.version" value="${project.version}" />
 	        <filter token="version.jboss.osgi.deployment" value="${version.jboss.osgi.deployment}" />
 	        <filter token="version.jboss.osgi.framework" value="${version.jboss.osgi.framework}" />
+	        <filter token="version.jboss.osgi.metadata" value="${version.jboss.osgi.metadata}" />
 	        <filter token="version.jboss.osgi.provision" value="${version.jboss.osgi.provision}" />
 	        <filter token="version.jboss.osgi.repository" value="${version.jboss.osgi.repository}" />
 	        <filter token="version.jboss.osgi.resolver" value="${version.jboss.osgi.resolver}" />
@@ -75,6 +76,9 @@
     </copy>
     <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/framework/main" overwrite="true">
         <fileset file="${deploy.artifacts.lib}/jbosgi-framework-*.jar" />
+    </copy>
+    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/metadata/main" overwrite="true">
+        <fileset file="${deploy.artifacts.lib}/jbosgi-metadata-*.jar" />
     </copy>
     <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/provision/main" overwrite="true">
         <fileset file="${deploy.artifacts.lib}/jbosgi-provision-*.jar" />
