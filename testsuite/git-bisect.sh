@@ -1,4 +1,12 @@
 #!/bin/sh
+#
+# Usage
+#
+# git bisect start [badrev] [goodrev]
+# git bisect run ./git-bisect.sh
+#
+# @author thomas.diesler@jboss.com
+# @since 15-Sep-2013
 
 JBOSGI_HOME="$HOME/git/jbosgi"
 WILDFLY_HOME="$HOME/git/wildfly"
