@@ -79,12 +79,8 @@
         <version.mockito>1.9.5</version.mockito>
         <version.osgi>5.0.0</version.osgi>
         <version.slf4j>1.6.4</version.slf4j>
-        <version.jboss.wildfly>8.0.0.CR1</version.jboss.wildfly>
-        <version.jboss.wildfly.stable>8.0.0.CR1</version.jboss.wildfly.stable>
-        
-        <!-- Enabled when working with a WildFly SNAPSHOT - ->
-        <wildfly.dist.dir>${project.root.dir}/../wildfly/build/target/wildfly-${version.jboss.wildfly}</wildfly.dist.dir>
-        -->
+        <version.jboss.wildfly>8.0.0.Beta1</version.jboss.wildfly>
+        <version.jboss.wildfly.stable>8.0.0.Beta1</version.jboss.wildfly.stable>
     </properties>
 
     <!-- Modules -->
@@ -505,7 +501,6 @@
                 <module>distribution</module>
             </modules>
         </profile>
-        
         <profile>
             <id>wildfly</id>
             <activation>
@@ -516,6 +511,18 @@
             <modules>
                 <module>wildfly</module>
             </modules>
+        </profile>
+        <profile>
+            <id>wildfly-snapshot</id>
+            <activation>
+                <property>
+                    <name>wfsnap</name>
+                </property>
+            </activation>
+            <properties>
+                <version.jboss.wildfly>8.0.0.Final-SNAPSHOT</version.jboss.wildfly>
+                <wildfly.dist.dir>${project.root.dir}/../wildfly/build/target/wildfly-${version.jboss.wildfly}</wildfly.dist.dir>
+            </properties>
         </profile>
     </profiles>
 

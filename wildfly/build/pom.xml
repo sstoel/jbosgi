@@ -148,31 +148,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Enabled when working with a WildFly release -->
-            <plugin>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>unpack-wildfly</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>org.wildfly</groupId>
-                                    <artifactId>wildfly-dist</artifactId>
-                                    <version>${version.jboss.wildfly}</version>
-                                    <type>zip</type>
-                                    <overWrite>false</overWrite>
-                                    <outputDirectory>${project.build.directory}</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -187,31 +162,6 @@
                         <configuration>
                             <target>
                                 <ant antfile="${basedir}/scripts/antrun-wildfly-patch.xml" inheritRefs="true" />
-                            </target>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>build-wildfly-osgi</id>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <phase>process-test-resources</phase>
-                        <configuration>
-                            <target>
-                                <!-- Enabled when working with a WildFly SNAPSHOT - ->
-                                <mkdir dir="${jboss.home}/standalone/deployments" />
-                                <copy todir="${jboss.home}" failonerror="false" overwrite="true">
-                                    <fileset dir="${wildfly.dist.dir}">
-                                        <include name="bin/**" />
-                                        <include name="modules/**" />
-                                        <include name="standalone/configuration/**" />
-                                        <include name="standalone/lib/**" />
-                                        <include name="jboss-modules.jar" />
-                                    </fileset>
-                                </copy>
-                                <chmod dir="${jboss.home}/bin" includes="*.sh" perm="+x" />
-                                -->
-                                <unzip src="${wildfly.patch.file}" dest="${jboss.home}" />
                             </target>
                         </configuration>
                     </execution>
@@ -256,4 +206,104 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>wildfly-stable</id>
+            <activation>
+                <property>
+                    <name>!wfsnap</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unpack-wildfly</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.wildfly</groupId>
+                                            <artifactId>wildfly-dist</artifactId>
+                                            <version>${version.jboss.wildfly}</version>
+                                            <type>zip</type>
+                                            <overWrite>false</overWrite>
+                                            <outputDirectory>${project.build.directory}</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>build-wildfly-osgi</id>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>process-test-resources</phase>
+                                <configuration>
+                                    <target>
+                                        <unzip src="${wildfly.patch.file}" dest="${jboss.home}" />
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>wildfly-snapshot</id>
+            <activation>
+                <property>
+                    <name>wfsnap</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <inherited>false</inherited>
+                        <executions>
+                            <execution>
+                                <id>build-wildfly-osgi</id>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <phase>process-test-resources</phase>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="${jboss.home}/standalone/deployments" />
+                                        <copy todir="${jboss.home}" failonerror="false" overwrite="true">
+                                            <fileset dir="${wildfly.dist.dir}">
+                                                <include name="bin/**" />
+                                                <include name="modules/**" />
+                                                <include name="standalone/configuration/**" />
+                                                <include name="standalone/lib/**" />
+                                                <include name="jboss-modules.jar" />
+                                            </fileset>
+                                        </copy>
+                                        <chmod dir="${jboss.home}/bin" includes="*.sh" perm="+x" />
+                                        <unzip src="${wildfly.patch.file}" dest="${jboss.home}" />
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
