@@ -112,9 +112,6 @@
     <copy todir="${wildfly.patch.dir}/bundles/org/jboss/osgi/logging/main" overwrite="true">
         <fileset file="${deploy.artifacts.lib}/jboss-osgi-logging-*.jar" />
     </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/jboss/as/osgi/configadmin/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-configadmin-*.jar" />
-    </copy>
 	
   	<!-- Zip the wildfly patch -->
   	<zip destfile="${output.dir}/${project.artifactId}-${project.version}-patch.zip" basedir="${wildfly.patch.dir}"/>

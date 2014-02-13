@@ -34,7 +34,6 @@ interface SystemPackagesIntegration  {
         "javax.api",
         "javax.inject.api",
         "org.apache.xerces",
-        "org.jboss.as.configadmin",
         "org.jboss.as.controller-client",
         "org.jboss.as.osgi",
         "org.jboss.dmr",
@@ -52,7 +51,6 @@ interface SystemPackagesIntegration  {
     String[] DEFAULT_INTEGRATION_PACKAGES = new String[] {
         "javax.inject",
         "org.apache.xerces.jaxp",
-        "org.jboss.as.configadmin",
         "org.jboss.as.controller.client",
         "org.jboss.as.controller.client.helpers",
         "org.jboss.as.controller.client.helpers.domain",

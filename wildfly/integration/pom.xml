@@ -36,7 +36,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>configadmin</module>
         <module>http</module>
         <module>jmx</module>
         <module>jpa</module>
