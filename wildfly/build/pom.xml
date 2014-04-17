@@ -24,7 +24,7 @@
     <!-- Properties -->    
     <properties>
         <project.root.dir>${basedir}/../..</project.root.dir>
-        <wildfly.patch.file>${project.build.directory}/${project.artifactId}-${project.version}-patch.zip</wildfly.patch.file>
+        <wildfly.patch.file>${project.build.directory}/${project.artifactId}-${project.version}-patch</wildfly.patch.file>
         <jboss.home>${project.build.directory}/wildfly-${version.jboss.wildfly}</jboss.home>
     </properties>
     
@@ -176,12 +176,12 @@
                         <configuration>
                             <artifacts>
                                 <artifact>
-                                    <file>${wildfly.patch.file}</file>
+                                    <file>${wildfly.patch.file}.zip</file>
                                     <classifier>patch</classifier>
                                     <type>zip</type>
                                 </artifact>
                                 <artifact>
-                                    <file>${wildfly.patch.file}</file>
+                                    <file>${wildfly.patch.file}.tar.gz</file>
                                     <classifier>patch</classifier>
                                     <type>tar.gz</type>
                                 </artifact>
@@ -243,13 +243,13 @@
                         <executions>
                             <execution>
                                 <id>build-wildfly-osgi</id>
+                                <phase>process-test-resources</phase>
                                 <goals>
                                     <goal>run</goal>
                                 </goals>
-                                <phase>process-test-resources</phase>
                                 <configuration>
                                     <target>
-                                        <unzip src="${wildfly.patch.file}" dest="${jboss.home}" />
+                                        <unzip src="${wildfly.patch.file}.zip" dest="${jboss.home}" />
                                     </target>
                                 </configuration>
                             </execution>
