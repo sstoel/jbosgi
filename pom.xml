@@ -79,9 +79,9 @@
         <version.mockito>1.9.5</version.mockito>
         <version.osgi>5.0.0</version.osgi>
         <version.slf4j>1.6.4</version.slf4j>
-        <version.jboss.wildfly>8.1.0.CR1</version.jboss.wildfly>
-        <version.jboss.wildfly.stable>8.1.0.CR1</version.jboss.wildfly.stable>
-        
+        <version.jboss.wildfly>8.1.0.Final</version.jboss.wildfly>
+        <version.jboss.wildfly.stable>8.1.0.Final</version.jboss.wildfly.stable>
+
         <!-- [SUREFIRE-1020] Incorrect XML escape in <system-out> and <system-err> content of junit xml report -->
         <version.surefire.plugin>2.16</version.surefire.plugin>
     </properties>
@@ -455,6 +455,37 @@
                     <artifactId>maven-scr-plugin</artifactId>
                     <version>${version.apache.felix.scr.generator}</version>
                 </plugin>
+                <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+                <plugin>
+                    <groupId>org.eclipse.m2e</groupId>
+                    <artifactId>lifecycle-mapping</artifactId>
+                    <version>1.0.0</version>
+                    <configuration>
+                        <lifecycleMappingMetadata>
+                            <pluginExecutions>
+                                <pluginExecution>
+                                    <pluginExecutionFilter>
+                                        <groupId>
+                                            org.apache.maven.plugins
+                                        </groupId>
+                                        <artifactId>
+                                            maven-dependency-plugin
+                                        </artifactId>
+                                        <versionRange>
+                                            [2.8,)
+                                        </versionRange>
+                                        <goals>
+                                            <goal>unpack</goal>
+                                        </goals>
+                                    </pluginExecutionFilter>
+                                    <action>
+                                        <execute/>
+                                    </action>
+                                </pluginExecution>
+                            </pluginExecutions>
+                        </lifecycleMappingMetadata>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -467,7 +498,7 @@
             </plugin>
         </plugins>
     </build>
-    
+
     <!-- Repositories -->
     <repositories>
         <repository>
@@ -513,7 +544,7 @@
                 </property>
             </activation>
             <properties>
-                <version.jboss.wildfly>8.0.1.Final-SNAPSHOT</version.jboss.wildfly>
+                <version.jboss.wildfly>8.1.0.Final-SNAPSHOT</version.jboss.wildfly>
                 <wildfly.dist.dir>${project.root.dir}/../wildfly/build/target/wildfly-${version.jboss.wildfly}</wildfly.dist.dir>
             </properties>
         </profile>
