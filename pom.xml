@@ -118,7 +118,7 @@
                 <artifactId>hibernate-jpa-2.0-api</artifactId>
                 <version>${version.javax.persistence.api}</version>
             </dependency>
-            
+
             <!-- Arquillian -->
             <dependency>
                 <groupId>org.jboss.arquillian.junit</groupId>
@@ -174,7 +174,7 @@
                 <artifactId>izpack-standalone-compiler</artifactId>
                 <version>${version.codehaus.izpack}</version>
             </dependency>
-			
+
             <!-- JBoss -->
             <dependency>
                 <groupId>org.jboss.modules</groupId>
@@ -394,7 +394,7 @@
                 <version>${version.apache.felix.webconsole}</version>
             </dependency>
 
-			<!-- WildFly -->
+            <!-- WildFly -->
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-arquillian-common</artifactId>
@@ -410,7 +410,7 @@
                 <artifactId>wildfly-testsuite-shared</artifactId>
                 <version>${version.jboss.wildfly}</version>
             </dependency>
-	        
+
             <!-- org.mockito -->
             <dependency>
                 <groupId>org.mockito</groupId>
