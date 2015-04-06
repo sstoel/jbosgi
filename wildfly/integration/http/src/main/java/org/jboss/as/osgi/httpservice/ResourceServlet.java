@@ -24,6 +24,8 @@ package org.jboss.as.osgi.httpservice;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
+
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -58,10 +60,27 @@ final class ResourceServlet extends HttpServlet {
             res.sendError(HttpServletResponse.SC_NOT_FOUND, req.getRequestURI());
         }
 
-        // [TODO] MimeType, Content-Length, etc.
-
+        URLConnection conn = resurl.openConnection();
+        InputStream in = conn.getInputStream();
+        if (conn.getContentLength() != -1) {
+            res.setContentLength(conn.getContentLength());
+        }
+        if(conn.getContentType() != null) {
+            res.setContentType(conn.getContentType());
+        }
+        if(conn.getContentEncoding() != null) {
+            res.setCharacterEncoding(conn.getContentEncoding());
+        }
+        if(conn.getDate() != 0) {
+            res.setDateHeader("date", conn.getDate());
+        }
+        if(conn.getExpiration() != 0) {
+            res.setDateHeader("expires", conn.getExpiration());
+        }
+        if(conn.getLastModified() != 0) {
+            res.setDateHeader("last-modified", conn.getLastModified());
+        }
         ServletOutputStream out = res.getOutputStream();
-        InputStream in = resurl.openStream();
         IOUtils.copyStream(out, in);
     }
 }
