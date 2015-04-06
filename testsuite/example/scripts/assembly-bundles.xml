@@ -20,6 +20,12 @@
                 <include>*:org.apache.felix.configadmin:jar</include>
                 <include>*:org.apache.felix.log:jar</include>
                 <include>*:org.apache.felix.scr:jar</include>
+                <include>*:org.apache.felix.webconsole:jar</include>
+                <include>*:org.apache.aries.blueprint:jar</include>
+                <include>*:org.apache.aries.jmx:jar</include>
+                <include>*:org.apache.aries.jndi:jar</include>
+                <include>*:org.apache.aries.proxy:jar</include>
+                <include>*:org.apache.aries.util:jar</include>
                 <include>*:jbosgi-repository-bundle:jar</include>
                 <include>*:jbosgi-provision-bundle:jar</include>
                 <include>*:jboss-osgi-logging:jar</include>

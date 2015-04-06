@@ -109,12 +109,30 @@
     <copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/scr/main" overwrite="true">
         <fileset file="${deploy.artifacts.lib}/org.apache.felix.scr-*.jar" />
     </copy>
+    <copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/webconsole/main" overwrite="true">
+        <fileset file="${deploy.artifacts.lib}/org.apache.felix.webconsole-*.jar" />
+    </copy>
+    <copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/blueprint/main" overwrite="true">
+        <fileset file="${deploy.artifacts.lib}/org.apache.aries.blueprint-*.jar" />
+    </copy>
+    <copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/jmx/main" overwrite="true">
+        <fileset file="${deploy.artifacts.lib}/org.apache.aries.jmx-*.jar" />
+    </copy>
+    <copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/jndi/main" overwrite="true">
+        <fileset file="${deploy.artifacts.lib}/org.apache.aries.jndi-*.jar" />
+    </copy>
+    <copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/proxy/main" overwrite="true">
+        <fileset file="${deploy.artifacts.lib}/org.apache.aries.proxy-*.jar" />
+    </copy>
+    <copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/util/main" overwrite="true">
+        <fileset file="${deploy.artifacts.lib}/org.apache.aries.util-*.jar" />
+    </copy>
     <copy todir="${wildfly.patch.dir}/bundles/org/jboss/osgi/logging/main" overwrite="true">
         <fileset file="${deploy.artifacts.lib}/jboss-osgi-logging-*.jar" />
     </copy>
 	
   	<!-- Zip the wildfly patch -->
   	<zip destfile="${output.dir}/${project.artifactId}-${project.version}-patch.zip" basedir="${wildfly.patch.dir}"/>
-  	<tar destfile="${output.dir}/${project.artifactId}-${project.version}-patch.tar.gz" basedir="${wildfly.patch.dir}" compression="gzip"/>
+    <tar destfile="${output.dir}/${project.artifactId}-${project.version}-patch.tar.gz" basedir="${wildfly.patch.dir}" compression="gzip" longfile="posix"/>
   </target>
 </project>

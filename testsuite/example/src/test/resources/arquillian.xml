@@ -10,6 +10,7 @@
 			<property name="allowConnectingToRunningServer">true</property>
             <property name="serverConfig">standalone-osgi.xml</property>
             <property name="frameworkProperties">src/test/resources/jbosgi-framework.properties</property>
+            <!--  <property name="javaVmArguments">-agentlib:jdwp=transport=dt_socket,address=5005,server=y,suspend=y</property>  -->
 		</configuration>
 	</container>
 </arquillian>
