@@ -37,18 +37,6 @@
     <requirement namespace="osgi.identity">
       <attribute name="osgi.identity" value="aries.jmx.feature" />
     </requirement>
-    <requirement namespace="osgi.identity">
-      <attribute name="osgi.identity" value="jbosgi-jmx" />
-    </requirement>
-  </resource>
-  <resource>
-    <capability namespace="osgi.identity">
-      <attribute name="osgi.identity" value="jbosgi-jmx" />
-      <attribute name="type" value="abstract" />
-    </capability>
-    <requirement namespace="maven.identity">
-      <attribute name="maven.identity" value="org.jboss.osgi.jmx:jbosgi-jmx:jar:@version.jboss.osgi.jmx@" />
-    </requirement>
   </resource>
 
   <!--

@@ -100,7 +100,9 @@ public class BundleStateTestCase {
         ServiceReference<MBeanServer> sref = context.getServiceReference(MBeanServer.class);
         MBeanServer server = context.getService(sref);
 
-        ObjectName oname = ObjectName.getInstance("osgi.core:type=bundleState,version=1.5");
+        ObjectName oname = ObjectName.getInstance(BundleStateMBean.OBJECTNAME + ",*");
+        // Workaround for ARIES-1056
+        oname = server.queryNames(oname, null).iterator().next();
         BundleStateMBean bundleState = getMBeanProxy(server, oname, BundleStateMBean.class);
         assertNotNull("BundleStateMBean not null", bundleState);
 

@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.jboss.osgi</groupId>
         <artifactId>jbosgi-parent</artifactId>
-        <version>1.0.24</version>
+        <version>1.0.27</version>
     </parent>
 
     <name>JBossOSGi</name>
@@ -24,7 +24,7 @@
     <artifactId>jbosgi</artifactId>
     <packaging>pom</packaging>
 
-    <version>2.2.1-SNAPSHOT</version>
+    <version>2.3.1.Final-SNAPSHOT</version>
 
     <!-- Source Control -->
     <scm>
@@ -36,55 +36,31 @@
 
     <!-- Properties -->
     <properties>
-        <version.apache.ant>1.7.0</version.apache.ant>
-        <version.apache.aries.blueprint>1.0.0</version.apache.aries.blueprint>
-        <version.apache.aries.jmx>1.0.0</version.apache.aries.jmx>
+        <version.apache.ant>1.9.4</version.apache.ant>
+        <version.apache.aries.blueprint>1.1.0</version.apache.aries.blueprint>
+        <version.apache.aries.jmx>1.1.1</version.apache.aries.jmx>
         <version.apache.aries.jndi>1.0.0</version.apache.aries.jndi>
-        <version.apache.aries.proxy>1.0.0</version.apache.aries.proxy>
-        <version.apache.aries.util>1.0.0</version.apache.aries.util>
-        <version.apache.felix.configadmin>1.6.0</version.apache.felix.configadmin>
-        <version.apache.felix.eventadmin>1.3.0</version.apache.felix.eventadmin>
+        <version.apache.aries.proxy>1.0.1</version.apache.aries.proxy>
+        <version.apache.aries.util>1.1.0</version.apache.aries.util>
+        <version.apache.felix.configadmin>1.8.2</version.apache.felix.configadmin>
+        <version.apache.felix.eventadmin>1.4.2</version.apache.felix.eventadmin>
         <version.apache.felix.log>1.0.1</version.apache.felix.log>
-        <version.apache.felix.metatype>1.0.8</version.apache.felix.metatype>
-        <version.apache.felix.scr>1.6.2</version.apache.felix.scr>
-        <version.apache.felix.scr.ds.annotations>1.2.4</version.apache.felix.scr.ds.annotations>
-        <version.apache.felix.scr.generator>1.9.0</version.apache.felix.scr.generator>
+        <version.apache.felix.metatype>1.0.10</version.apache.felix.metatype>
+        <version.apache.felix.scr>1.8.2</version.apache.felix.scr>
+        <version.apache.felix.scr.ds.annotations>1.2.8</version.apache.felix.scr.ds.annotations>
+        <version.apache.felix.scr.generator>1.20.0</version.apache.felix.scr.generator>
         <version.apache.felix.webconsole>3.1.8</version.apache.felix.webconsole>
         <version.codehaus.izpack>4.3.5</version.codehaus.izpack>
-        <version.javax.annotations.api>1.0.1.Final</version.javax.annotations.api>
-        <version.javax.ejb.api>1.0.1.Final</version.javax.ejb.api>
-        <version.javax.enterprise.api>1.0-SP4</version.javax.enterprise.api>
-        <version.javax.jaxrs.api>1.0.1.Final</version.javax.jaxrs.api>
-        <version.javax.persistence.api>1.0.1.Final</version.javax.persistence.api>
-        <version.javax.servlet.api>1.0.2.Final</version.javax.servlet.api>
-        <version.javax.transaction.api>1.0.0.Alpha3</version.javax.transaction.api>
-        <version.jboss.arquillian.core>1.1.2.Final-wildfly-1</version.jboss.arquillian.core>
-        <version.jboss.arquillian.osgi>2.1.0.CR2</version.jboss.arquillian.osgi>
-        <version.jboss.logging>3.1.4.GA</version.jboss.logging>
-        <version.jboss.logging.processor>1.1.0.Final</version.jboss.logging.processor>
-        <version.jboss.logmanager>1.5.0.Final</version.jboss.logmanager>
-        <version.jboss.modules>1.3.3.Final</version.jboss.modules>
-        <version.jboss.osgi.deployment>2.0.0.Final</version.jboss.osgi.deployment>
-        <version.jboss.osgi.framework>3.0.2.Final</version.jboss.osgi.framework>
-        <version.jboss.osgi.logging>1.0.0</version.jboss.osgi.logging>
-        <version.jboss.osgi.jmx>1.1.0.Final</version.jboss.osgi.jmx>
-        <version.jboss.osgi.metadata>3.0.0.Final</version.jboss.osgi.metadata>
-        <version.jboss.osgi.provision>1.1.0.Beta1</version.jboss.osgi.provision>
-        <version.jboss.osgi.repository>3.1.0.CR1</version.jboss.osgi.repository>
-        <version.jboss.osgi.resolver>4.0.0.Final</version.jboss.osgi.resolver>
-        <version.jboss.osgi.spi>4.0.0.Final</version.jboss.osgi.spi>
-        <version.jboss.osgi.testing>2.0.0.Final</version.jboss.osgi.testing>
-        <version.jboss.osgi.vfs>2.0.0.Final</version.jboss.osgi.vfs>
-        <version.jboss.shrinkwrap>1.1.2</version.jboss.shrinkwrap>
-        <version.junit>4.11</version.junit>
-        <version.mockito>1.9.5</version.mockito>
-        <version.osgi>5.0.0</version.osgi>
-        <version.slf4j>1.6.4</version.slf4j>
-        <version.jboss.wildfly>8.1.0.Final</version.jboss.wildfly>
-        <version.jboss.wildfly.stable>8.1.0.Final</version.jboss.wildfly.stable>
-
-        <!-- [SUREFIRE-1020] Incorrect XML escape in <system-out> and <system-err> content of junit xml report -->
-        <version.surefire.plugin>2.16</version.surefire.plugin>
+        <version.jboss.osgi.deployment>2.0.2.Final</version.jboss.osgi.deployment>
+        <version.jboss.osgi.framework>3.0.6.Final</version.jboss.osgi.framework>
+        <version.jboss.osgi.logging>1.0.1.Final</version.jboss.osgi.logging>
+        <version.jboss.osgi.metadata>4.0.0.Final</version.jboss.osgi.metadata>
+        <version.jboss.osgi.provision>1.1.1.Final</version.jboss.osgi.provision>
+        <version.jboss.osgi.repository>4.0.1.Final</version.jboss.osgi.repository>
+        <version.jboss.osgi.resolver>4.0.3.Final</version.jboss.osgi.resolver>
+        <version.jboss.osgi.spi>4.0.2.Final</version.jboss.osgi.spi>
+        <version.jboss.osgi.testing>2.0.2.Final</version.jboss.osgi.testing>
+        <version.jboss.osgi.vfs>2.0.2.Final</version.jboss.osgi.vfs>
     </properties>
 
     <!-- Modules -->
@@ -101,44 +77,6 @@
                 <groupId>org.apache.ant</groupId>
                 <artifactId>ant</artifactId>
                 <version>${version.apache.ant}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.enterprise</groupId>
-                <artifactId>cdi-api</artifactId>
-                <version>${version.javax.enterprise.api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.ws.rs</groupId>
-                <artifactId>jboss-jaxrs-api_1.1_spec</artifactId>
-                <version>${version.javax.jaxrs.api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.0-api</artifactId>
-                <version>${version.javax.persistence.api}</version>
-            </dependency>
-
-            <!-- Arquillian -->
-            <dependency>
-                <groupId>org.jboss.arquillian.junit</groupId>
-                <artifactId>arquillian-junit-container</artifactId>
-                <version>${version.jboss.arquillian.core}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-container-osgi</artifactId>
-                <version>${version.jboss.arquillian.osgi}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-container-jbosgi-embedded</artifactId>
-                <version>${version.jboss.arquillian.osgi}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.osgi</groupId>
-                <artifactId>arquillian-osgi-bundle</artifactId>
-                <version>${version.jboss.arquillian.osgi}</version>
             </dependency>
 
             <!-- Aries -->
@@ -175,53 +113,6 @@
                 <version>${version.codehaus.izpack}</version>
             </dependency>
 
-            <!-- JBoss -->
-            <dependency>
-                <groupId>org.jboss.modules</groupId>
-                <artifactId>jboss-modules</artifactId>
-                <version>${version.jboss.modules}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${version.jboss.logging}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-processor</artifactId>
-                <version>${version.jboss.logging.processor}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logmanager</groupId>
-                <artifactId>jboss-logmanager</artifactId>
-                <version>${version.jboss.logmanager}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.shrinkwrap</groupId>
-                <artifactId>shrinkwrap-impl-base</artifactId>
-                <version>${version.jboss.shrinkwrap}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.annotation</groupId>
-                <artifactId>jboss-annotations-api_1.1_spec</artifactId>
-                <version>${version.javax.annotations.api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.ejb</groupId>
-                <artifactId>jboss-ejb-api_3.1_spec</artifactId>
-                <version>${version.javax.ejb.api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.servlet</groupId>
-                <artifactId>jboss-servlet-api_3.0_spec</artifactId>
-                <version>${version.javax.servlet.api}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.spec.javax.transaction</groupId>
-                <artifactId>jboss-transaction-api_1.2_spec</artifactId>
-                <version>${version.javax.transaction.api}</version>
-            </dependency>
-
             <!-- JBOSGi -->
             <dependency>
                 <groupId>org.jboss.osgi.deployment</groupId>
@@ -238,11 +129,6 @@
                 <artifactId>jbosgi-framework-aggregated</artifactId>
                 <version>${version.jboss.osgi.framework}</version>
                 <classifier>all</classifier>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.osgi.jmx</groupId>
-                <artifactId>jbosgi-jmx</artifactId>
-                <version>${version.jboss.osgi.jmx}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.logging</groupId>
@@ -394,6 +280,15 @@
                 <version>${version.apache.felix.webconsole}</version>
             </dependency>
 
+            <!-- Java EE -->
+            <dependency>
+                <groupId>org.jboss.spec</groupId>
+                <artifactId>jboss-javaee-7.0</artifactId>
+                <version>${version.jboss.javaee}</version>
+                <type>pom</type>
+                <scope>provided</scope>
+            </dependency>
+
             <!-- WildFly -->
             <dependency>
                 <groupId>org.wildfly</groupId>
@@ -407,44 +302,14 @@
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-arquillian-container-remote</artifactId>
+                <version>${version.jboss.wildfly}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-testsuite-shared</artifactId>
                 <version>${version.jboss.wildfly}</version>
             </dependency>
-
-            <!-- org.mockito -->
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-all</artifactId>
-                <version>${version.mockito}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <!-- org.osgi -->
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.core</artifactId>
-                <version>${version.osgi}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>org.osgi.enterprise</artifactId>
-                <version>${version.osgi}</version>
-            </dependency>
-
-            <!-- SLF4J -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-jdk14</artifactId>
-                <version>${version.slf4j}</version>
-            </dependency>
-
-            <!-- JUnit -->
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${version.junit}</version>
-            </dependency>
-
         </dependencies>
     </dependencyManagement>
 
@@ -514,7 +379,7 @@
                 </property>
             </activation>
             <properties>
-                <version.jboss.wildfly>8.1.0.Final-SNAPSHOT</version.jboss.wildfly>
+                <version.jboss.wildfly>8.2.0.Final</version.jboss.wildfly>
                 <wildfly.dist.dir>${project.root.dir}/../wildfly/build/target/wildfly-${version.jboss.wildfly}</wildfly.dist.dir>
             </properties>
         </profile>

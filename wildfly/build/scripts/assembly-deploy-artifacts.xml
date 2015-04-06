@@ -19,6 +19,7 @@
                 <include>*:jbosgi-*:jar</include>
                 <include>*:jboss-osgi-*:jar</include>
                 <include>*:org.apache.felix*:jar</include>
+                <include>*:org.apache.aries*:jar</include>
             </includes>
             <scope>compile</scope>
             <unpack>false</unpack>
