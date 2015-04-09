@@ -52,7 +52,7 @@
         <version.apache.felix.webconsole>3.1.8</version.apache.felix.webconsole>
         <version.codehaus.izpack>4.3.5</version.codehaus.izpack>
         <version.jboss.osgi.deployment>2.0.2.Final</version.jboss.osgi.deployment>
-        <version.jboss.osgi.framework>3.0.6.Final</version.jboss.osgi.framework>
+        <version.jboss.osgi.framework>3.0.7.Final-SNAPSHOT</version.jboss.osgi.framework>
         <version.jboss.osgi.logging>1.0.1.Final</version.jboss.osgi.logging>
         <version.jboss.osgi.metadata>4.0.0.Final</version.jboss.osgi.metadata>
         <version.jboss.osgi.provision>1.1.1.Final</version.jboss.osgi.provision>
