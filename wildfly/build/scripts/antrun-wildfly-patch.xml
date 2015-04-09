@@ -11,128 +11,134 @@
 
 <project default="build">
 
-  <!-- ================================================================== -->
-  <!-- Setup                                                              -->
-  <!-- ================================================================== -->
-  
-  <property name="output.dir" value="${basedir}/target" />
-  <property name="resources.dir" value="${basedir}/src/main/resources" />
-  <property name="wildfly.patch.dir" value="${output.dir}/wildfly-patch" />
-  <property name="deploy.artifacts.dir" value="${output.dir}/deploy-artifacts" />
-  <property name="deploy.artifacts.lib" value="${deploy.artifacts.dir}/lib" />
-  <property name="deploy.artifacts.resources" value="${deploy.artifacts.dir}/resources" />
+	<!-- ================================================================== -->
+	<!-- Setup                                                              -->
+	<!-- ================================================================== -->
 
-  <!-- ================================================================== -->
-  <!-- Initialization                                                     -->
-  <!-- ================================================================== -->
-  <target name="init">
-  </target>
+	<property name="output.dir" value="${basedir}/target" />
+	<property name="resources.dir" value="${basedir}/src/main/resources" />
+	<property name="wildfly.patch.dir" value="${output.dir}/wildfly-patch" />
+	<property name="deploy.artifacts.dir" value="${output.dir}/deploy-artifacts" />
+	<property name="deploy.artifacts.lib" value="${deploy.artifacts.dir}/lib" />
+	<property name="deploy.artifacts.resources" value="${deploy.artifacts.dir}/resources" />
 
-  <!-- ================================================================== -->
-  <!-- Distribution                                                       -->
-  <!-- ================================================================== -->
-  <target name="build" depends="init">
+	<!-- ================================================================== -->
+	<!-- Initialization                                                     -->
+	<!-- ================================================================== -->
+	<target name="init">
+	</target>
 
-  	<!-- Filter the modules resources -->
-    <copy todir="${wildfly.patch.dir}" overwrite="true">
-        <fileset dir="${resources.dir}/wildfly" />
-		<filterset>
-	        <filter token="project.version" value="${project.version}" />
-	        <filter token="version.jboss.osgi.deployment" value="${version.jboss.osgi.deployment}" />
-	        <filter token="version.jboss.osgi.framework" value="${version.jboss.osgi.framework}" />
-	        <filter token="version.jboss.osgi.metadata" value="${version.jboss.osgi.metadata}" />
-	        <filter token="version.jboss.osgi.provision" value="${version.jboss.osgi.provision}" />
-	        <filter token="version.jboss.osgi.repository" value="${version.jboss.osgi.repository}" />
-	        <filter token="version.jboss.osgi.resolver" value="${version.jboss.osgi.resolver}" />
-	        <filter token="version.jboss.osgi.spi" value="${version.jboss.osgi.spi}" />
-	        <filter token="version.jboss.osgi.vfs" value="${version.jboss.osgi.vfs}" />
-      	</filterset>
-    </copy>
-  	
-  	<!-- Copy module resources-->
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/http/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-http-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/jmx/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-jmx-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/jpa/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-jpa-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/jta/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-jta-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-service-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/naming/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-naming-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/web/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-web-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/deployment/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-deployment-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/framework/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-framework-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/metadata/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-metadata-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/provision/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-provision-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/repository/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-repository-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/resolver/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-resolver-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/spi/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-spi-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/vfs/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jbosgi-vfs*.jar" />
-    </copy>
-  	
-  	<!-- Copy bundle resources-->
-    <copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/configadmin/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/org.apache.felix.configadmin-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/log/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/org.apache.felix.log-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/metatype/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/org.apache.felix.metatype-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/scr/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/org.apache.felix.scr-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/webconsole/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/org.apache.felix.webconsole-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/blueprint/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/org.apache.aries.blueprint-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/jmx/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/org.apache.aries.jmx-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/jndi/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/org.apache.aries.jndi-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/proxy/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/org.apache.aries.proxy-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/util/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/org.apache.aries.util-*.jar" />
-    </copy>
-    <copy todir="${wildfly.patch.dir}/bundles/org/jboss/osgi/logging/main" overwrite="true">
-        <fileset file="${deploy.artifacts.lib}/jboss-osgi-logging-*.jar" />
-    </copy>
-	
-  	<!-- Zip the wildfly patch -->
-  	<zip destfile="${output.dir}/${project.artifactId}-${project.version}-patch.zip" basedir="${wildfly.patch.dir}"/>
-    <tar destfile="${output.dir}/${project.artifactId}-${project.version}-patch.tar.gz" basedir="${wildfly.patch.dir}" compression="gzip" longfile="posix"/>
-  </target>
+	<!-- ================================================================== -->
+	<!-- Distribution                                                       -->
+	<!-- ================================================================== -->
+	<target name="build" depends="init">
+
+		<!-- Filter the modules resources -->
+		<copy todir="${wildfly.patch.dir}" overwrite="true">
+			<fileset dir="${resources.dir}/wildfly" />
+			<filterset>
+				<filter token="project.version" value="${project.version}" />
+				<filter token="version.jboss.osgi.deployment" value="${version.jboss.osgi.deployment}" />
+				<filter token="version.jboss.osgi.framework" value="${version.jboss.osgi.framework}" />
+				<filter token="version.jboss.osgi.metadata" value="${version.jboss.osgi.metadata}" />
+				<filter token="version.jboss.osgi.provision" value="${version.jboss.osgi.provision}" />
+				<filter token="version.jboss.osgi.repository" value="${version.jboss.osgi.repository}" />
+				<filter token="version.jboss.osgi.resolver" value="${version.jboss.osgi.resolver}" />
+				<filter token="version.jboss.osgi.spi" value="${version.jboss.osgi.spi}" />
+				<filter token="version.jboss.osgi.vfs" value="${version.jboss.osgi.vfs}" />
+			</filterset>
+		</copy>
+
+		<!-- Copy module resources-->
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/http/main/jbosgi-wildfly-http-${project.version}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-http-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/jmx/main/jbosgi-wildfly-jmx-${project.version}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-jmx-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/jpa/main/jbosgi-wildfly-jpa-${project.version}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-jpa-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/jta/main/jbosgi-wildfly-jta-${project.version}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-jta-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/main/jbosgi-wildfly-service-${project.version}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-service-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/naming/main/jbosgi-wildfly-naming-${project.version}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-naming-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/web/main/jbosgi-wildfly-web-${project.version}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-web-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/deployment/main/jbosgi-deployment-${version.jboss.osgi.deployment}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-deployment-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/framework/main/jbosgi-framework-core-${version.jboss.osgi.framework}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-framework-core-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/metadata/main/jbosgi-metadata-${version.jboss.osgi.metadata}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-metadata-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/provision/main/jbosgi-provision-core-${version.jboss.osgi.provision}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-provision-core-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/repository/main/jbosgi-repository-core-${version.jboss.osgi.repository}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-repository-core-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/resolver/main/jbosgi-resolver-api-${version.jboss.osgi.resolver}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-resolver-api-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/resolver/main/jbosgi-resolver-felix-${version.jboss.osgi.resolver}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-resolver-felix-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/spi/main/jbosgi-spi-${version.jboss.osgi.spi}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-spi-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/vfs/main/jbosgi-vfs-${version.jboss.osgi.vfs}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-vfs-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/vfs/main/jbosgi-vfs30-${version.jboss.osgi.vfs}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-vfs30-*.jar" />
+		</copy>
+
+		<!-- Copy bundle resources-->
+		<copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/configadmin/main" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.apache.felix.configadmin-*.jar" />
+		</copy>
+		<copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/log/main" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.apache.felix.log-*.jar" />
+		</copy>
+		<copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/metatype/main" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.apache.felix.metatype-*.jar" />
+		</copy>
+		<copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/scr/main" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.apache.felix.scr-*.jar" />
+		</copy>
+		<copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/webconsole/main" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.apache.felix.webconsole-*.jar" />
+		</copy>
+		<copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/blueprint/main" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.apache.aries.blueprint-*.jar" />
+		</copy>
+		<copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/jmx/main" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.apache.aries.jmx-*.jar" />
+		</copy>
+		<copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/jndi/main" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.apache.aries.jndi-*.jar" />
+		</copy>
+		<copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/proxy/main" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.apache.aries.proxy-*.jar" />
+		</copy>
+		<copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/util/main" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.apache.aries.util-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/bundles/org/jboss/osgi/logging/main/jboss-osgi-logging-${version.jboss.osgi.logging}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jboss-osgi-logging-*.jar" />
+		</copy>
+
+		<!-- Zip the wildfly patch -->
+		<zip destfile="${output.dir}/${project.artifactId}-${project.version}-patch.zip" basedir="${wildfly.patch.dir}" />
+		<tar destfile="${output.dir}/${project.artifactId}-${project.version}-patch.tar.gz" basedir="${wildfly.patch.dir}" compression="gzip" longfile="posix" />
+	</target>
 </project>
