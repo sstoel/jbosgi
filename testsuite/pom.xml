@@ -9,7 +9,8 @@
 <!--                                                                        -->
 <!-- ====================================================================== -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -67,6 +68,7 @@
         <dependency>
             <groupId>org.jboss.osgi.resolver</groupId>
             <artifactId>jbosgi-resolver-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <!-- add this aggregate last -->
         <dependency>
@@ -79,13 +81,16 @@
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
             <artifactId>arquillian-container-osgi</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss.arquillian.junit</groupId>
             <artifactId>arquillian-junit-container</artifactId>
-            <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.core</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.jboss.logmanager</groupId>
             <artifactId>jboss-logmanager</artifactId>
@@ -94,12 +99,10 @@
         <dependency>
             <groupId>org.jboss.shrinkwrap</groupId>
             <artifactId>shrinkwrap-impl-base</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -143,6 +146,7 @@
                         <configuration>
                             <argLine>${surefire.system.args}</argLine>
                             <systemPropertyVariables>
+                                <jboss.home>${jboss.home}</jboss.home>
                                 <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                                 <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                                 <jboss.osgi.framework.properties>${jboss.osgi.framework.properties}</jboss.osgi.framework.properties>
@@ -205,11 +209,19 @@
                             </execution>
                         </executions>
                     </plugin>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <jboss.home>${jboss.home}</jboss.home>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
-		    <modules>
-		        <module>integration</module>
-		    </modules>
+            <modules>
+                <module>integration</module>
+            </modules>
         </profile>
         <profile>
             <id>wildfly-stable</id>
@@ -265,7 +277,7 @@
                                     <goal>run</goal>
                                 </goals>
                                 <phase>process-test-resources</phase>
-                                  <configuration>
+                                <configuration>
                                     <target>
                                         <mkdir dir="${jboss.home}/standalone/deployments" />
                                         <copy todir="${jboss.home}" failonerror="false" overwrite="true">

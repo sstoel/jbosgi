@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.jboss.osgi</groupId>
         <artifactId>jbosgi-parent</artifactId>
-        <version>1.0.27</version>
+        <version>1.0.28-SNAPSHOT</version>
     </parent>
 
     <name>JBossOSGi</name>
@@ -279,37 +279,6 @@
                 <artifactId>org.apache.felix.webconsole</artifactId>
                 <version>${version.apache.felix.webconsole}</version>
             </dependency>
-
-            <!-- Java EE -->
-            <dependency>
-                <groupId>org.jboss.spec</groupId>
-                <artifactId>jboss-javaee-7.0</artifactId>
-                <version>${version.jboss.javaee}</version>
-                <type>pom</type>
-                <scope>provided</scope>
-            </dependency>
-
-            <!-- WildFly -->
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-arquillian-common</artifactId>
-                <version>${version.jboss.wildfly}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-arquillian-container-managed</artifactId>
-                <version>${version.jboss.wildfly}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-arquillian-container-remote</artifactId>
-                <version>${version.jboss.wildfly}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-testsuite-shared</artifactId>
-                <version>${version.jboss.wildfly}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -323,15 +292,6 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-        <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                </configuration>
-            </plugin>
-        </plugins>
     </build>
 
     <!-- Repositories -->

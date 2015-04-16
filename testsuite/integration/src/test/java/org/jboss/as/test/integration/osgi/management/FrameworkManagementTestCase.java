@@ -24,6 +24,7 @@ package org.jboss.as.test.integration.osgi.management;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -100,7 +101,8 @@ public class FrameworkManagementTestCase {
         ensureFrameworkActive();
 
         String capabilityName = "org.jboss.test.testcap" + System.currentTimeMillis();
-        String basedir = System.getProperty("jboss.dist");
+        String basedir = System.getProperty("jboss.home");
+        assertNotNull("basedir", basedir);
         File targetdir = new File(basedir + "/bundles/" + capabilityName.replace(".", "/") + "/main");
         targetdir.mkdirs();
 
