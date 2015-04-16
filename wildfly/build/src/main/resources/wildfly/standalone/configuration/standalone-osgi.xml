@@ -107,24 +107,12 @@
             <capabilities>
                 <!-- modules registered with the OSGi layer on startup -->
                 <capability name="javax.jws.api"/>
-                <capability name="javax.jms.api"/>
-                <capability name="javax.activation.api"/>
-                <capability name="javax.validation.api"/>
                 <capability name="javax.persistence.api"/>
                 <capability name="javax.servlet.api"/>
                 <capability name="javax.transaction.api"/>
                 <capability name="javax.ws.rs.api"/>
                 <capability name="javax.xml.bind.api"/>
                 <capability name="javax.xml.ws.api"/>
-                <capability name="javax.xml.soap.api"/>
-                <capability name="org.dom4j"/>
-                <capability name="org.hibernate"/>
-                <capability name="org.hibernate.commons-annotations"/>
-                <capability name="org.hibernate.search.engine"/>
-                <capability name="org.hibernate.search.orm"/>
-                <capability name="org.hibernate.hql"/>
-                <capability name="org.hibernate.validator"/>
-                <capability name="org.apache.lucene"/>
 
                 <!-- bundles started in startlevel 1 -->
                 <capability name="org.apache.felix.log" startlevel="1"/>
