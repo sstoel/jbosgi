@@ -35,8 +35,9 @@
     <!-- Properties -->
     <properties>
         <project.root.dir>${basedir}/../..</project.root.dir>
+        <argLine>${surefire.system.args} ${surefire.security.args}</argLine>
     </properties>
-    
+
     <!-- Dependencies -->
     <dependencies>
         <!-- Provided -->
@@ -211,7 +212,6 @@
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>${surefire.system.args} ${surefire.security.args}</argLine>
                             <excludes>
                                 <exclude>**/cdi/*TestCase.java</exclude>
                                 <exclude>**/ear/*TestCase.java</exclude>
@@ -253,7 +253,6 @@
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>${surefire.system.args} ${surefire.security.args}</argLine>
                             <excludes>
                                 <exclude>**/*StandaloneTestCase.java</exclude>
                             </excludes>

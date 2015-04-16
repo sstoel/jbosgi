@@ -15,7 +15,8 @@
     -Dtest.archive.directory=${workspace_loc:jbosgi-testsuite-functional/target}/test-libs
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -23,17 +24,18 @@
         <artifactId>jbosgi-testsuite</artifactId>
         <version>2.3.1.Final-SNAPSHOT</version>
     </parent>
-    
+
     <name>JBossOSGi Testsuite Functional</name>
-    
+
     <artifactId>jbosgi-testsuite-functional</artifactId>
     <packaging>jar</packaging>
 
     <!-- Properties -->
     <properties>
         <project.root.dir>${basedir}/../..</project.root.dir>
+        <argLine>${surefire.system.args} ${surefire.security.args}</argLine>
     </properties>
-    
+
     <!-- Dependencies -->
     <dependencies>
         <dependency>
@@ -45,7 +47,7 @@
             <artifactId>jbosgi-testsuite-example</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
+
         <!-- Provided -->
         <dependency>
             <groupId>org.apache.felix</groupId>
@@ -168,7 +170,6 @@
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <argLine>${surefire.system.args} ${surefire.security.args}</argLine>
                             <excludes>
                                 <!-- [JBOSGI-639] Bundle update fails in AS8 -->
                                 <exclude>**/*BundleUpdateTestCase.java</exclude>

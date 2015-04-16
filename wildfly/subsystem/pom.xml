@@ -39,6 +39,10 @@
     <name>JBossOSGi WildFly Subsystem</name>
     <artifactId>jbosgi-wildfly-service</artifactId>
 
+    <properties>
+        <argLine>${surefire.system.args}</argLine>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.wildfly</groupId>
@@ -129,7 +133,6 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>${surefire.system.args}</argLine>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <org.jboss.model.test.cache.root>${org.jboss.model.test.cache.root}</org.jboss.model.test.cache.root>
