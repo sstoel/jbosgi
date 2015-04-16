@@ -33,7 +33,6 @@
     <!-- Properties -->
     <properties>
         <project.root.dir>${basedir}/../..</project.root.dir>
-        <argLine>${surefire.system.args} ${surefire.security.args}</argLine>
     </properties>
 
     <!-- Dependencies -->
@@ -170,6 +169,7 @@
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+                            <argLine>@{jacocoArgLine} @{surefire.system.args} @{surefire.security.args}</argLine>
                             <excludes>
                                 <!-- [JBOSGI-639] Bundle update fails in AS8 -->
                                 <exclude>**/*BundleUpdateTestCase.java</exclude>

@@ -39,10 +39,6 @@
     <name>JBossOSGi WildFly Subsystem</name>
     <artifactId>jbosgi-wildfly-service</artifactId>
 
-    <properties>
-        <argLine>${surefire.system.args}</argLine>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.wildfly</groupId>

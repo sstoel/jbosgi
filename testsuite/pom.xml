@@ -36,7 +36,6 @@
         <surefire.system.args>-ea -Xmx512m</surefire.system.args>
         <surefire.security.args>-Djava.security.manager "-Djava.security.policy=${basedir}/src/test/resources/tst.policy"</surefire.security.args>
         <jboss.osgi.framework.properties>jbosgi-framework.properties</jboss.osgi.framework.properties>
-        <argLine>${surefire.system.args}</argLine>
     </properties>
 
     <!-- Dependencies -->
@@ -145,6 +144,7 @@
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
+                            <argLine>@{jacocoArgLine} @{surefire.system.args}</argLine>
                             <systemPropertyVariables>
                                 <jboss.home>${jboss.home}</jboss.home>
                                 <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
