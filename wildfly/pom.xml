@@ -21,7 +21,8 @@
   ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -36,63 +37,71 @@
     <artifactId>jbosgi-wildfly</artifactId>
     <packaging>pom</packaging>
 
-	<dependencyManagement>
-		<dependencies>
-	        <dependency>
-	            <groupId>org.wildfly</groupId>
-	            <artifactId>wildfly-build</artifactId>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-build</artifactId>
                 <version>${version.jboss.wildfly}</version>
                 <type>pom</type>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.wildfly</groupId>
-	            <artifactId>wildfly-ee</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-ee</artifactId>
                 <version>${version.jboss.wildfly}</version>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.wildfly</groupId>
-	            <artifactId>wildfly-embedded</artifactId>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-embedded</artifactId>
                 <version>${version.jboss.wildfly}</version>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.wildfly</groupId>
-	            <artifactId>wildfly-jmx</artifactId>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-jmx</artifactId>
                 <version>${version.jboss.wildfly}</version>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.wildfly</groupId>
-	            <artifactId>wildfly-jpa</artifactId>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-jpa</artifactId>
                 <version>${version.jboss.wildfly}</version>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.wildfly</groupId>
-	            <artifactId>wildfly-naming</artifactId>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-naming</artifactId>
                 <version>${version.jboss.wildfly}</version>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.wildfly</groupId>
-	            <artifactId>wildfly-server</artifactId>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-server</artifactId>
                 <version>${version.jboss.wildfly}</version>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.wildfly</groupId>
-	            <artifactId>wildfly-transactions</artifactId>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-transactions</artifactId>
                 <version>${version.jboss.wildfly}</version>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.wildfly</groupId>
-	            <artifactId>wildfly-subsystem-test</artifactId>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-subsystem-test</artifactId>
                 <version>${version.jboss.wildfly}</version>
                 <type>pom</type>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.wildfly</groupId>
-	            <artifactId>wildfly-web-common</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-web-common</artifactId>
                 <version>${version.jboss.wildfly}</version>
-	        </dependency>
-		</dependencies>
-	</dependencyManagement>
-	
+                <scope>provided</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <modules>
         <module>build</module>
         <module>subsystem</module>
