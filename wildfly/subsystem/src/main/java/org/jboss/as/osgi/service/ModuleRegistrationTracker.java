@@ -49,6 +49,7 @@ import org.jboss.osgi.resolver.XBundleRevision;
 import org.jboss.osgi.resolver.XBundleRevisionBuilderFactory;
 import org.jboss.osgi.resolver.XEnvironment;
 import org.jboss.osgi.resolver.XResourceBuilder;
+import org.jboss.osgi.resolver.spi.OSGiMetaDataProcessor;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -108,7 +109,7 @@ public class ModuleRegistrationTracker extends AbstractService<Void> {
     }
 
     private XBundleRevision registerInternal(final BundleContext context, final Registration reg) {
-        final OSGiMetaData metadata = reg.metadata;
+        OSGiMetaData metadata = reg.metadata;
         final Module module = reg.module;
         LOGGER.infoRegisterModule(module.getIdentifier());
 
@@ -125,11 +126,12 @@ public class ModuleRegistrationTracker extends AbstractService<Void> {
             if (metadata != null) {
                 builder.loadFrom(metadata);
                 brev = builder.getResource();
-                brev.putAttachment(IntegrationConstants.OSGI_METADATA_KEY, metadata);
             } else {
                 builder.loadFrom(module);
                 brev = builder.getResource();
+                metadata = OSGiMetaDataProcessor.getOsgiMetaData(brev);
             }
+            brev.putAttachment(IntegrationConstants.OSGI_METADATA_KEY, metadata);
 
             injectedEnvironment.getValue().installResources(brev);
 
