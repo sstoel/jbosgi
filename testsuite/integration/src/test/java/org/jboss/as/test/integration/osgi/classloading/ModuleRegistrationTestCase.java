@@ -103,12 +103,9 @@ public class ModuleRegistrationTestCase {
             // Verify resource identity
             XBundleRevision brev = (XBundleRevision) caps.get(0).getResource();
             XIdentityCapability icap = brev.getIdentityCapability();
-            Assert.assertEquals("deployment.module-a", icap.getName());
+            Assert.assertEquals("deployment." + MODULE_A, icap.getName());
             Assert.assertEquals(Version.emptyVersion, icap.getVersion());
             Assert.assertEquals(XResource.TYPE_MODULE, icap.getType());
-
-            caps = brev.getCapabilities(PackageNamespace.PACKAGE_NAMESPACE);
-            Assert.assertEquals("One exported package capability", 1, caps.size());
         } finally {
             deployer.undeploy(MODULE_A);
         }
@@ -132,7 +129,7 @@ public class ModuleRegistrationTestCase {
                 Assert.assertEquals(bundleA, wire.getRequirer().getBundle());
                 XBundleRevision provider = (XBundleRevision) wire.getProvider();
                 XIdentityCapability icap = provider.getIdentityCapability();
-                Assert.assertEquals("deployment.module-a", icap.getName());
+                Assert.assertEquals("deployment." + MODULE_A, icap.getName());
             } finally {
                 bundleA.uninstall();
             }
