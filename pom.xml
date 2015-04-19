@@ -16,7 +16,7 @@
     <parent>
         <groupId>org.jboss.osgi</groupId>
         <artifactId>jbosgi-parent</artifactId>
-        <version>1.0.28-SNAPSHOT</version>
+        <version>1.0.28</version>
     </parent>
 
     <name>JBossOSGi</name>
@@ -55,9 +55,9 @@
         <version.jboss.osgi.framework>3.0.7.Final-SNAPSHOT</version.jboss.osgi.framework>
         <version.jboss.osgi.logging>1.0.2.Final</version.jboss.osgi.logging>
         <version.jboss.osgi.metadata>4.0.0.Final</version.jboss.osgi.metadata>
-        <version.jboss.osgi.provision>1.1.1.Final</version.jboss.osgi.provision>
-        <version.jboss.osgi.repository>4.0.1.Final</version.jboss.osgi.repository>
-        <version.jboss.osgi.resolver>4.0.3.Final</version.jboss.osgi.resolver>
+        <version.jboss.osgi.provision>1.1.2.Final-SNAPSHOT</version.jboss.osgi.provision>
+        <version.jboss.osgi.repository>4.0.2.Final-SNAPSHOT</version.jboss.osgi.repository>
+        <version.jboss.osgi.resolver>4.0.4.Final-SNAPSHOT</version.jboss.osgi.resolver>
         <version.jboss.osgi.spi>4.0.2.Final</version.jboss.osgi.spi>
         <version.jboss.osgi.testing>2.0.2.Final</version.jboss.osgi.testing>
         <version.jboss.osgi.vfs>2.0.2.Final</version.jboss.osgi.vfs>
@@ -149,6 +149,7 @@
                 <groupId>org.jboss.osgi.provision</groupId>
                 <artifactId>jbosgi-provision-bundle</artifactId>
                 <version>${version.jboss.osgi.provision}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.repository</groupId>
@@ -159,6 +160,7 @@
                 <groupId>org.jboss.osgi.repository</groupId>
                 <artifactId>jbosgi-repository-bundle</artifactId>
                 <version>${version.jboss.osgi.repository}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.resolver</groupId>
