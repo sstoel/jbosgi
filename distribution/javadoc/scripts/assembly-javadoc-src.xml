@@ -15,7 +15,6 @@
             <includes>
                 <include>*:jbosgi-deployment:jar:sources</include>
                 <include>*:jbosgi-framework-core:jar:sources</include>
-                <include>*:jbosgi-jmx-api:jar:sources</include>
                 <include>*:jbosgi-metadata:jar:sources</include>
                 <include>*:jbosgi-resolver-api:jar:sources</include>
                 <include>*:jbosgi-repository-core:jar:sources</include>

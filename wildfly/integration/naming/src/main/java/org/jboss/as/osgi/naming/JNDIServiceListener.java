@@ -52,9 +52,9 @@ final class JNDIServiceListener implements ServiceListener {
         this.bundleContext = bundleContext;
         try {
             // Register the pre-existing services
-            ServiceReference[] refs = bundleContext.getServiceReferences(ObjectFactory.class.getName(), null);
+            ServiceReference<?>[] refs = bundleContext.getServiceReferences(ObjectFactory.class.getName(), null);
             if (refs != null) {
-                for (ServiceReference ref : refs) {
+                for (ServiceReference<?> ref : refs) {
                     handleJNDIRegistration(ref, true);
                 }
             }
@@ -65,7 +65,7 @@ final class JNDIServiceListener implements ServiceListener {
 
     @Override
     public void serviceChanged(ServiceEvent event) {
-        ServiceReference ref = event.getServiceReference();
+        ServiceReference<?> ref = event.getServiceReference();
         switch (event.getType()) {
             case ServiceEvent.REGISTERED:
                 handleJNDIRegistration(ref, true);
@@ -76,7 +76,7 @@ final class JNDIServiceListener implements ServiceListener {
         }
     }
 
-    private void handleJNDIRegistration(ServiceReference ref, boolean register) {
+    private void handleJNDIRegistration(ServiceReference<?> ref, boolean register) {
         String[] objClasses = (String[]) ref.getProperty(Constants.OBJECTCLASS);
         for (String objClass : objClasses) {
             if (ObjectFactory.class.getName().equals(objClass)) {

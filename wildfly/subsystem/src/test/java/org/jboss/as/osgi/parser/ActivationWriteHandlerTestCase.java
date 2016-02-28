@@ -34,6 +34,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import static org.mockito.Mockito.*;
+
 /**
  * @author David Bosschaert
  * @author Thomas.Diesler@jboss.com
@@ -45,17 +47,15 @@ public class ActivationWriteHandlerTestCase {
         ModelNode targetNode = new ModelNode();
         targetNode.get(ModelConstants.ACTIVATION).set("eager");
 
-        OperationContext context = Mockito.mock(OperationContext.class);
-        Resource resource = Mockito.mock(Resource.class);
-        Mockito.when(resource.getModel()).thenReturn(targetNode);
-        Mockito.when(context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
+        OperationContext context = mock(OperationContext.class);
+        Resource resource = mock(Resource.class);
+        when(resource.getModel()).thenReturn(targetNode);
+        when(context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
 
         ModelNode operation = new ModelNode();
         operation.get(ModelDescriptionConstants.NAME).set(ModelConstants.ACTIVATION);
         operation.get(ModelDescriptionConstants.VALUE).set(Activation.LAZY.toString().toLowerCase(Locale.ENGLISH));
         ActivationAttributeHandler.INSTANCE.execute(context, operation);
-
-        Mockito.verify(context).stepCompleted();
 
         Assert.assertEquals(Activation.LAZY.toString().toLowerCase(), targetNode.get(ModelConstants.ACTIVATION).asString());
     }

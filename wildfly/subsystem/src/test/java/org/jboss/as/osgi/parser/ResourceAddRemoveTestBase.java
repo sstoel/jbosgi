@@ -21,6 +21,13 @@
  */
 package org.jboss.as.osgi.parser;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -36,7 +43,6 @@ import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceRegistry;
-import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -51,28 +57,29 @@ class ResourceAddRemoveTestBase {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     protected OperationContext mockOperationContext(SubsystemState stateService, final List<OperationStepHandler> addedSteps,
                                                     final ResultAction stepResult) throws Exception {
-        ServiceRegistry serviceRegistry = Mockito.mock(ServiceRegistry.class);
-        ServiceController serviceController = Mockito.mock(ServiceController.class);
-        Mockito.when(serviceController.getValue()).thenReturn(stateService);
-        Mockito.when(serviceRegistry.getService(OSGiConstants.SUBSYSTEM_STATE_SERVICE_NAME)).thenReturn(serviceController);
+        ServiceRegistry serviceRegistry = mock(ServiceRegistry.class);
+        ServiceController serviceController = mock(ServiceController.class);
+        when(serviceController.getValue()).thenReturn(stateService);
+        when(serviceRegistry.getService(OSGiConstants.SUBSYSTEM_STATE_SERVICE_NAME)).thenReturn(serviceController);
         ModelNode result = new ModelNode();
-        final OperationContext context = Mockito.mock(OperationContext.class);
-        Resource resource = Mockito.mock(Resource.class);
-        Mockito.when(resource.getModel()).thenReturn(result);
-        Mockito.when(context.getServiceRegistry(true)).thenReturn(serviceRegistry);
-        Mockito.when(context.createResource(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
-        Mockito.when(context.readResource(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
-        Mockito.when(context.getProcessType()).thenReturn(ProcessType.STANDALONE_SERVER);
-        Mockito.when(context.getRunningMode()).thenReturn(RunningMode.NORMAL);
-        Mockito.when(context.isNormalServer()).thenReturn(true);
-        Mockito.doAnswer(new Answer<Void>() {
+        final OperationContext context = mock(OperationContext.class);
+        Resource resource = mock(Resource.class);
+        when(resource.getModel()).thenReturn(result);
+        when(context.getServiceRegistry(true)).thenReturn(serviceRegistry);
+        when(context.createResource(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
+        when(context.readResource(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
+        when(context.getProcessType()).thenReturn(ProcessType.STANDALONE_SERVER);
+        when(context.getRunningMode()).thenReturn(RunningMode.NORMAL);
+        when(context.isNormalServer()).thenReturn(true);
+        when(context.isDefaultRequiresRuntime()).thenReturn(true);
+        doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
                 addedSteps.add((OperationStepHandler) invocation.getArguments()[0]);
                 return null;
             }
-        }).when(context).addStep((OperationStepHandler) Mockito.anyObject(), Mockito.eq(OperationContext.Stage.RUNTIME));
-        Mockito.doAnswer(new Answer<Void>() {
+        }).when(context).addStep((OperationStepHandler) anyObject(), eq(OperationContext.Stage.RUNTIME));
+        doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
                 if (stepResult == ResultAction.ROLLBACK) {
@@ -82,13 +89,13 @@ class ResourceAddRemoveTestBase {
                 }
                 return null;
             }
-        }).when(context).completeStep(Mockito.any(OperationContext.RollbackHandler.class));
-        Mockito.doAnswer(new Answer<ModelNode>() {
+        }).when(context).completeStep(any(OperationContext.RollbackHandler.class));
+        doAnswer(new Answer<ModelNode>() {
             @Override
             public ModelNode answer(InvocationOnMock invocation) throws Throwable {
                 return (ModelNode)invocation.getArguments()[0];
             }
-        }).when(context).resolveExpressions(Mockito.any(ModelNode.class));
+        }).when(context).resolveExpressions(any(ModelNode.class));
         return context;
     }
 
@@ -99,7 +106,7 @@ class ResourceAddRemoveTestBase {
     }
 
     protected void configureForRollback(final OperationContext context, final ModelNode operation) {
-        Mockito.doAnswer(new Answer<Void>() {
+        doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
                 Object[] args = invocation.getArguments();
@@ -107,15 +114,15 @@ class ResourceAddRemoveTestBase {
                 handler.handleRollback(context, operation);
                 return null;
             }
-        }).when(context).completeStep(Mockito.any(OperationContext.RollbackHandler.class));
+        }).when(context).completeStep(any(OperationContext.RollbackHandler.class));
     }
 
     protected void configureForSuccess(final OperationContext context) {
-        Mockito.doAnswer(new Answer<Void>() {
+        doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
                 return null;
             }
-        }).when(context).completeStep(Mockito.any(OperationContext.RollbackHandler.class));
+        }).when(context).completeStep(any(OperationContext.RollbackHandler.class));
     }
 }

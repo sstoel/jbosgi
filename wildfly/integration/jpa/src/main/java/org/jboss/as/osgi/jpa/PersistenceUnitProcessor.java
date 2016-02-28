@@ -27,7 +27,6 @@ import java.util.Hashtable;
 import javax.persistence.EntityManagerFactory;
 
 import org.jboss.as.jpa.processor.JpaAttachments;
-import org.jboss.as.jpa.spi.PersistenceUnitService;
 import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.server.deployment.AttachmentKey;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -46,6 +45,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.osgi.framework.spi.BundleManager;
 import org.jboss.osgi.resolver.XBundle;
 import org.jboss.osgi.resolver.XBundleRevision;
+import org.jipijapa.plugin.spi.PersistenceUnitService;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;

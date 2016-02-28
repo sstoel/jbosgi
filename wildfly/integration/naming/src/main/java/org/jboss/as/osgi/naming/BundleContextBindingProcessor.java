@@ -24,6 +24,7 @@ package org.jboss.as.osgi.naming;
 import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 import static org.jboss.as.server.deployment.Attachments.COMPOSITE_ANNOTATION_INDEX;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -43,6 +44,8 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.FieldInfo;
+import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.MethodParameterInfo;
 import org.jboss.jandex.Type;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -60,6 +63,10 @@ public class BundleContextBindingProcessor implements DeploymentUnitProcessor {
 
     private static final ModuleIdentifier ORG_JBOSS_OSGI_RESOLVER = ModuleIdentifier.create("org.jboss.osgi.resolver");
     private static final ModuleIdentifier ORG_OSGI_CORE = ModuleIdentifier.create("org.osgi.core");
+    
+    private static final DotName RESOURCE_DOT_NAME = DotName.createSimple(Resource.class.getName());
+    private static final DotName INJECT_DOT_NAME = DotName.createSimple("javax.inject.Inject");
+    private static final DotName TARGET_DOT_NAME = DotName.createSimple(BundleContext.class.getName());
 
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
@@ -73,20 +80,45 @@ public class BundleContextBindingProcessor implements DeploymentUnitProcessor {
 
         // Check if we have a BundleContext injection point
         boolean hasBundleContextResource = false;
-        DotName resourceDotName = DotName.createSimple(Resource.class.getName());
-        DotName targetDotName = DotName.createSimple(BundleContext.class.getName());
-        List<AnnotationInstance> anList = compositeIndex.getAnnotations(resourceDotName);
+
+        List<AnnotationInstance> anList = new ArrayList<AnnotationInstance>();
+        anList.addAll(compositeIndex.getAnnotations(RESOURCE_DOT_NAME));
+        anList.addAll(compositeIndex.getAnnotations(INJECT_DOT_NAME));
         for (AnnotationInstance an : anList) {
             AnnotationTarget anTarget = an.target();
             if (anTarget instanceof FieldInfo) {
                 FieldInfo fieldInfo = (FieldInfo) anTarget;
                 Type targetType = fieldInfo.type();
-                if (targetType.name().equals(targetDotName)) {
+                if (TARGET_DOT_NAME.equals(targetType.name())) {
                     hasBundleContextResource = true;
                     break;
                 }
             }
-            // [TODO] Method injection
+            else if(anTarget instanceof MethodInfo) {
+                MethodInfo methodInfo = (MethodInfo) anTarget;
+                for(Type targetType : methodInfo.args()) {
+                    if(TARGET_DOT_NAME.equals(targetType.name())) {
+                        hasBundleContextResource = true;
+                        break;
+                    }
+                }
+                Type targetType = methodInfo.returnType();
+                if(TARGET_DOT_NAME.equals(targetType.name())) {
+                    hasBundleContextResource = true;
+                }
+                if(hasBundleContextResource) {
+                    break;
+                }
+            }
+            else if(anTarget instanceof MethodParameterInfo) {
+                MethodParameterInfo methodParamInfo = (MethodParameterInfo) anTarget;
+                MethodInfo methodInfo = methodParamInfo.method();
+                Type targetType = methodInfo.args()[methodParamInfo.position()];
+                if(TARGET_DOT_NAME.equals(targetType.name())) {
+                    hasBundleContextResource = true;
+                    break;
+                }
+            }
         }
 
         if (hasBundleContextResource) {

@@ -57,6 +57,7 @@
             <type>pom</type>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-testsuite-shared</artifactId>
@@ -80,7 +81,7 @@
         </dependency>
         <!-- Test -->
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>org.wildfly.arquillian</groupId>
             <artifactId>wildfly-arquillian-common</artifactId>
             <scope>test</scope>
         </dependency>

@@ -32,7 +32,7 @@ import org.jboss.osgi.deployment.deployer.Deployment;
 import org.jboss.osgi.framework.spi.IntegrationServices;
 
 /**
- * Add a dependency on the resolve phase for all persisten bundles to be installed.
+ * Add a dependency on the resolve phase for all persistent bundles to be installed.
  *
  * @author Thomas.Diesler@jboss.com
  * @since 16-Nov-2012
@@ -46,7 +46,7 @@ public class BundleDependenciesProcessor implements DeploymentUnitProcessor {
         if (deployment == null)
             return;
 
-        // Add a dependency on the next phase for all persisten bundles to be installed
+        // Add a dependency on the next phase for all persistent bundles to be installed
         phaseContext.addDeploymentDependency(IntegrationServices.PERSISTENT_BUNDLES_COMPLETE, AttachmentKey.create(Object.class));
     }
 

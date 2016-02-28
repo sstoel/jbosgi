@@ -24,12 +24,14 @@ package org.jboss.as.osgi.deployment;
 
 import static org.jboss.osgi.framework.spi.IntegrationConstants.BUNDLE_INFO_KEY;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
-
-import javax.annotation.ManagedBean;
+import java.util.Set;
 
 import org.jboss.as.ee.structure.DeploymentType;
 import org.jboss.as.ee.structure.DeploymentTypeMarker;
+import org.jboss.as.ee.weld.WeldDeploymentMarker;
 import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.service.BundleLifecycleIntegration;
 import org.jboss.as.server.deployment.Attachments;
@@ -65,6 +67,8 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
 
     public static final AttachmentKey<DeploymentUnit> DEPLOYMENT_UNIT_KEY = AttachmentKey.create(DeploymentUnit.class);
     public static final AttachmentKey<ModuleSpecification> MODULE_SPECIFICATION_KEY = AttachmentKey.create(ModuleSpecification.class);
+    
+    public final String [] EXCLUDED_SUBSYSTEMS = {"batch"};
 
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
@@ -102,7 +106,7 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
             }
 
             // Prevent autostart for marked deployments
-            AnnotationInstance marker = getAnnotation(depUnit, "org.jboss.as.arquillian.api.DeploymentMarker");
+            AnnotationInstance marker = getAnnotation(depUnit, "org.jboss.as.arquillian.jbosgi.api.DeploymentMarker");
             if (marker != null) {
                 AnnotationValue value = marker.value("autoStart");
                 if (value != null && deployment.isAutoStart()) {
@@ -122,7 +126,7 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
             ModuleIdentifier identifier = depUnit.getAttachment(Attachments.MODULE_IDENTIFIER);
             deployment.putAttachment(IntegrationConstants.MODULE_IDENTIFIER_KEY, identifier);
 
-            // Allow additional dependencies for the set of supported deployemnt types
+            // Allow additional dependencies for the set of supported deployment types
             if (allowAdditionalModuleDependencies(depUnit)) {
                 ModuleSpecification moduleSpec = depUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
                 deployment.putAttachment(BundleDeploymentProcessor.MODULE_SPECIFICATION_KEY, moduleSpec);
@@ -141,6 +145,18 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
             } else {
                 parent = depUnit.getParent();
             }
+            
+            boolean noExistingSubsystems = false;
+            Set<String> excludedSubsystems = depUnit.getAttachment(Attachments.EXCLUDED_SUBSYSTEMS);
+            if(excludedSubsystems == null) {
+                excludedSubsystems = new HashSet<String>();
+                noExistingSubsystems = true;
+            }
+            excludedSubsystems.addAll(Arrays.asList(EXCLUDED_SUBSYSTEMS));
+            if(noExistingSubsystems) {
+                depUnit.putAttachment(Attachments.EXCLUDED_SUBSYSTEMS, excludedSubsystems);
+            }
+
             parent.putAttachment(Attachments.ALLOW_PHASE_RESTART, true);
         }
     }
@@ -159,7 +175,7 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
     private boolean allowAdditionalModuleDependencies(final DeploymentUnit depUnit) {
         boolean isWar = DeploymentTypeMarker.isType(DeploymentType.WAR, depUnit);
         boolean isEjb = EjbDeploymentMarker.isEjbDeployment(depUnit);
-        boolean isCDI = getAnnotation(depUnit, ManagedBean.class.getName()) != null;
+        boolean isCDI = WeldDeploymentMarker.isPartOfWeldDeployment(depUnit);
         boolean isJPA = JPADeploymentMarker.isJPADeployment(depUnit);
         return isWar || isEjb || isCDI || isJPA;
     }

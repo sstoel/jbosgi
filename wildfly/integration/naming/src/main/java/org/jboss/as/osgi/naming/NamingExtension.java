@@ -56,10 +56,10 @@ import org.osgi.framework.InvalidSyntaxException;
  * @author thomas.diesler@jboss.com
  * @since 31-Jul-2012
  */
-public class NamingExtension extends AbstractSubsystemExtension {
-
+public class NamingExtension extends AbstractSubsystemExtension {    
     private final InjectedValue<NamingStore> injectedNamingStore = new InjectedValue<NamingStore>();
     private JNDIServiceListener jndiServiceListener;
+    
 
     @Override
     public void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model, final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) {

@@ -21,6 +21,11 @@
  */
 package org.jboss.as.osgi.parser;
 
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
@@ -31,6 +36,9 @@ import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
 import org.jboss.as.controller.transform.description.TransformationDescription;
 import org.jboss.as.controller.transform.description.TransformationDescriptionBuilder;
+import org.jboss.as.ee.component.deployers.ResourceInjectionAnnotationParsingProcessor;
+
+import sun.misc.Unsafe;
 
 /**
  * Domain extension used to initialize the OSGi subsystem.
@@ -39,7 +47,29 @@ import org.jboss.as.controller.transform.description.TransformationDescriptionBu
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  * @author David Bosschaert
  */
+@SuppressWarnings("restriction")
 public class OSGiExtension implements Extension {
+    static {
+        Unsafe unsafe;
+        try {
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            unsafe = (Unsafe) field.get(null);
+        } catch (Exception e) {
+            throw new Error("JBOSGI HACK: Unsafe is unavailable", e);
+        }
+        try {
+            Field field = ResourceInjectionAnnotationParsingProcessor.class.getDeclaredField("FIXED_LOCATIONS");
+            @SuppressWarnings("unchecked")
+            Map<String, String> oldFixedLocations = (Map<String, String>) field.get(null);
+            Map<String, String> newFixedLocations = new HashMap<String, String>(oldFixedLocations);
+            newFixedLocations.put("org.osgi.framework.BundleContext", "java:jboss/osgi/BundleContext");
+            unsafe.putObjectVolatile(ResourceInjectionAnnotationParsingProcessor.class, unsafe.staticFieldOffset(field),
+                    Collections.unmodifiableMap(newFixedLocations));
+        } catch (Exception e) {
+            throw new Error("JBOSGI HACK: Unable to patch " + ResourceInjectionAnnotationParsingProcessor.class.getSimpleName() + ".FIXED_LOCATIONS", e);
+        }
+    }
 
     public static final String SUBSYSTEM_NAME = "osgi";
 
