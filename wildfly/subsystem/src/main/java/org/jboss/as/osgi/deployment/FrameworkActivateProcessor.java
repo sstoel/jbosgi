@@ -39,8 +39,12 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.annotation.CompositeIndex;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.FieldInfo;
+import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.MethodParameterInfo;
+import org.jboss.jandex.Type;
 import org.jboss.osgi.deployment.deployer.Deployment;
 import org.jboss.osgi.framework.Services;
 
@@ -93,21 +97,56 @@ public class FrameworkActivateProcessor implements DeploymentUnitProcessor {
         return hasInjectionPoint(depUnit, "javax.inject.Inject") || hasInjectionPoint(depUnit, "javax.annotation.Resource");
     }
 
+    private boolean isInjectingOsgi(String typeName) {
+        return typeName.startsWith("org.osgi.framework") || typeName.startsWith("org.osgi.service");
+    }
+    
     // Check for injection target fields of type org.osgi.framework.*
     private boolean hasInjectionPoint(DeploymentUnit depUnit, String anName) {
         boolean result = false;
         CompositeIndex compositeIndex = depUnit.getAttachment(Attachments.COMPOSITE_ANNOTATION_INDEX);
         List<AnnotationInstance> annotationList = compositeIndex.getAnnotations(DotName.createSimple(anName));
-        for (AnnotationInstance instance : annotationList) {
-            AnnotationTarget target = instance.target();
-            if (target instanceof FieldInfo) {
-                FieldInfo fieldInfo = (FieldInfo) target;
-                String typeName = fieldInfo.type().toString();
-                if (typeName.startsWith("org.osgi.framework") || typeName.startsWith("org.osgi.service")) {
-                    LOGGER.debugf("OSGi injection point of type '%s' detected: %s", typeName, fieldInfo.declaringClass());
-                    result = true;
-                    break;
+        String typeName = null;
+        ClassInfo declaringClass = null;
+        try {
+            for (AnnotationInstance instance : annotationList) {
+                AnnotationTarget target = instance.target();
+                if (target instanceof FieldInfo) {
+                    FieldInfo fieldInfo = (FieldInfo) target;
+                    typeName = fieldInfo.type().toString();
+                    if (typeName.startsWith("org.osgi.framework") || typeName.startsWith("org.osgi.service")) {
+                        declaringClass = fieldInfo.declaringClass();
+                        return true;
+                    }
+                } else if (target instanceof MethodInfo) {
+                    MethodInfo methodInfo = (MethodInfo) target;
+                    for (Type targetType : methodInfo.args()) {
+                        typeName = targetType.toString();
+                        if (isInjectingOsgi(typeName)) {
+                            declaringClass = methodInfo.declaringClass();
+                            return true;
+                        }
+                    }
+                    Type targetType = methodInfo.returnType();
+                    typeName = targetType.toString();
+                    if (isInjectingOsgi(typeName)) {
+                        declaringClass = methodInfo.declaringClass();
+                        return true;
+                    }
+                } else if (target instanceof MethodParameterInfo) {
+                    MethodParameterInfo methodParamInfo = (MethodParameterInfo) target;
+                    MethodInfo methodInfo = methodParamInfo.method();
+                    Type targetType = methodInfo.args()[methodParamInfo.position()];
+                    typeName = targetType.toString();
+                    if (isInjectingOsgi(typeName)) {
+                        declaringClass = methodInfo.declaringClass();
+                        return true;
+                    }
                 }
+            }
+        } finally {
+            if (result) {
+                LOGGER.debugf("OSGi injection point of type '%s' detected: %s", typeName, declaringClass);
             }
         }
         return result;

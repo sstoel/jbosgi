@@ -26,7 +26,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.jar.Manifest;
 
-import org.jboss.as.server.ServerMessages;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentMountProvider;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -38,6 +37,7 @@ import org.jboss.as.server.deployment.MountType;
 import org.jboss.as.server.deployment.module.ModuleRootMarker;
 import org.jboss.as.server.deployment.module.MountHandle;
 import org.jboss.as.server.deployment.module.ResourceRoot;
+import org.jboss.as.server.logging.ServerLogger;
 import org.jboss.as.web.common.WebApplicationBundleUtils;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VFSUtils;
@@ -79,7 +79,7 @@ public class RemountDeploymentRootProcessor implements DeploymentUnitProcessor {
             mountHandle = new MountHandle(handle);
         } catch (IOException e) {
             VFSUtils.safeClose(handle);
-            throw ServerMessages.MESSAGES.deploymentMountFailed(e);
+            throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);
         }
 
         resourceRoot = new ResourceRoot(deploymentRoot, mountHandle);

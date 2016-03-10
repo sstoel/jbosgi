@@ -38,6 +38,7 @@
 			<fileset dir="${resources.dir}/wildfly" />
 			<filterset>
 				<filter token="project.version" value="${project.version}" />
+				<filter token="version.osgi" value="${version.osgi}" />
 				<filter token="version.jboss.osgi.deployment" value="${version.jboss.osgi.deployment}" />
 				<filter token="version.jboss.osgi.framework" value="${version.jboss.osgi.framework}" />
 				<filter token="version.jboss.osgi.metadata" value="${version.jboss.osgi.metadata}" />
@@ -50,6 +51,9 @@
 		</copy>
 
 		<!-- Copy module resources-->
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/osgi/core/main/org.osgi.core-${version.osgi}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/org.osgi.core-*.jar" />
+		</copy>
 		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/http/main/jbosgi-wildfly-http-${project.version}.jar" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-http-*.jar" />
 		</copy>

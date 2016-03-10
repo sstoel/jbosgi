@@ -36,7 +36,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.osgi.resolver.XBundleRevision;
 
 /**
- * Handle deferred deployemnt phases.
+ * Handle deferred deployment phases.
  *
  * @author Thomas.Diesler@jboss.com
  * @since 25-Sep-2012

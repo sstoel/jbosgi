@@ -21,7 +21,7 @@
  */
 package org.jboss.as.test.integration.osgi.deployment.bundle;
 
-import org.jboss.as.arquillian.api.DeploymentMarker;
+import org.jboss.as.arquillian.jbosgi.api.DeploymentMarker;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 

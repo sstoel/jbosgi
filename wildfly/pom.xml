@@ -89,7 +89,6 @@
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-subsystem-test</artifactId>
-                <version>${version.jboss.wildfly}</version>
                 <type>pom</type>
             </dependency>
             <dependency>
@@ -106,4 +105,5 @@
         <module>subsystem</module>
         <module>integration</module>
     </modules>
+
 </project>
