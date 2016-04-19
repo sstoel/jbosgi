@@ -23,6 +23,7 @@ package org.jboss.as.osgi.management;
 
 import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -129,6 +130,14 @@ public class OSGiRuntimeResource implements Resource {
         return result;
     }
 
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        Set<String> result = new HashSet<String>(delegate.getOrderedChildTypes());
+        result.add(ModelConstants.BUNDLE);
+        return result;
+    }
+
     @Override
     public Set<String> getChildrenNames(String childType) {
         if (ModelConstants.BUNDLE.equals(childType))
@@ -156,6 +165,15 @@ public class OSGiRuntimeResource implements Resource {
             throw new UnsupportedOperationException();
         } else {
             delegate.registerChild(address, resource);
+        }
+    }
+
+    @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        if (ModelConstants.BUNDLE.equals(address.getKey())) {
+            throw new UnsupportedOperationException();
+        } else {
+            delegate.registerChild(address, index, resource);
         }
     }
 

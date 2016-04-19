@@ -39,6 +39,7 @@
 			<filterset>
 				<filter token="project.version" value="${project.version}" />
 				<filter token="version.osgi" value="${version.osgi}" />
+				<filter token="version.shrinkwrap" value="${version.shrinkwrap}" />
 				<filter token="version.jboss.osgi.deployment" value="${version.jboss.osgi.deployment}" />
 				<filter token="version.jboss.osgi.framework" value="${version.jboss.osgi.framework}" />
 				<filter token="version.jboss.osgi.metadata" value="${version.jboss.osgi.metadata}" />
@@ -74,6 +75,15 @@
 		</copy>
 		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/web/main/jbosgi-wildfly-web-${project.version}.jar" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-web-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/shrinkwrap/main/shrinkwrap-api-${version.shrinkwrap}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/shrinkwrap-api-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/shrinkwrap/main/shrinkwrap-impl-base-${version.shrinkwrap}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/shrinkwrap-impl-base-*.jar" />
+		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/shrinkwrap/main/shrinkwrap-spi-${version.shrinkwrap}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/shrinkwrap-spi-*.jar" />
 		</copy>
 		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/osgi/deployment/main/jbosgi-deployment-${version.jboss.osgi.deployment}.jar" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/jbosgi-deployment-*.jar" />

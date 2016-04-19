@@ -104,6 +104,11 @@ public class OSGiBundleResource implements Resource {
     }
 
     @Override
+    public void registerChild(PathElement address, int index, Resource resource) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Resource removeChild(PathElement address) {
         return null;
     }
@@ -121,6 +126,11 @@ public class OSGiBundleResource implements Resource {
     @Override
     public Resource clone()  {
         return new OSGiBundleResource();
+    }
+
+    @Override
+    public Set<String> getOrderedChildTypes() {
+        return Collections.emptySet();
     }
 
     static class OSGiBundleResourceEntry extends OSGiBundleResource implements ResourceEntry, Comparable<ResourceEntry> {
@@ -167,6 +177,11 @@ public class OSGiBundleResource implements Resource {
         @Override
         public String toString() {
             return path.toString();
+        }
+
+        @Override
+        public Set<String> getOrderedChildTypes() {
+            return Collections.emptySet();
         }
     }
 }
