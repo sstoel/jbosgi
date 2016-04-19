@@ -19,6 +19,7 @@
                 <include>org.osgi:*:*</include>
                 <include>*:jbosgi-*:jar</include>
                 <include>*:jboss-osgi-*:jar</include>
+                <include>org.jboss.shrinkwrap:*:*</include>
                 <include>*:org.apache.felix*:jar</include>
                 <include>*:org.apache.aries*:jar</include>
             </includes>

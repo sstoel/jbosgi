@@ -38,6 +38,7 @@ import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.ProcessType;
 import org.jboss.as.controller.RunningMode;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.dmr.ModelNode;
@@ -53,24 +54,45 @@ import org.mockito.stubbing.Answer;
 class ResourceAddRemoveTestBase {
 
     private final AtomicReference<ModelNode> operationHolder = new AtomicReference<ModelNode>();
+    private boolean resourceActive = true;
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     protected OperationContext mockOperationContext(SubsystemState stateService, final List<OperationStepHandler> addedSteps,
                                                     final ResultAction stepResult) throws Exception {
         ServiceRegistry serviceRegistry = mock(ServiceRegistry.class);
         ServiceController serviceController = mock(ServiceController.class);
+        ImmutableManagementResourceRegistration registration = mock(ImmutableManagementResourceRegistration.class);
         when(serviceController.getValue()).thenReturn(stateService);
         when(serviceRegistry.getService(OSGiConstants.SUBSYSTEM_STATE_SERVICE_NAME)).thenReturn(serviceController);
         ModelNode result = new ModelNode();
         final OperationContext context = mock(OperationContext.class);
-        Resource resource = mock(Resource.class);
+        final Resource resource = mock(Resource.class);
         when(resource.getModel()).thenReturn(result);
         when(context.getServiceRegistry(true)).thenReturn(serviceRegistry);
         when(context.createResource(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
         when(context.readResource(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
+        when(context.readResource(PathAddress.EMPTY_ADDRESS, false)).thenAnswer(new Answer<Resource>() {
+            @Override
+            public Resource answer(InvocationOnMock invocation) throws Throwable {
+                if (resourceActive) {
+                    return resource;
+                } else {
+                    throw new Resource.NoSuchResourceException(PathAddress.EMPTY_ADDRESS.getLastElement());
+                }
+            }
+        });
+
+        when(context.removeResource(PathAddress.EMPTY_ADDRESS)).thenAnswer(new Answer<Resource>() {
+            @Override
+            public Resource answer(InvocationOnMock invocation) throws Throwable {
+                resourceActive = false;
+                return resource;
+            }
+        });
         when(context.getProcessType()).thenReturn(ProcessType.STANDALONE_SERVER);
         when(context.getRunningMode()).thenReturn(RunningMode.NORMAL);
         when(context.isNormalServer()).thenReturn(true);
+        when(context.getResourceRegistration()).thenReturn(registration);
         when(context.isDefaultRequiresRuntime()).thenReturn(true);
         doAnswer(new Answer<Void>() {
             @Override

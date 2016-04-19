@@ -37,7 +37,7 @@
     
     <dependencies>
         <module name="org.jboss.logging"/>
-        <module name="org.jboss.shrinkwrap.core"/>
+        <module name="org.jboss.as.osgi.shrinkwrap"/>
         <module name="org.osgi.core"/>
     </dependencies>
 </module>
