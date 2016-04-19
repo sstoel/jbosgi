@@ -128,8 +128,9 @@
                     <excludePackageNames>*.internal:*.integration:org.jboss.osgi.blueprint:org.osgi.framework
                     </excludePackageNames>
                     <links>
-                        <link>http://www.osgi.org/javadoc/r4v42/</link>
+                        <link>https://osgi.org/javadoc/r5/cmpn/</link>
                     </links>
+                    <additionalparam>-Xdoclint:none</additionalparam>
                 </configuration>
                 <executions>
                     <execution>

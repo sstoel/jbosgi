@@ -15,7 +15,7 @@
     <parent>
         <groupId>org.jboss.osgi</groupId>
         <artifactId>jbosgi-parent</artifactId>
-        <version>2.0.1</version>
+        <version>3.0.1-SNAPSHOT</version>
     </parent>
 
     <name>JBossOSGi</name>
@@ -35,7 +35,7 @@
 
     <!-- Properties -->
     <properties>
-        <version.apache.ant>1.9.4</version.apache.ant>
+        <version.apache.ant>1.9.7</version.apache.ant>
         <version.apache.aries.blueprint>1.1.0</version.apache.aries.blueprint>
         <version.apache.aries.jmx>1.1.5</version.apache.aries.jmx>
         <version.apache.aries.jndi>1.0.0</version.apache.aries.jndi>
@@ -50,16 +50,16 @@
         <version.apache.felix.scr.generator>1.21.0</version.apache.felix.scr.generator>
         <version.apache.felix.webconsole>4.2.14</version.apache.felix.webconsole>
         <version.codehaus.izpack>4.3.5</version.codehaus.izpack>
-        <version.jboss.osgi.deployment>3.0.1.Final</version.jboss.osgi.deployment>
-        <version.jboss.osgi.framework>4.0.1.Final</version.jboss.osgi.framework>
-        <version.jboss.osgi.logging>2.0.1.Final</version.jboss.osgi.logging>
-        <version.jboss.osgi.metadata>5.0.1.Final</version.jboss.osgi.metadata>
-        <version.jboss.osgi.provision>2.0.1.Final</version.jboss.osgi.provision>
-        <version.jboss.osgi.repository>5.0.1.Final</version.jboss.osgi.repository>
-        <version.jboss.osgi.resolver>5.0.1.Final</version.jboss.osgi.resolver>
-        <version.jboss.osgi.spi>5.0.1.Final</version.jboss.osgi.spi>
-        <version.jboss.osgi.testing>3.0.1.Final</version.jboss.osgi.testing>
-        <version.jboss.osgi.vfs>3.0.1.Final</version.jboss.osgi.vfs>
+        <version.jboss.osgi.deployment>4.0.1.Final-SNAPSHOT</version.jboss.osgi.deployment>
+        <version.jboss.osgi.framework>5.0.1.Final-SNAPSHOT</version.jboss.osgi.framework>
+        <version.jboss.osgi.logging>3.0.1.Final-SNAPSHOT</version.jboss.osgi.logging>
+        <version.jboss.osgi.metadata>6.0.1.Final-SNAPSHOT</version.jboss.osgi.metadata>
+        <version.jboss.osgi.provision>3.0.1.Final-SNAPSHOT</version.jboss.osgi.provision>
+        <version.jboss.osgi.repository>6.0.1.Final-SNAPSHOT</version.jboss.osgi.repository>
+        <version.jboss.osgi.resolver>6.0.1.Final-SNAPSHOT</version.jboss.osgi.resolver>
+        <version.jboss.osgi.spi>6.0.1.Final-SNAPSHOT</version.jboss.osgi.spi>
+        <version.jboss.osgi.testing>4.0.1.Final-SNAPSHOT</version.jboss.osgi.testing>
+        <version.jboss.osgi.vfs>4.0.1.Final-SNAPSHOT</version.jboss.osgi.vfs>
     </properties>
 
     <!-- Modules -->
@@ -347,7 +347,7 @@
                 </property>
             </activation>
             <properties>
-                <version.jboss.wildfly>9.0.2.Final</version.jboss.wildfly>
+                <version.jboss.wildfly>10.0.0.Final</version.jboss.wildfly>
                 <wildfly.dist.dir>${project.root.dir}/../wildfly/build/target/wildfly-${version.jboss.wildfly}</wildfly.dist.dir>
             </properties>
         </profile>
