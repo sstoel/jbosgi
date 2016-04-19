@@ -68,7 +68,7 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
     public static final AttachmentKey<DeploymentUnit> DEPLOYMENT_UNIT_KEY = AttachmentKey.create(DeploymentUnit.class);
     public static final AttachmentKey<ModuleSpecification> MODULE_SPECIFICATION_KEY = AttachmentKey.create(ModuleSpecification.class);
     
-    public final String [] EXCLUDED_SUBSYSTEMS = {"batch"};
+    public final String [] EXCLUDED_SUBSYSTEMS = {"batch", "batch-jberet"};
 
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
