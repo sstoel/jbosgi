@@ -157,7 +157,7 @@ public class InitialDeploymentTracker extends ServiceTracker<Object> {
                 Property property = node.asProperty();
                 ModelNode enabled = property.getValue().get(ModelDescriptionConstants.ENABLED);
                 if (enabled.isDefined() && enabled.asBoolean()) {
-                    result.add(property.getName());
+                    result.add(property.getValue().get(ModelDescriptionConstants.RUNTIME_NAME).asString());
                 }
             }
             LOGGER.debugf("Expecting initial deployments: %s", result);
