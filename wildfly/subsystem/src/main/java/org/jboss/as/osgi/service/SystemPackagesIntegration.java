@@ -73,6 +73,7 @@ interface SystemPackagesIntegration  {
     // Keep in sync with module javax.api
     String[] JAVAX_API_PACKAGES = new String[] {
         "javax.accessibility",
+        "javax.annotation.processing",
         "javax.activity",
         "javax.crypto",
         "javax.crypto.interfaces",
@@ -158,6 +159,7 @@ interface SystemPackagesIntegration  {
         "javax.xml.stream",
         "javax.xml.stream.events",
         "javax.xml.stream.util",
+        "javax.transaction.xa",
         "javax.xml.transform",
         "javax.xml.transform.dom",
         "javax.xml.transform.sax",
