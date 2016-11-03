@@ -21,6 +21,7 @@
  */
 package org.jboss.as.osgi.service;
 
+import java.util.Arrays;
 import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 
@@ -29,6 +30,8 @@ import org.jboss.osgi.framework.spi.LockManager;
 import org.jboss.osgi.framework.spi.LockManagerPlugin;
 import org.jboss.osgi.spi.Attachable;
 import org.jboss.osgi.spi.AttachmentKey;
+
+import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 
 /**
  * An integation plugin for the {@link LockManager}.
@@ -48,42 +51,50 @@ public final class LockManagerIntegration extends LockManagerPlugin {
 
             @Override
             public <T extends LockableItem> T getItemForType(Class<T> type) {
+                // Delegate is NBC-safe
                 return delegate.getItemForType(type);
             }
 
             @Override
             public LockContext getCurrentLockContext() {
+                // Thread-local safety
                 return delegate.getCurrentLockContext();
             }
 
             @Override
             public LockContext lockItems(Method method, LockableItem... items) {
-                LockContext context = null;
-                if (!skipLocking(method, items)) {
-                    context = delegate.lockItems(method, items);
-                    pushAttachedLockContext(context, items);
-                }
-                return context;
+                // Safety in the call below
+                return lockItems(method, 1L, TimeUnit.MINUTES, items);
             }
 
             @Override
-            public LockContext lockItems(Method method, long timeout, TimeUnit unit, LockableItem... items) {
-                LockContext context = null;
-                if (!skipLocking(method, items)) {
-                    context = delegate.lockItems(method, timeout, unit, items);
-                    pushAttachedLockContext(context, items);
+            public LockContext lockItems(Method method, long timeout, TimeUnit unit,
+                    LockableItem... items) {
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.tracef("LockManager AS: Locking %s with method '%s' and timeout [%s,%d]",
+                            Arrays.toString(items), method, unit, timeout);
                 }
-                return context;
+                synchronized (delegate) {
+                    LockContext context = null;
+                    if (!skipLocking(method, items)) {
+                        context = delegate.lockItems(method, timeout, unit, items);
+                        pushAttachedLockContext(context, items);
+                    }
+                    return context;
+                }
             }
 
             @Override
             public void unlockItems(LockContext context) {
-                popAttachedLockContext(context);
-                delegate.unlockItems(context);
+                LOGGER.tracef("LockManager AS: Unlocking %s", context);
+                synchronized (delegate) {
+                    popAttachedLockContext(context);
+                    delegate.unlockItems(context);
+                }
             }
 
             @SuppressWarnings("unchecked")
-            private synchronized boolean skipLocking(Method method, LockableItem... items) {
+            private boolean skipLocking(Method method, LockableItem... items) {
 
                 // Another thread might qualify to skip locking
 
@@ -137,7 +148,7 @@ public final class LockManagerIntegration extends LockManagerPlugin {
             }
 
             @SuppressWarnings("unchecked")
-            private synchronized void pushAttachedLockContext(LockContext context, LockableItem... items) {
+            private void pushAttachedLockContext(LockContext context, LockableItem... items) {
                 for (LockableItem item : items) {
                     if (item instanceof Attachable) {
                         Attachable attachableItem = (Attachable) item;
@@ -151,7 +162,7 @@ public final class LockManagerIntegration extends LockManagerPlugin {
                 }
             }
 
-            private synchronized void popAttachedLockContext(LockContext context) {
+            private void popAttachedLockContext(LockContext context) {
                 if (context != null) {
                     for (LockableItem item : context.getItems()) {
                         if (item instanceof Attachable) {
