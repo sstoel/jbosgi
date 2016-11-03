@@ -15,7 +15,7 @@
     <parent>
         <groupId>org.jboss.osgi</groupId>
         <artifactId>jbosgi-parent</artifactId>
-        <version>3.0.2</version>
+        <version>3.0.3-SNAPSHOT</version>
     </parent>
 
     <name>JBossOSGi</name>
@@ -50,16 +50,16 @@
         <version.apache.felix.scr.generator>1.21.0</version.apache.felix.scr.generator>
         <version.apache.felix.webconsole>4.2.14</version.apache.felix.webconsole>
         <version.codehaus.izpack>4.3.5</version.codehaus.izpack>
-        <version.jboss.osgi.deployment>4.0.1.Final</version.jboss.osgi.deployment>
-        <version.jboss.osgi.framework>5.0.1.Final</version.jboss.osgi.framework>
-        <version.jboss.osgi.logging>3.0.1.Final</version.jboss.osgi.logging>
-        <version.jboss.osgi.metadata>6.0.1.Final</version.jboss.osgi.metadata>
-        <version.jboss.osgi.provision>3.0.1.Final</version.jboss.osgi.provision>
-        <version.jboss.osgi.repository>6.0.1.Final</version.jboss.osgi.repository>
-        <version.jboss.osgi.resolver>6.0.1.Final</version.jboss.osgi.resolver>
-        <version.jboss.osgi.spi>6.0.1.Final</version.jboss.osgi.spi>
-        <version.jboss.osgi.testing>4.0.1.Final</version.jboss.osgi.testing>
-        <version.jboss.osgi.vfs>4.0.1.Final</version.jboss.osgi.vfs>
+        <version.jboss.osgi.deployment>4.0.2.Final-SNAPSHOT</version.jboss.osgi.deployment>
+        <version.jboss.osgi.framework>5.0.2.Final-SNAPSHOT</version.jboss.osgi.framework>
+        <version.jboss.osgi.logging>3.0.2.Final-SNAPSHOT</version.jboss.osgi.logging>
+        <version.jboss.osgi.metadata>6.0.2.Final-SNAPSHOT</version.jboss.osgi.metadata>
+        <version.jboss.osgi.provision>3.0.2.Final-SNAPSHOT</version.jboss.osgi.provision>
+        <version.jboss.osgi.repository>6.0.2.Final-SNAPSHOT</version.jboss.osgi.repository>
+        <version.jboss.osgi.resolver>6.0.2.Final-SNAPSHOT</version.jboss.osgi.resolver>
+        <version.jboss.osgi.spi>6.0.2.Final-SNAPSHOT</version.jboss.osgi.spi>
+        <version.jboss.osgi.testing>4.0.2.Final-SNAPSHOT</version.jboss.osgi.testing>
+        <version.jboss.osgi.vfs>4.0.2.Final-SNAPSHOT</version.jboss.osgi.vfs>
     </properties>
 
     <!-- Modules -->
@@ -117,55 +117,55 @@
             <dependency>
                 <groupId>org.jboss.osgi.deployment</groupId>
                 <artifactId>jbosgi-deployment</artifactId>
-                <version>4.0.1.Final</version>
+                <version>${version.jboss.osgi.deployment}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.framework</groupId>
                 <artifactId>jbosgi-framework-core</artifactId>
-                <version>5.0.1.Final</version>
+                <version>${version.jboss.osgi.framework}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.framework</groupId>
                 <artifactId>jbosgi-framework-aggregated</artifactId>
-                <version>5.0.1.Final</version>
+                <version>${version.jboss.osgi.framework}</version>
                 <classifier>all</classifier>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.logging</groupId>
                 <artifactId>jboss-osgi-logging</artifactId>
-                <version>3.0.1.Final</version>
+                <version>${version.jboss.osgi.logging}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.metadata</groupId>
                 <artifactId>jbosgi-metadata</artifactId>
-                <version>6.0.1.Final</version>
+                <version>${version.jboss.osgi.metadata}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.provision</groupId>
                 <artifactId>jbosgi-provision-core</artifactId>
-                <version>3.0.1.Final</version>
+                <version>${version.jboss.osgi.provision}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.provision</groupId>
                 <artifactId>jbosgi-provision-bundle</artifactId>
-                <version>3.0.1.Final</version>
+                <version>${version.jboss.osgi.provision}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.repository</groupId>
                 <artifactId>jbosgi-repository-core</artifactId>
-                <version>6.0.1.Final</version>
+                <version>${version.jboss.osgi.repository}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.repository</groupId>
                 <artifactId>jbosgi-repository-bundle</artifactId>
-                <version>6.0.1.Final</version>
+                <version>${version.jboss.osgi.repository}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.resolver</groupId>
                 <artifactId>jbosgi-resolver-api</artifactId>
-                <version>6.0.1.Final</version>
+                <version>${version.jboss.osgi.resolver}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.resolver</groupId>
@@ -175,17 +175,17 @@
             <dependency>
                 <groupId>org.jboss.osgi.spi</groupId>
                 <artifactId>jbosgi-spi</artifactId>
-                <version>6.0.1.Final</version>
+                <version>${version.jboss.osgi.spi}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.vfs</groupId>
                 <artifactId>jbosgi-vfs</artifactId>
-                <version>4.0.1.Final</version>
+                <version>${version.jboss.osgi.vfs}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.vfs</groupId>
                 <artifactId>jbosgi-vfs30</artifactId>
-                <version>4.0.1.Final</version>
+                <version>${version.jboss.osgi.vfs}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi.wildfly</groupId>
@@ -225,7 +225,7 @@
             <dependency>
                 <groupId>org.jboss.osgi.testing</groupId>
                 <artifactId>jbosgi-testing</artifactId>
-                <version>4.0.1.Final</version>
+                <version>${version.jboss.osgi.testing}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss.osgi</groupId>
