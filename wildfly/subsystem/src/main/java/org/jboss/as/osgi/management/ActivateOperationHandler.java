@@ -23,10 +23,7 @@ package org.jboss.as.osgi.management;
 
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationContext.Stage;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
-import org.jboss.as.osgi.service.FrameworkActivator;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -52,13 +49,6 @@ public class ActivateOperationHandler extends AbstractRuntimeOnlyHandler  {
         // also so it knows to await full MSC ServiceContainer stability before proceeding to Stage.VERIFY
         // So, ask for the service registry as a way of communicating this.
         context.getServiceRegistry(true);
-
-        // This verification handler will track any problems associated with service controllers
-        // we associate it with, making that information available in the operation response failure description.
-        ServiceVerificationHandler verificationHandler = new ServiceVerificationHandler();
-        if (FrameworkActivator.activateEagerly(verificationHandler)) {
-            context.addStep(verificationHandler, Stage.VERIFY);
-        }
 
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }

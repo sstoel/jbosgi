@@ -28,7 +28,6 @@ import javax.naming.spi.ObjectFactory;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.naming.InitialContextFactoryBuilder;
 import org.jboss.as.naming.NamingStore;
 import org.jboss.as.naming.service.NamingService;
@@ -62,12 +61,12 @@ public class NamingExtension extends AbstractSubsystemExtension {
     
 
     @Override
-    public void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model, final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) {
+    public void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model) {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 ServiceTarget serviceTarget = context.getServiceTarget();
-                newControllers.add(BundleContextBindingService.addService(serviceTarget));
+                BundleContextBindingService.addService(serviceTarget);
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
         }, OperationContext.Stage.RUNTIME);

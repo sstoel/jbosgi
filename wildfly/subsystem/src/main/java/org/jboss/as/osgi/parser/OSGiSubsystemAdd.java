@@ -34,7 +34,6 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.controller.PathAddress;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.osgi.SubsystemExtension;
 import org.jboss.as.osgi.deployment.BundleActivateProcessor;
@@ -98,8 +97,7 @@ class OSGiSubsystemAdd extends AbstractBoottimeAddStepHandler {
     }
 
     @Override
-    protected void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model,
-            final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model) throws OperationFailedException {
 
         LOGGER.infoActivatingSubsystem();
 
@@ -118,15 +116,15 @@ class OSGiSubsystemAdd extends AbstractBoottimeAddStepHandler {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                newControllers.add(FrameworkBootstrapService.addService(serviceTarget, resource, deploymentTracker, extensions, verificationHandler));
-                newControllers.add(registrationTracker.install(serviceTarget, verificationHandler));
+                  FrameworkBootstrapService.addService(serviceTarget, resource, deploymentTracker, extensions);
+                  registrationTracker.install(serviceTarget);
 
                 // Add the resource provisioning services
-                newControllers.add(AbstractResolverService.addService(serviceTarget));
-                newControllers.add(EnvironmentService.addService(serviceTarget));
-                newControllers.add(RepositoryService.addService(serviceTarget));
-                newControllers.add(ResourceProvisionerService.addService(serviceTarget));
-                newControllers.add(ResourceInstallerService.addService(serviceTarget));
+                AbstractResolverService.addService(serviceTarget);
+                EnvironmentService.addService(serviceTarget);
+                RepositoryService.addService(serviceTarget);
+                ResourceProvisionerService.addService(serviceTarget);
+                ResourceInstallerService.addService(serviceTarget);
 
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
@@ -154,10 +152,10 @@ class OSGiSubsystemAdd extends AbstractBoottimeAddStepHandler {
 
         // Perform boottime on subsystem extensions
         for(SubsystemExtension extension : extensions) {
-            extension.performBoottime(context, operation, model, verificationHandler, newControllers);
+            extension.performBoottime(context, operation, model);
         }
 
         // Add the subsystem state as a service
-        newControllers.add(SubsystemState.addService(serviceTarget, activation));
+        SubsystemState.addService(serviceTarget, activation);
     }
 }

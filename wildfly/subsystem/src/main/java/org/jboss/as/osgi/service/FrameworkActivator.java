@@ -27,7 +27,6 @@ import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.osgi.parser.SubsystemState.Activation;
 import org.jboss.msc.service.AbstractService;
 import org.jboss.msc.service.ServiceBuilder;
@@ -72,16 +71,16 @@ public final class FrameworkActivator {
     /**
      * Activates the framework.
      */
-    public static boolean activate(ServiceVerificationHandler verificationHandler) {
-        return INSTANCE.activateInternal(Activation.LAZY, verificationHandler);
+    public static boolean activate() {
+        return INSTANCE.activateInternal(Activation.LAZY);
     }
 
     /**
      * Activates the framework eagerly.
      * All services are started and {@link Services#FRAMEWORK_ACTIVE} is verified
      */
-    public static boolean activateEagerly(ServiceVerificationHandler verificationHandler) {
-        return INSTANCE.activateInternal(Activation.EAGER, verificationHandler);
+    public static boolean activateEagerly() {
+        return INSTANCE.activateInternal(Activation.EAGER);
     }
 
     private FrameworkActivator(FrameworkBuilder builder) {
@@ -89,21 +88,21 @@ public final class FrameworkActivator {
         this.builder = builder;
     }
 
-    private boolean activateInternal(Activation activation, ServiceVerificationHandler verificationHandler) {
+    private boolean activateInternal(Activation activation) {
         boolean activate = activated.compareAndSet(false, true);
         if (activate) {
             LOGGER.debugf("Activating %sly", activation);
             ServiceTarget serviceTarget = builder.getServiceTarget();
-            builder.installServices(FrameworkPhase.INIT, serviceTarget, verificationHandler);
-            builder.installServices(FrameworkPhase.ACTIVE, serviceTarget, verificationHandler);
+            builder.installServices(FrameworkPhase.INIT, serviceTarget, null);
+            builder.installServices(FrameworkPhase.ACTIVE, serviceTarget, null);
 
             ServiceName serviceName = Services.FRAMEWORK_ACTIVE.getParent().append(activation.toString(), "ACTIVATOR");
             switch (activation) {
                 case EAGER:
-                    EagerActivatorService.addService(serviceTarget, serviceName, verificationHandler);
+                    EagerActivatorService.addService(serviceTarget, serviceName);
                     break;
                 case LAZY:
-                    LazyActivatorService.addService(serviceTarget, serviceName, verificationHandler);
+                    LazyActivatorService.addService(serviceTarget, serviceName);
                     break;
             }
         }
@@ -113,10 +112,9 @@ public final class FrameworkActivator {
     static class EagerActivatorService extends AbstractService<Void> {
 
         // The {@link EagerActivatorService} has a dependency on {@link Services#FRAMEWORK_ACTIVE}
-        static void addService (ServiceTarget serviceTarget, ServiceName serviceName, ServiceVerificationHandler verificationHandler) {
+        static void addService (ServiceTarget serviceTarget, ServiceName serviceName) {
             ServiceBuilder<Void> builder = serviceTarget.addService(serviceName, new EagerActivatorService());
             builder.addDependency(Services.FRAMEWORK_ACTIVE);
-            builder.addListener(verificationHandler);
             builder.install();
         }
     }
@@ -125,10 +123,9 @@ public final class FrameworkActivator {
 
         // The {@link LazyActivatorService} has no framework dependency.
         // Instead it explicitly activates {@link Services#FRAMEWORK_ACTIVE}
-        static void addService (ServiceTarget serviceTarget, ServiceName serviceName, ServiceVerificationHandler verificationHandler) {
+        static void addService (ServiceTarget serviceTarget, ServiceName serviceName) {
             ServiceBuilder<Void> builder = serviceTarget.addService(serviceName, new LazyActivatorService());
             builder.addDependency(FrameworkBootstrapService.SERVICE_NAME);
-            builder.addListener(verificationHandler);
             builder.install();
         }
 

@@ -25,7 +25,6 @@ package org.jboss.as.osgi;
 import java.util.List;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.osgi.parser.SubsystemState;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
@@ -45,7 +44,7 @@ import org.osgi.framework.BundleContext;
 public abstract class AbstractSubsystemExtension implements SubsystemExtension {
 
     @Override
-    public void performBoottime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler, List<ServiceController<?>> newControllers) {
+    public void performBoottime(OperationContext context, ModelNode operation, ModelNode model) {
     }
 
     @Override

@@ -130,7 +130,6 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         builder.addDependency(Services.ENVIRONMENT, XEnvironment.class, injectedEnvironment);
         builder.addDependency(Services.RESOLVER, XResolver.class, injectedResolver);
         builder.addDependency(Services.FRAMEWORK_CREATE);
-        builder.setInitialMode(Mode.ON_DEMAND);
     }
 
     @Override

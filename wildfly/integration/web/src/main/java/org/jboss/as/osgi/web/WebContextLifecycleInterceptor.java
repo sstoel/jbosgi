@@ -25,7 +25,6 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 import javax.servlet.ServletContext;
 
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.osgi.OSGiLogger;
 import org.jboss.as.osgi.OSGiMessages;
 import org.jboss.as.web.host.ContextActivator;
@@ -64,11 +63,10 @@ class WebContextLifecycleInterceptor extends AbstractLifecycleInterceptor implem
     private final InjectedValue<BundleContext> injectedSystemContext = new InjectedValue<BundleContext>();
     private ServiceRegistration<LifecycleInterceptor> registration;
 
-    static ServiceController<LifecycleInterceptor> addService(ServiceTarget serviceTarget, ServiceVerificationHandler verificationHandler) {
+    static ServiceController<LifecycleInterceptor> addService(ServiceTarget serviceTarget) {
         WebContextLifecycleInterceptor service = new WebContextLifecycleInterceptor();
         ServiceBuilder<LifecycleInterceptor> builder = serviceTarget.addService(SERVICE_NAME, service);
         builder.addDependency(Services.FRAMEWORK_CREATE, BundleContext.class, service.injectedSystemContext);
-        builder.addListener(verificationHandler);
         builder.setInitialMode(Mode.ON_DEMAND);
         return builder.install();
     }

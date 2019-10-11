@@ -23,7 +23,6 @@ package org.jboss.as.osgi.management;
 
 import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -141,7 +140,7 @@ public class OSGiRuntimeResource implements Resource {
     @Override
     public Set<String> getChildrenNames(String childType) {
         if (ModelConstants.BUNDLE.equals(childType))
-            return getBundleIDs();
+            return getBundleNames();
         else
             return delegate.getChildrenNames(childType);
     }
@@ -150,8 +149,8 @@ public class OSGiRuntimeResource implements Resource {
     public Set<ResourceEntry> getChildren(String childType) {
         if (ModelConstants.BUNDLE.equals(childType)) {
             Set<ResourceEntry> result = new TreeSet<Resource.ResourceEntry>();
-            for (String id : getBundleIDs()) {
-                result.add(new OSGiBundleResource.OSGiBundleResourceEntry(id));
+            for (String name : getBundleNames()) {
+                result.add(new OSGiBundleResource.OSGiBundleResourceEntry(name));
             }
             return result;
         } else {
@@ -217,12 +216,12 @@ public class OSGiRuntimeResource implements Resource {
         return result;
     }
 
-    private Set<String> getBundleIDs() {
+    private Set<String> getBundleNames() {
         Set<String> result = new TreeSet<String>();
         BundleContext context = getBundleContext();
         if (context != null) {
             for (Bundle b : context.getBundles()) {
-                result.add(Long.toString(b.getBundleId()));
+                result.add(b.getLocation());
             }
         }
         return result;

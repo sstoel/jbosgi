@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.SubsystemExtension;
 import org.jboss.as.osgi.management.OSGiRuntimeResource;
@@ -79,21 +78,18 @@ public class FrameworkBootstrapService implements Service<Void> {
     private final InjectedValue<ServerEnvironment> injectedServerEnvironment = new InjectedValue<ServerEnvironment>();
     private final InjectedValue<SubsystemState> injectedSubsystemState = new InjectedValue<SubsystemState>();
     private final InitialDeploymentTracker deploymentTracker;
-    private final ServiceVerificationHandler verificationHandler;
     private final List<SubsystemExtension> extensions;
     private final OSGiRuntimeResource resource;
 
-    public static ServiceController<Void> addService(ServiceTarget target, OSGiRuntimeResource resource, InitialDeploymentTracker deploymentTracker, List<SubsystemExtension> extensions, ServiceVerificationHandler verificationHandler) {
-        FrameworkBootstrapService service = new FrameworkBootstrapService(resource, deploymentTracker, extensions, verificationHandler);
+    public static ServiceController<Void> addService(ServiceTarget target, OSGiRuntimeResource resource, InitialDeploymentTracker deploymentTracker, List<SubsystemExtension> extensions) {
+        FrameworkBootstrapService service = new FrameworkBootstrapService(resource, deploymentTracker, extensions);
         ServiceBuilder<Void> builder = target.addService(FrameworkBootstrapService.SERVICE_NAME, service);
         builder.addDependency(ServerEnvironmentService.SERVICE_NAME, ServerEnvironment.class, service.injectedServerEnvironment);
         builder.addDependency(OSGiConstants.SUBSYSTEM_STATE_SERVICE_NAME, SubsystemState.class, service.injectedSubsystemState);
-        builder.addListener(verificationHandler);
         return builder.install();
     }
 
-    private FrameworkBootstrapService(OSGiRuntimeResource resource, InitialDeploymentTracker deploymentTracker, List<SubsystemExtension> extensions, ServiceVerificationHandler verificationHandler) {
-        this.verificationHandler = verificationHandler;
+    private FrameworkBootstrapService(OSGiRuntimeResource resource, InitialDeploymentTracker deploymentTracker, List<SubsystemExtension> extensions) {
         this.deploymentTracker = deploymentTracker;
         this.extensions = extensions;
         this.resource = resource;
@@ -142,11 +138,11 @@ public class FrameworkBootstrapService implements Service<Void> {
             }
 
             // Install the services to create the framework
-            builder.installServices(FrameworkPhase.CREATE, serviceTarget, verificationHandler);
+            builder.installServices(FrameworkPhase.CREATE, serviceTarget, null);
 
             if (activation == Activation.EAGER) {
-                builder.installServices(FrameworkPhase.INIT, serviceTarget, verificationHandler);
-                builder.installServices(FrameworkPhase.ACTIVE, serviceTarget, verificationHandler);
+                builder.installServices(FrameworkPhase.INIT, serviceTarget, null);
+                builder.installServices(FrameworkPhase.ACTIVE, serviceTarget, null);
             }
 
             // Create the framework activator

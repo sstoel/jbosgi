@@ -111,14 +111,14 @@ public final class FrameworkManagement {
         executeOperation(client, op, true);
     }
 
-    public static List<Long> listBundleIDs(ModelControllerClient client) throws Exception {
+    public static List<String> listBundleIDs(ModelControllerClient client) throws Exception {
         ModelNode op = createOpNode("subsystem=osgi", ModelDescriptionConstants.READ_CHILDREN_NAMES_OPERATION);
         op.get(ModelDescriptionConstants.CHILD_TYPE).set(ModelConstants.BUNDLE);
         ModelNode result = executeOperation(client, op, true);
 
-        List<Long> ids = new ArrayList<Long>();
+        List<String> ids = new ArrayList<String>();
         for (ModelNode s : result.asList()) {
-            ids.add(Long.parseLong(s.asString()));
+            ids.add(s.asString());
         }
         return ids;
     }

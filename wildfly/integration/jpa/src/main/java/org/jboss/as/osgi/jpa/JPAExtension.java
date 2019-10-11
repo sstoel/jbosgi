@@ -25,7 +25,6 @@ package org.jboss.as.osgi.jpa;
 import java.util.List;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.osgi.AbstractSubsystemExtension;
 import org.jboss.as.osgi.parser.OSGiExtension;
 import org.jboss.as.server.AbstractDeploymentChainStep;
@@ -43,8 +42,7 @@ import org.jboss.msc.service.ServiceController;
 public class JPAExtension extends AbstractSubsystemExtension {
 
     @Override
-    public void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model,
-            final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) {
+    public void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model) {
 
         context.addStep(new AbstractDeploymentChainStep() {
             @Override

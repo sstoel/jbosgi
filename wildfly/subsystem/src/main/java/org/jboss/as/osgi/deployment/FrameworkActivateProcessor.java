@@ -73,7 +73,7 @@ public class FrameworkActivateProcessor implements DeploymentUnitProcessor {
             return;
 
         // Activate the framework if not done so already
-        FrameworkActivator.activate(depUnit.getAttachment(Attachments.SERVICE_VERIFICATION_HANDLER));
+        FrameworkActivator.activate();
 
         // Setup a dependency on the the next phase. Persistent bundles have a dependency on the bootstrap bundles
         if (deploymentTracker.isComplete()) {

@@ -26,7 +26,6 @@ import java.util.List;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.osgi.parser.SubsystemState.OSGiCapability;
 import org.jboss.dmr.ModelNode;
@@ -48,8 +47,7 @@ public class OSGiCapabilityAdd extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model, ServiceVerificationHandler verificationHandler,
-            List<ServiceController<?>> newControllers) throws OperationFailedException {
+    protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         final Integer startLevel = (operation.hasDefined(ModelConstants.STARTLEVEL) ? FrameworkCapabilityResource.STARTLEVEL.resolveModelAttribute(context, model).asInt() : null);
 
         String identifier = operation.get(ModelDescriptionConstants.OP_ADDR).asObject().get(ModelConstants.CAPABILITY).asString();

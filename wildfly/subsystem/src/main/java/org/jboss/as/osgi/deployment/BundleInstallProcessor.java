@@ -24,6 +24,8 @@ package org.jboss.as.osgi.deployment;
 
 import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 import static org.jboss.as.server.deployment.Attachments.BUNDLE_STATE_KEY;
+import static org.jboss.as.server.deployment.Attachments.MODULE;
+import static org.jboss.osgi.framework.spi.IntegrationConstants.MODULE_IDENTIFIER_KEY;
 import static org.jboss.osgi.framework.spi.IntegrationConstants.STORAGE_STATE_KEY;
 
 import org.jboss.as.osgi.OSGiConstants;

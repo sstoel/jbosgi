@@ -27,7 +27,6 @@ import java.util.List;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.as.osgi.AbstractSubsystemExtension;
 import org.jboss.as.osgi.parser.OSGiExtension;
 import org.jboss.as.osgi.parser.SubsystemState;
@@ -69,14 +68,13 @@ public class WebExtension extends AbstractSubsystemExtension {
     private ServiceRegistration<URLStreamHandlerService> urlHandlerRegistration;
 
     @Override
-    public void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model,
-            final ServiceVerificationHandler verificationHandler, final List<ServiceController<?>> newControllers) {
+    public void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model) {
 
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
                 ServiceTarget serviceTarget = context.getServiceTarget();
-                newControllers.add(WebContextLifecycleInterceptor.addService(serviceTarget, verificationHandler));
+                WebContextLifecycleInterceptor.addService(serviceTarget);
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
         }, OperationContext.Stage.RUNTIME);

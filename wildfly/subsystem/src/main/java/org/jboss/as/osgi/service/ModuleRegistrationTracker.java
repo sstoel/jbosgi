@@ -28,7 +28,6 @@ import static org.jboss.as.osgi.OSGiMessages.MESSAGES;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.jboss.as.controller.ServiceVerificationHandler;
 import org.jboss.modules.Module;
 import org.jboss.msc.service.AbstractService;
 import org.jboss.msc.service.ServiceBuilder;
@@ -68,13 +67,12 @@ public class ModuleRegistrationTracker extends AbstractService<Void> {
 
     private final Map<Module, Registration> registrations = new LinkedHashMap<Module, Registration>();
 
-    public ServiceController<Void> install(ServiceTarget serviceTarget, ServiceVerificationHandler verificationHandler) {
+    public ServiceController<Void> install(ServiceTarget serviceTarget) {
         ServiceBuilder<Void> builder = serviceTarget.addService(MODULE_REGISTRATION_COMPLETE, this);
         builder.addDependency(Services.FRAMEWORK_CREATE, BundleContext.class, injectedSystemContext);
         builder.addDependency(Services.BUNDLE_MANAGER, BundleManager.class, injectedBundleManager);
         builder.addDependency(Services.ENVIRONMENT, XEnvironment.class, injectedEnvironment);
         builder.addDependencies(IntegrationServices.BOOTSTRAP_BUNDLES_COMPLETE);
-        builder.addListener(verificationHandler);
         builder.setInitialMode(Mode.ON_DEMAND);
         return builder.install();
     }

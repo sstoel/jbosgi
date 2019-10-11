@@ -249,7 +249,8 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             }
 
             ModuleIdentifier identifier = brev.getModuleIdentifier();
-            return ModuleLoadService.install(serviceTarget, identifier, dependencies);
+            return ModuleLoadService.install(serviceTarget, identifier, dependencies, new ArrayList<ModuleDependency>(),
+                    new ArrayList<ModuleDependency>());
         }
 
         /**
