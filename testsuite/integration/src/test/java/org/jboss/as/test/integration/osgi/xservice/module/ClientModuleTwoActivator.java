@@ -26,7 +26,7 @@ import org.jboss.as.test.integration.osgi.api.Echo;
 import org.jboss.logging.Logger;
 import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
-import org.jboss.msc.service.AbstractService;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceActivator;
 import org.jboss.msc.service.ServiceActivatorContext;
 import org.jboss.msc.service.ServiceBuilder;
@@ -35,6 +35,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.osgi.framework.Services;
 import org.osgi.framework.BundleContext;
@@ -62,7 +63,7 @@ public class ClientModuleTwoActivator implements ServiceActivator
       log.infof("ModuleIdentifier: %s", identifier);
    }
 
-   static class EchoInvokerService extends AbstractService<Void>
+   static class EchoInvokerService implements Service<Void>
    {
       private static final Logger log = Logger.getLogger(EchoInvokerService.class);
 
@@ -86,6 +87,16 @@ public class ClientModuleTwoActivator implements ServiceActivator
          ServiceReference<Echo> sref = systemContext.getServiceReference(Echo.class);
          Echo service = systemContext.getService(sref);
          service.echo("hello world");
+      }
+
+      @Override
+      public void stop(final StopContext context) {
+
+      }
+
+      @Override
+      public Void getValue() throws IllegalStateException, IllegalArgumentException {
+         return null;
       }
    }
 }

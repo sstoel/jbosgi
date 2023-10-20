@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.jboss.osgi.testsuite</groupId>
         <artifactId>jbosgi-testsuite</artifactId>
-        <version>2.6.0.Final</version>
+        <version>2.7.0.Final</version>
     </parent>
 
     <name>JBossOSGi Testsuite Examples</name>
@@ -102,7 +102,7 @@
         </dependency>
         <dependency>
             <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-7.0</artifactId>
+            <artifactId>jboss-javaee-8.0</artifactId>
             <type>pom</type>
             <scope>provided</scope>
         </dependency>
@@ -110,6 +110,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <version>4.13.2</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -130,7 +131,7 @@
                         <id>bundles</id>
                         <phase>test-compile</phase>
                         <goals>
-                            <goal>directory-single</goal>
+                            <goal>single</goal>
                         </goals>
                         <configuration>
                             <finalName>test-libs</finalName>
@@ -139,6 +140,7 @@
                             <descriptors>
                                 <descriptor>scripts/assembly-bundles.xml</descriptor>
                             </descriptors>
+                            <formats>dir</formats>
                         </configuration>
                     </execution>
                     <execution>

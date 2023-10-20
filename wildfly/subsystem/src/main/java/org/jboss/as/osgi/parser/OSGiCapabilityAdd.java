@@ -27,6 +27,7 @@ import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.osgi.parser.SubsystemState.OSGiCapability;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
@@ -60,7 +61,7 @@ public class OSGiCapabilityAdd extends AbstractAddStepHandler {
     }
 
     @Override
-    protected void rollbackRuntime(OperationContext context, ModelNode operation, ModelNode model, List<ServiceController<?>> controllers) {
+    protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
         String identifier = operation.get(ModelDescriptionConstants.OP_ADDR).asObject().get(ModelConstants.CAPABILITY).asString();
         SubsystemState subsystemState = SubsystemState.getSubsystemState(context);
         if (subsystemState != null) {

@@ -44,6 +44,7 @@
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.as.ee" optional="true"/>
         <module name="org.jboss.as.network"/>
+        <module name="org.jboss.as.weld" optional="true"/>
         <module name="org.wildfly.security.manager"/>
         <module name="org.jboss.as.server"/>
         <module name="org.jboss.jandex"/>

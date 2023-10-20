@@ -21,9 +21,11 @@
  */
 package org.jboss.as.osgi.service;
 
-import static org.jboss.as.network.SocketBinding.JBOSS_BINDING_NAME;
 import static org.jboss.as.server.Services.JBOSS_SERVER_CONTROLLER;
+import static org.jboss.as.server.services.net.SocketBindingResourceDefinition.SOCKET_BINDING_CAPABILITY;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.Dictionary;
@@ -36,12 +38,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.network.SocketBinding;
 import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.SubsystemExtension;
 import org.jboss.as.osgi.management.OSGiRuntimeResource;
-import org.jboss.msc.service.AbstractService;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceName;
@@ -73,7 +76,7 @@ import org.osgi.util.xml.XMLParserActivator;
  */
 final class SystemServicesIntegration extends SystemServicesPlugin {
 
-    private final InjectedValue<ModelController> injectedModelController = new InjectedValue<ModelController>();
+    private final InjectedValue<ModelControllerClientFactory> injectedModelControllerClientFactory = new InjectedValue<ModelControllerClientFactory>();
     private final InjectedValue<BundleManager> injectedBundleManager = new InjectedValue<BundleManager>();
     private final InjectedValue<BundleContext> injectedBundleContext = new InjectedValue<BundleContext>();
     private final InjectedValue<XRepository> injectedRepository = new InjectedValue<XRepository>();
@@ -92,7 +95,7 @@ final class SystemServicesIntegration extends SystemServicesPlugin {
     @Override
     protected void addServiceDependencies(ServiceBuilder<SystemServices> builder) {
         super.addServiceDependencies(builder);
-        builder.addDependency(JBOSS_SERVER_CONTROLLER, ModelController.class, injectedModelController);
+        builder.addDependency(ServiceName.parse("org.wildfly.management.model-controller-client-factory"), ModelControllerClientFactory.class, injectedModelControllerClientFactory);
         builder.addDependency(OSGiConstants.REPOSITORY_SERVICE_NAME, XRepository.class, injectedRepository);
         builder.addDependency(ResourceInstallerService.SERVICE_NAME, ResourceInstaller.class, injectedResourceInstaller);
         builder.addDependency(Services.BUNDLE_MANAGER, BundleManager.class, injectedBundleManager);
@@ -206,8 +209,8 @@ final class SystemServicesIntegration extends SystemServicesPlugin {
             }
         });
         // Register the {@link ModelControllerClient} service
-        ModelController modelController = injectedModelController.getValue();
-        ModelControllerClient client = modelController.createClient(controllerThreadExecutor);
+        ModelControllerClientFactory mccf = injectedModelControllerClientFactory.getValue();
+        ModelControllerClient client = mccf.createClient(controllerThreadExecutor);
         syscontext.registerService(ModelControllerClient.class, client, null);
     }
 
@@ -217,11 +220,16 @@ final class SystemServicesIntegration extends SystemServicesPlugin {
         if (bindingNames != null) {
             final Set<ServiceName> socketBindingNames = new HashSet<ServiceName>();
             for (String suffix : bindingNames.split(",")) {
-                socketBindingNames.add(JBOSS_BINDING_NAME.append(suffix));
+                socketBindingNames.add(SOCKET_BINDING_CAPABILITY.getCapabilityServiceName(suffix));
             }
             ServiceTarget serviceTarget = bundleManager.getServiceTarget();
             ServiceName serviceName = IntegrationServices.SYSTEM_SERVICES_PLUGIN.append("BINDINGS");
-            ServiceBuilder<Void> builder = serviceTarget.addService(serviceName, new AbstractService<Void>() {
+            ServiceBuilder<Void> builder = serviceTarget.addService(serviceName, new Service<>() {
+                @Override
+                public Void getValue() throws IllegalStateException, IllegalArgumentException {
+                    return null;
+                }
+
                 @Override
                 public void start(StartContext context) throws StartException {
                     for (ServiceName serviceName : socketBindingNames) {
@@ -232,9 +240,16 @@ final class SystemServicesIntegration extends SystemServicesPlugin {
                         syscontext.registerService(InetSocketAddress.class, value, props);
                     }
                 }
+
+                @Override
+                public void stop(final StopContext context) {
+
+                }
             });
             ServiceName[] serviceNameArray = socketBindingNames.toArray(new ServiceName[socketBindingNames.size()]);
-            builder.addDependencies(serviceNameArray);
+            for (ServiceName sn : serviceNameArray) {
+                builder.requires(sn);
+            }
             builder.install();
         }
     }

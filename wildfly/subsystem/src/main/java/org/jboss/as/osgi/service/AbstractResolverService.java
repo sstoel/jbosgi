@@ -23,7 +23,7 @@
 package org.jboss.as.osgi.service;
 
 import org.jboss.as.osgi.OSGiConstants;
-import org.jboss.msc.service.AbstractService;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
@@ -39,7 +39,7 @@ import org.jboss.osgi.resolver.spi.AbstractResolver;
  * @author Thomas.Diesler@jboss.com
  * @since 14-May-2012
  */
-public final class AbstractResolverService extends AbstractService<XResolver> {
+public final class AbstractResolverService implements Service<XResolver> {
 
     private XResolver resolver;
 

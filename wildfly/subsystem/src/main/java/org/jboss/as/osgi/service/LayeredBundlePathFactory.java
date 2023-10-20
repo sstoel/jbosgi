@@ -56,7 +56,7 @@ public final class LayeredBundlePathFactory {
      */
     public static List<File> resolveLayeredBundlePath(final ServerEnvironment serverEnvironment) {
 
-        File bundlesDir = serverEnvironment.getBundlesDir();
+        File bundlesDir = new File(serverEnvironment.getHomeDir(), "bundles");
 
         if (!bundlesDir.isDirectory())
             throw MESSAGES.illegalStateCannotFindBundleDir(bundlesDir);

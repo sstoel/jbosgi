@@ -22,6 +22,7 @@
 
 package org.jboss.as.osgi.deployment;
 
+import static org.jboss.as.weld.Capabilities.WELD_CAPABILITY_NAME;
 import static org.jboss.osgi.framework.spi.IntegrationConstants.BUNDLE_INFO_KEY;
 
 import java.util.Arrays;
@@ -29,9 +30,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.jboss.as.controller.capability.CapabilityServiceSupport;
 import org.jboss.as.ee.structure.DeploymentType;
 import org.jboss.as.ee.structure.DeploymentTypeMarker;
-import org.jboss.as.ee.weld.WeldDeploymentMarker;
 import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.service.BundleLifecycleIntegration;
 import org.jboss.as.server.deployment.Attachments;
@@ -43,6 +44,7 @@ import org.jboss.as.server.deployment.EjbDeploymentMarker;
 import org.jboss.as.server.deployment.JPADeploymentMarker;
 import org.jboss.as.server.deployment.annotation.CompositeIndex;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
+import org.jboss.as.weld.WeldCapability;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.DotName;
@@ -186,7 +188,13 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
     private boolean allowAdditionalModuleDependencies(final DeploymentUnit depUnit) {
         boolean isWar = DeploymentTypeMarker.isType(DeploymentType.WAR, depUnit);
         boolean isEjb = EjbDeploymentMarker.isEjbDeployment(depUnit);
-        boolean isCDI = WeldDeploymentMarker.isPartOfWeldDeployment(depUnit);
+        final CapabilityServiceSupport support = depUnit.getAttachment(Attachments.CAPABILITY_SERVICE_SUPPORT);
+        boolean isCDI = false;
+        if (support.hasCapability(WELD_CAPABILITY_NAME)) {
+            final WeldCapability api = support.getOptionalCapabilityRuntimeAPI(WELD_CAPABILITY_NAME, WeldCapability.class).get();
+            isCDI = api.isPartOfWeldDeployment(depUnit);
+        }
+        //TODO: WeldDeploymentMarker.isPartOfWeldDeployment(depUnit);
         boolean isJPA = JPADeploymentMarker.isJPADeployment(depUnit);
         return isWar || isEjb || isCDI || isJPA;
     }

@@ -23,8 +23,8 @@ package org.jboss.as.test.integration.osgi.jpa.bundle;
 
 import java.util.concurrent.Callable;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 
 import org.junit.Assert;
 import org.osgi.framework.BundleContext;

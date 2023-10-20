@@ -27,7 +27,8 @@ import org.jboss.as.naming.ManagedReferenceInjector;
 import org.jboss.as.naming.ServiceBasedNamingStore;
 import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.as.naming.service.BinderService;
-import org.jboss.msc.service.AbstractServiceListener;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
@@ -54,17 +55,15 @@ final class BundleContextBindingService {
         };
         ServiceBuilder<?> builder = serviceTarget.addService(getBinderServiceName(), binderService);
         builder.addDependency(Services.FRAMEWORK_ACTIVE, BundleContext.class, new ManagedReferenceInjector<BundleContext>(binderService.getManagedObjectInjector()));
-        builder.addDependency(bindInfo.getParentContextServiceName(), ServiceBasedNamingStore.class, binderService.getNamingStoreInjector()).addListener(new AbstractServiceListener<Object>() {
-            public void transition(final ServiceController<? extends Object> controller, final ServiceController.Transition transition) {
-                switch (transition) {
-                    case STARTING_to_UP: {
-                        LOGGER.infoBoundSystemContext(BUNDLE_CONTEXT_BINDING_NAME);
-                        break;
-                    }
-                    case START_REQUESTED_to_DOWN: {
-                        LOGGER.infoUnboundSystemContext(BUNDLE_CONTEXT_BINDING_NAME);
-                        break;
-                    }
+        builder.addDependency(bindInfo.getParentContextServiceName(), ServiceBasedNamingStore.class, binderService.getNamingStoreInjector()).addListener((controller, event) -> {
+            switch (event) {
+                case UP: {
+                    LOGGER.infoBoundSystemContext(BUNDLE_CONTEXT_BINDING_NAME);
+                    break;
+                }
+                case DOWN: {
+                    LOGGER.infoUnboundSystemContext(BUNDLE_CONTEXT_BINDING_NAME);
+                    break;
                 }
             }
         });

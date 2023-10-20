@@ -27,11 +27,11 @@ import static org.junit.Assert.assertNull;
 
 import java.io.InputStream;
 
-import javax.transaction.Status;
-import javax.transaction.Synchronization;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
-import javax.transaction.UserTransaction;
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
+import jakarta.transaction.Transaction;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.UserTransaction;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;

@@ -24,8 +24,8 @@ package org.jboss.as.test.integration.osgi.jpa;
 import java.io.InputStream;
 import java.util.concurrent.Callable;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;

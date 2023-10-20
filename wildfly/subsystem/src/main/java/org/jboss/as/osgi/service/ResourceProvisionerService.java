@@ -28,11 +28,13 @@ import java.io.IOException;
 import java.util.concurrent.Executors;
 
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.osgi.OSGiConstants;
-import org.jboss.msc.service.AbstractService;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
@@ -49,9 +51,9 @@ import org.jboss.osgi.resolver.XResolver;
  * @author Thomas.Diesler@jboss.com
  * @since 14-May-2012
  */
-public final class ResourceProvisionerService extends AbstractService<XResourceProvisioner> {
+public final class ResourceProvisionerService implements Service<XResourceProvisioner> {
 
-    private final InjectedValue<ModelController> injectedController = new InjectedValue<ModelController>();
+    private final InjectedValue<ModelControllerClientFactory> injectedModelControllerClientFactory = new InjectedValue<ModelControllerClientFactory>();
     private final InjectedValue<XPersistentRepository> injectedRepository = new InjectedValue<XPersistentRepository>();
     private final InjectedValue<XResolver> injectedResolver = new InjectedValue<XResolver>();
     private ModelControllerClient modelControllerClient;
@@ -60,7 +62,7 @@ public final class ResourceProvisionerService extends AbstractService<XResourceP
     public static ServiceController<?> addService(final ServiceTarget target) {
         ResourceProvisionerService service = new ResourceProvisionerService();
         ServiceBuilder<?> builder = target.addService(OSGiConstants.PROVISIONER_SERVICE_NAME, service);
-        builder.addDependency(JBOSS_SERVER_CONTROLLER, ModelController.class, service.injectedController);
+        builder.addDependency(ServiceName.parse("org.wildfly.management.model-controller-client-factory"), ModelControllerClientFactory.class, service.injectedModelControllerClientFactory);
         builder.addDependency(OSGiConstants.REPOSITORY_SERVICE_NAME, XPersistentRepository.class, service.injectedRepository);
         builder.addDependency(OSGiConstants.RESOLVER_SERVICE_NAME, XResolver.class, service.injectedResolver);
         return builder.install();
@@ -71,8 +73,8 @@ public final class ResourceProvisionerService extends AbstractService<XResourceP
 
     @Override
     public void start(StartContext startContext) throws StartException {
-        ModelController modelController = injectedController.getValue();
-        modelControllerClient = modelController.createClient(Executors.newCachedThreadPool());
+        ModelControllerClientFactory mcff = injectedModelControllerClientFactory.getValue();
+        modelControllerClient = mcff.createClient(Executors.newCachedThreadPool());
 
         final XResolver resolver = injectedResolver.getValue();
         final XPersistentRepository repository = injectedRepository.getValue();

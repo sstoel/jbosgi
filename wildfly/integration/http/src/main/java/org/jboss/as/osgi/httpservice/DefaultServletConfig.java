@@ -25,8 +25,8 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
 
 /**
  * The default {@link org.osgi.service.http.HttpContext}

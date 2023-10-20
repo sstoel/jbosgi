@@ -21,8 +21,8 @@
  */
 package org.jboss.as.osgi.jta;
 
-import javax.transaction.TransactionManager;
-import javax.transaction.UserTransaction;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.UserTransaction;
 
 import org.jboss.as.osgi.AbstractSubsystemExtension;
 import org.jboss.as.txn.service.TransactionManagerService;

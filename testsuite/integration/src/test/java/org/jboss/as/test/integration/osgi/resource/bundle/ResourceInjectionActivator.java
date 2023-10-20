@@ -21,7 +21,7 @@
  */
 package org.jboss.as.test.integration.osgi.resource.bundle;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import javax.sql.DataSource;
 
 import org.osgi.framework.BundleActivator;

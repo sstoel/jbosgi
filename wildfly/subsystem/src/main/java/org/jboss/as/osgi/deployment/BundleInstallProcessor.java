@@ -25,6 +25,8 @@ package org.jboss.as.osgi.deployment;
 import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 import static org.jboss.as.server.deployment.Attachments.BUNDLE_STATE_KEY;
 import static org.jboss.as.server.deployment.Attachments.MODULE;
+import static org.jboss.msc.service.ServiceController.State.STOPPING;
+import static org.jboss.msc.service.ServiceController.State.UP;
 import static org.jboss.osgi.framework.spi.IntegrationConstants.MODULE_IDENTIFIER_KEY;
 import static org.jboss.osgi.framework.spi.IntegrationConstants.STORAGE_STATE_KEY;
 
@@ -40,7 +42,6 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceRegistry;
-import org.jboss.msc.service.ServiceController.Substate;
 import org.jboss.osgi.deployment.deployer.Deployment;
 import org.jboss.osgi.framework.spi.BundleManager;
 import org.jboss.osgi.framework.spi.IntegrationServices;
@@ -149,7 +150,7 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
     private int getUninstallOptions(BundleManager bundleManager) {
         ServiceContainer serviceContainer = bundleManager.getServiceContainer();
         ServiceController<?> controller = serviceContainer.getRequiredService(Services.JBOSS_SERVER_CONTROLLER);
-        boolean stopRequested = controller.getSubstate() == Substate.STOP_REQUESTED;
+        boolean stopRequested = controller.getState() == UP && (controller.getMode() == ServiceController.Mode.REMOVE || controller.getMode() == ServiceController.Mode.NEVER);
         return stopRequested ? Bundle.STOP_TRANSIENT : 0;
     }
 }

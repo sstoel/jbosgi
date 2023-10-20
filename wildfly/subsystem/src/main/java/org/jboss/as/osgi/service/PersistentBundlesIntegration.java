@@ -51,9 +51,9 @@ class PersistentBundlesIntegration extends BootstrapBundlesInstall<Void> {
     @Override
     protected void addServiceDependencies(ServiceBuilder<Void> builder) {
         super.addServiceDependencies(builder);
-        builder.addDependency(InitialDeploymentTracker.INITIAL_DEPLOYMENTS_COMPLETE);
-        builder.addDependency(ModuleRegistrationTracker.MODULE_REGISTRATION_COMPLETE);
-        builder.addDependency(IntegrationServices.BOOTSTRAP_BUNDLES_COMPLETE);
+        builder.requires(InitialDeploymentTracker.INITIAL_DEPLOYMENTS_COMPLETE);
+        builder.requires(ModuleRegistrationTracker.MODULE_REGISTRATION_COMPLETE);
+        builder.requires(IntegrationServices.BOOTSTRAP_BUNDLES_COMPLETE);
     }
 
     @Override

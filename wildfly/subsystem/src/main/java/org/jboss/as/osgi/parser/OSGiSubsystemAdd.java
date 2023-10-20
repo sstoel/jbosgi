@@ -64,7 +64,6 @@ import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.dmr.ModelNode;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
 
 /**
@@ -102,7 +101,8 @@ class OSGiSubsystemAdd extends AbstractBoottimeAddStepHandler {
         LOGGER.infoActivatingSubsystem();
 
         final Activation activation = Activation.valueOf(OSGiRootResource.ACTIVATION.resolveModelAttribute(context, model).asString().toUpperCase(Locale.ENGLISH));
-        final ServiceTarget serviceTarget = context.getServiceTarget();
+        final ServiceTarget serviceTarget = context.getCapabilityServiceTarget();
+
         final InitialDeploymentTracker deploymentTracker = new InitialDeploymentTracker(context);
         final ModuleRegistrationTracker registrationTracker = new ModuleRegistrationTracker();
 

@@ -182,7 +182,7 @@ public class BundleResourceHandlerTestCase {
         Bundle testBundle = Mockito.mock(Bundle.class);
         Mockito.when(bundleContext.getBundle(Long.MAX_VALUE)).thenReturn(testBundle);
 
-        Mockito.verifyZeroInteractions(testBundle);
+        Mockito.verifyNoInteractions(testBundle);
         BundleResourceHandler.INSTANCE.executeRuntimeStep(operationContext, startOp);
         Mockito.verify(testBundle).start();
     }
@@ -198,7 +198,7 @@ public class BundleResourceHandlerTestCase {
         Bundle testBundle = Mockito.mock(Bundle.class);
         Mockito.when(bundleContext.getBundle(Long.MAX_VALUE)).thenReturn(testBundle);
 
-        Mockito.verifyZeroInteractions(testBundle);
+        Mockito.verifyNoInteractions(testBundle);
         BundleResourceHandler.INSTANCE.executeRuntimeStep(operationContext, startOp);
         Mockito.verify(testBundle).stop();
     }

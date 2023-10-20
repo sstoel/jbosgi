@@ -73,7 +73,7 @@ public class WebExtension extends AbstractSubsystemExtension {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceTarget serviceTarget = context.getServiceTarget();
+                ServiceTarget serviceTarget = context.getCapabilityServiceTarget();
                 WebContextLifecycleInterceptor.addService(serviceTarget);
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }
@@ -101,7 +101,7 @@ public class WebExtension extends AbstractSubsystemExtension {
     @Override
     public void configureServiceDependencies(ServiceName serviceName, ServiceBuilder<?> builder) {
         if (serviceName.equals(IntegrationServices.SYSTEM_SERVICES_PLUGIN)) {
-            builder.addDependency(WebContextLifecycleInterceptor.SERVICE_NAME);
+            builder.requires(WebContextLifecycleInterceptor.SERVICE_NAME);
         }
     }
 

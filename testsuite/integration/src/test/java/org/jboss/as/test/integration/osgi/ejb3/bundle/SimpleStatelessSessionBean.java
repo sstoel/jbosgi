@@ -23,9 +23,9 @@ package org.jboss.as.test.integration.osgi.ejb3.bundle;
 
 import static org.osgi.framework.Constants.BUNDLE_SYMBOLICNAME;
 
-import javax.annotation.Resource;
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
+import jakarta.annotation.Resource;
+import jakarta.ejb.LocalBean;
+import jakarta.ejb.Stateless;
 
 import org.jboss.as.test.integration.osgi.api.Echo;
 import org.osgi.framework.Bundle;

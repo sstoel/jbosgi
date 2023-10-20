@@ -31,7 +31,7 @@ import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.parser.SubsystemState;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.as.server.ServerEnvironmentService;
-import org.jboss.msc.service.AbstractService;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceTarget;
@@ -54,7 +54,7 @@ import org.jboss.osgi.repository.spi.MavenIdentityRepository.ConfigurationProper
  * @author Thomas.Diesler@jboss.com
  * @since 31-Aug-2012
  */
-public final class RepositoryService extends AbstractService<XRepository> {
+public final class RepositoryService implements Service<XRepository> {
 
     private final InjectedValue<ServerEnvironment> injectedServerEnvironment = new InjectedValue<ServerEnvironment>();
     private final InjectedValue<SubsystemState> injectedSubsystemState = new InjectedValue<SubsystemState>();

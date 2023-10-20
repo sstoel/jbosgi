@@ -23,7 +23,7 @@ package org.jboss.as.osgi.web;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
-import javax.servlet.ServletContext;
+import jakarta.servlet.ServletContext;
 
 import org.jboss.as.osgi.OSGiLogger;
 import org.jboss.as.osgi.OSGiMessages;

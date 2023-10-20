@@ -17,8 +17,8 @@ package org.osgi.service.http;
 
 import java.util.Dictionary;
 
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletException;
 
 /**
  * The Http Service allows other bundles in the OSGi environment to dynamically register resources and servlets into the URI

@@ -27,7 +27,7 @@
     <parent>
 	    <groupId>org.jboss.osgi.wildfly</groupId>
 	    <artifactId>jbosgi-wildfly-integration</artifactId>
-        <version>2.6.0.Final</version>
+        <version>2.7.0.Final</version>
     </parent>
 
     <name>JBossOSGi WildFly Integration: JPA</name>
@@ -48,6 +48,11 @@
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-server</artifactId>
         </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
     </dependencies>
 
     <!-- Build -->
@@ -64,7 +69,7 @@
                         	org.osgi.service.jpa;version="1.0",
                         </Export-Package>
                         <Import-Package>
-                            javax.persistence;version="1.0",
+                            jakarta.persistence;version="1.0",
                             org.jboss.dmr,
                             org.jboss.msc,
                             org.jboss.msc.inject,

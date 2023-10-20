@@ -17,7 +17,7 @@ package org.osgi.service.jpa;
 
 import java.util.Map;
 
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManagerFactory;
 
 /**
  * This service interface offers JPA clients the ability to create instances of EntityManagerFactory for a given named

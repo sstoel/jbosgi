@@ -23,7 +23,7 @@ package org.jboss.test.osgi.example.ejb3.bundle;
 
 import static org.osgi.framework.Constants.BUNDLE_SYMBOLICNAME;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
 

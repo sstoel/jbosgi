@@ -105,7 +105,9 @@ public class BundleActivateProcessor implements DeploymentUnitProcessor {
                 }
             }
             // Add other named dependencies
-            builder.addDependencies(depUnit.getAttachmentList(Attachments.BUNDLE_ACTIVE_DEPENDENCIES));
+            for (ServiceName sn : depUnit.getAttachmentList(Attachments.BUNDLE_ACTIVE_DEPENDENCIES)) {
+                builder.requires(sn);
+            }
             return builder.install();
         }
 

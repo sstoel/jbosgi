@@ -1,6 +1,6 @@
 package org.jboss.test.osgi.example.jaxrs.bundle;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

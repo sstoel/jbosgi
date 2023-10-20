@@ -65,7 +65,7 @@ public final class ModuleIdentityRepositoryIntegration extends ModuleIdentityRep
 
     public ModuleIdentityRepositoryIntegration(ServerEnvironment serverEnvironment) {
         super(Module.getCallerModuleLoader());
-        File bundlesDir = serverEnvironment.getBundlesDir();
+        File bundlesDir = new File(serverEnvironment.getHomeDir(), "bundles");
         if (bundlesDir.isDirectory() == false)
             throw MESSAGES.illegalStateArtifactBaseLocation(bundlesDir);
 

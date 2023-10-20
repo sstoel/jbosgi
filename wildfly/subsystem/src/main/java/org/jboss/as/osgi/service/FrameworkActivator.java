@@ -28,7 +28,7 @@ import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.as.osgi.parser.SubsystemState.Activation;
-import org.jboss.msc.service.AbstractService;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController.Mode;
@@ -36,6 +36,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
 import org.jboss.osgi.framework.Services;
 import org.jboss.osgi.framework.spi.FrameworkBuilder;
 import org.jboss.osgi.framework.spi.FrameworkBuilder.FrameworkPhase;
@@ -109,23 +110,38 @@ public final class FrameworkActivator {
         return activate;
     }
 
-    static class EagerActivatorService extends AbstractService<Void> {
+    static class EagerActivatorService implements Service<Void> {
 
         // The {@link EagerActivatorService} has a dependency on {@link Services#FRAMEWORK_ACTIVE}
         static void addService (ServiceTarget serviceTarget, ServiceName serviceName) {
             ServiceBuilder<Void> builder = serviceTarget.addService(serviceName, new EagerActivatorService());
-            builder.addDependency(Services.FRAMEWORK_ACTIVE);
+            builder.requires(Services.FRAMEWORK_ACTIVE);
             builder.install();
+        }
+
+        @Override
+        public void start(final StartContext context) throws StartException {
+
+        }
+
+        @Override
+        public void stop(final StopContext context) {
+
+        }
+
+        @Override
+        public Void getValue() throws IllegalStateException, IllegalArgumentException {
+            return null;
         }
     }
 
-    static class LazyActivatorService extends AbstractService<Void> {
+    static class LazyActivatorService implements Service<Void> {
 
         // The {@link LazyActivatorService} has no framework dependency.
         // Instead it explicitly activates {@link Services#FRAMEWORK_ACTIVE}
         static void addService (ServiceTarget serviceTarget, ServiceName serviceName) {
             ServiceBuilder<Void> builder = serviceTarget.addService(serviceName, new LazyActivatorService());
-            builder.addDependency(FrameworkBootstrapService.SERVICE_NAME);
+            builder.requires(FrameworkBootstrapService.SERVICE_NAME);
             builder.install();
         }
 
@@ -133,6 +149,16 @@ public final class FrameworkActivator {
         public void start(StartContext context) throws StartException {
             ServiceContainer serviceContainer = context.getController().getServiceContainer();
             serviceContainer.getRequiredService(Services.FRAMEWORK_ACTIVE).setMode(Mode.ACTIVE);
+        }
+
+        @Override
+        public void stop(final StopContext context) {
+
+        }
+
+        @Override
+        public Void getValue() throws IllegalStateException, IllegalArgumentException {
+            return null;
         }
     }
 }

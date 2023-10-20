@@ -65,7 +65,7 @@ public class NamingExtension extends AbstractSubsystemExtension {
         context.addStep(new OperationStepHandler() {
             @Override
             public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceTarget serviceTarget = context.getServiceTarget();
+                ServiceTarget serviceTarget = context.getCapabilityServiceTarget();
                 BundleContextBindingService.addService(serviceTarget);
                 context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             }

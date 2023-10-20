@@ -21,8 +21,8 @@
  */
 package org.jboss.test.osgi.example.resource.bundle;
 
-import javax.annotation.ManagedBean;
-import javax.annotation.Resource;
+import jakarta.annotation.ManagedBean;
+import jakarta.annotation.Resource;
 
 import org.jboss.osgi.resolver.XBundle;
 import org.osgi.framework.BundleContext;

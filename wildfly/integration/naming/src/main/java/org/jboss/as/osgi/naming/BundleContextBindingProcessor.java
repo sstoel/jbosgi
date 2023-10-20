@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 import org.jboss.as.naming.ManagedReferenceFactory;
 import org.jboss.as.server.deployment.AttachmentKey;

@@ -36,12 +36,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.jboss.as.controller.ModelController;
+import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
@@ -54,6 +56,8 @@ import org.jboss.as.server.deployment.DeploymentUtils;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.ModuleIdentifier;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
@@ -109,7 +113,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
 
     private static final Map<String, Deployment> deploymentMap = new HashMap<String, Deployment>();
 
-    private final InjectedValue<ModelController> injectedController = new InjectedValue<ModelController>();
+    private final InjectedValue<ModelControllerClientFactory> injectedModelControllerClientFactory = new InjectedValue<ModelControllerClientFactory>();
     private final InjectedValue<BundleManager> injectedBundleManager = new InjectedValue<BundleManager>();
     private final InjectedValue<XEnvironment> injectedEnvironment = new InjectedValue<XEnvironment>();
     private final InjectedValue<XResolver> injectedResolver = new InjectedValue<XResolver>();
@@ -122,21 +126,21 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     @Override
     protected void addServiceDependencies(ServiceBuilder<BundleLifecycle> builder) {
         super.addServiceDependencies(builder);
-        builder.addDependency(JBOSS_SERVER_CONTROLLER, ModelController.class, injectedController);
+        builder.addDependency(ServiceName.parse("org.wildfly.management.model-controller-client-factory"), ModelControllerClientFactory.class, injectedModelControllerClientFactory);
         builder.addDependency(IntegrationServices.STORAGE_MANAGER_PLUGIN, StorageManager.class, injectedStorageManager);
         builder.addDependency(IntegrationServices.DEPLOYMENT_PROVIDER_PLUGIN, DeploymentProvider.class, injectedDeploymentManager);
         builder.addDependency(IntegrationServices.LOCK_MANAGER_PLUGIN, LockManager.class, injectedLockManager);
         builder.addDependency(Services.BUNDLE_MANAGER, BundleManager.class, injectedBundleManager);
         builder.addDependency(Services.ENVIRONMENT, XEnvironment.class, injectedEnvironment);
         builder.addDependency(Services.RESOLVER, XResolver.class, injectedResolver);
-        builder.addDependency(Services.FRAMEWORK_CREATE);
+        builder.requires(Services.FRAMEWORK_CREATE);
     }
 
     @Override
     public void start(StartContext startContext) throws StartException {
         super.start(startContext);
-        ModelController modelController = injectedController.getValue();
-        modelControllerClient = modelController.createClient(Executors.newCachedThreadPool());
+        ModelControllerClientFactory mcff = injectedModelControllerClientFactory.getValue();
+        modelControllerClient = mcff.createClient(Executors.newCachedThreadPool());
         serverDeploymentManager =  ServerDeploymentManager.Factory.create(modelControllerClient);
     }
 
@@ -354,14 +358,27 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             StabilityMonitor monitor = new StabilityMonitor();
             monitor.addController(parentDeploymentService);
             monitor.addController(phaseService);
-            Set<ServiceController<?>> failed = new HashSet<ServiceController<?>>();
-            Set<ServiceController<?>> problems = new HashSet<ServiceController<?>>();
+            Set<ServiceController<?>> failed = new HashSet<>();
+            Set<ServiceController<?>> problems = new HashSet<>();
+            CountDownLatch latch = new CountDownLatch(1);
+            LifecycleListener listener = (controller, event) -> {
+                switch (event)
+                {
+                    case UP:
+                    case FAILED:
+                        latch.countDown();
+                }
+            };
+
             try {
+                phaseService.addListener(listener);
                 phaseService.setMode(Mode.ACTIVE);
+                latch.await(10, TimeUnit.SECONDS);
                 monitor.awaitStability(failed, problems);
             } catch (final InterruptedException ex) {
                 // ignore
             } finally {
+                phaseService.removeListener(listener);
                 monitor.clear();
             }
 

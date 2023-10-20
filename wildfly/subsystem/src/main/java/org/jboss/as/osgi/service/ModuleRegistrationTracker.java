@@ -29,7 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jboss.modules.Module;
-import org.jboss.msc.service.AbstractService;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
@@ -37,6 +37,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.osgi.framework.Services;
 import org.jboss.osgi.framework.spi.AbstractBundleRevisionAdaptor;
@@ -57,7 +58,7 @@ import org.osgi.framework.BundleContext;
  * @author thomas.diesler@jboss.com
  * @since 25-Jul-2012
  */
-public class ModuleRegistrationTracker extends AbstractService<Void> {
+public class ModuleRegistrationTracker implements Service<Void> {
 
     public static final ServiceName MODULE_REGISTRATION_COMPLETE = SERVICE_BASE_NAME.append("module", "registration");
 
@@ -72,7 +73,7 @@ public class ModuleRegistrationTracker extends AbstractService<Void> {
         builder.addDependency(Services.FRAMEWORK_CREATE, BundleContext.class, injectedSystemContext);
         builder.addDependency(Services.BUNDLE_MANAGER, BundleManager.class, injectedBundleManager);
         builder.addDependency(Services.ENVIRONMENT, XEnvironment.class, injectedEnvironment);
-        builder.addDependencies(IntegrationServices.BOOTSTRAP_BUNDLES_COMPLETE);
+        builder.requires(IntegrationServices.BOOTSTRAP_BUNDLES_COMPLETE);
         builder.setInitialMode(Mode.ON_DEMAND);
         return builder.install();
     }
@@ -104,6 +105,11 @@ public class ModuleRegistrationTracker extends AbstractService<Void> {
             reg.brev = registerInternal(syscontext, reg);
         }
         registrations.clear();
+    }
+
+    @Override
+    public void stop(final StopContext context) {
+
     }
 
     private XBundleRevision registerInternal(final BundleContext context, final Registration reg) {
@@ -144,6 +150,11 @@ public class ModuleRegistrationTracker extends AbstractService<Void> {
         assert reg.brev != null : "BundleRevision not null";
         LOGGER.infoUnregisterModule(reg.module.getIdentifier());
         env.uninstallResources(reg.brev);
+    }
+
+    @Override
+    public Void getValue() throws IllegalStateException, IllegalArgumentException {
+        return null;
     }
 
     public static final class Registration {

@@ -24,7 +24,7 @@ package org.jboss.as.osgi.jpa;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManagerFactory;
 
 import org.jboss.as.jpa.processor.JpaAttachments;
 import org.jboss.as.osgi.OSGiConstants;

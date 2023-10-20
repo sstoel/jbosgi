@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
@@ -40,13 +41,13 @@ import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.Services;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
+import org.jboss.msc.Service;
+import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.service.ValueService;
-import org.jboss.msc.value.ImmediateValue;
 import org.jboss.osgi.deployment.deployer.Deployment;
 import org.jboss.osgi.framework.spi.IntegrationServices.BootstrapPhase;
 import org.jboss.osgi.framework.spi.ServiceTracker;
@@ -57,7 +58,7 @@ import org.jboss.osgi.framework.spi.ServiceTracker;
  * @author thomas.diesler@jboss.com
  * @since 12-Apr-2012
  */
-public class InitialDeploymentTracker extends ServiceTracker<Object> {
+public class InitialDeploymentTracker extends ServiceTracker {
 
     private static final ServiceName INITIAL_DEPLOYMENTS = SERVICE_BASE_NAME.append("initial", "deployments");
 
@@ -73,7 +74,7 @@ public class InitialDeploymentTracker extends ServiceTracker<Object> {
     public InitialDeploymentTracker(OperationContext context) {
         super(InitialDeploymentTracker.class.getSimpleName());
 
-        serviceTarget = context.getServiceTarget();
+        serviceTarget = context.getCapabilityServiceTarget();
         deploymentNames = getDeploymentNames(context);
 
         // Track the persistent DEPENDENCIES services. This makes sure that Bundle.INSTALL services have completed
@@ -166,6 +167,9 @@ public class InitialDeploymentTracker extends ServiceTracker<Object> {
     }
 
     private ServiceController<Object> addPhaseCompleteService(ServiceTarget serviceTarget, ServiceName serviceName) {
-        return serviceTarget.addService(serviceName, new ValueService<Object>(new ImmediateValue<Object>(new Object()))).install();
+        ServiceBuilder sb = serviceTarget.addService(serviceName);
+        Consumer<Object> c = sb.provides(serviceName);
+        sb.setInstance(Service.newInstance(c, new Object()));
+        return sb.install();
     }
 }

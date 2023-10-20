@@ -76,7 +76,7 @@ public class RemountDeploymentRootProcessor implements DeploymentUnitProcessor {
         MountHandle mountHandle;
         try {
             handle = deploymentMountProvider.mountDeploymentContent(deploymentContents, deploymentRoot, MountType.EXPANDED);
-            mountHandle = new MountHandle(handle);
+            mountHandle = MountHandle.create(handle);
         } catch (IOException e) {
             VFSUtils.safeClose(handle);
             throw ServerLogger.ROOT_LOGGER.deploymentMountFailed(e);

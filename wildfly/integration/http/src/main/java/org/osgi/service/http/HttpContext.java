@@ -18,8 +18,8 @@ package org.osgi.service.http;
 import java.io.IOException;
 import java.net.URL;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * This interface defines methods that the Http Service may call to get information about a registration.

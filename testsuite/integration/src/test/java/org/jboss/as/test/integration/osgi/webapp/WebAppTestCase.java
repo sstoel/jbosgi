@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.servlet.Servlet;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;

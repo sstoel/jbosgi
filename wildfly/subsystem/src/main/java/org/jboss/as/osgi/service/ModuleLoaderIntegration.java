@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.jboss.as.osgi.deployment.BundleDeploymentProcessor;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -51,6 +52,7 @@ import org.jboss.modules.ModuleSpec.Builder;
 import org.jboss.modules.filter.MultiplePathFilterBuilder;
 import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
@@ -59,8 +61,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
-import org.jboss.msc.service.ValueService;
-import org.jboss.msc.value.ImmediateValue;
+import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.osgi.deployment.deployer.Deployment;
 import org.jboss.osgi.framework.spi.FrameworkModuleLoader;
@@ -204,8 +205,11 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             ModuleIdentifier identifier = moduleSpec.getModuleIdentifier();
             LOGGER.tracef("Add module spec to loader: %s", identifier);
             ServiceName moduleSpecName = ServiceModuleLoader.moduleSpecServiceName(identifier);
-            ImmediateValue<ModuleDefinition> value = new ImmediateValue<>(new ModuleDefinition(identifier, Collections.<ModuleDependency>emptySet(), moduleSpec));
-            serviceTarget.addService(moduleSpecName, new ValueService<>(value)).install();
+
+            ServiceBuilder sb = serviceTarget.addService(moduleSpecName);
+            Consumer<ModuleDefinition> c = sb.provides(moduleSpecName);
+            sb.setInstance(new ModuleDefinitionService(c, new ModuleDefinition(identifier, Collections.emptySet(), moduleSpec)));
+            sb.install();
 
             ServiceModuleLoader.installModuleResolvedService(serviceTarget, identifier);
         }
@@ -224,7 +228,58 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             ServiceName moduleServiceName = getModuleServiceName(module.getIdentifier());
             if (serviceContainer.getService(moduleServiceName) == null) {
                 LOGGER.debugf("Add module to loader: %s", module.getIdentifier());
-                serviceTarget.addService(moduleServiceName, new ValueService<Module>(new ImmediateValue<Module>(module))).install();
+                ServiceBuilder sb = serviceTarget.addService(moduleServiceName);
+                Consumer<Module> c = sb.provides(moduleServiceName);
+                sb.setInstance(new ModuleService(c, module));
+                sb.install();
+            }
+        }
+
+        private final class ModuleDefinitionService implements Service {
+            private final Consumer<ModuleDefinition> moduleConsumer;
+            private final ModuleDefinition module;
+
+            private ModuleDefinitionService(final Consumer<ModuleDefinition> moduleConsumer, final ModuleDefinition module) {
+                this.moduleConsumer = moduleConsumer;
+                this.module = module;
+            }
+            @Override
+            public void start(final StartContext startContext) {
+                moduleConsumer.accept(module);
+            }
+
+            @Override
+            public void stop(final StopContext stopContext) {
+                moduleConsumer.accept(null);
+            }
+
+            @Override
+            public Object getValue() {
+                return module;
+            }
+        }
+
+        private final class ModuleService implements Service {
+            private final Consumer<Module> moduleConsumer;
+            private final Module module;
+
+            private ModuleService(final Consumer<Module> moduleConsumer, final Module module) {
+                this.moduleConsumer = moduleConsumer;
+                this.module = module;
+            }
+            @Override
+            public void start(final StartContext startContext) {
+                moduleConsumer.accept(module);
+            }
+
+            @Override
+            public void stop(final StopContext stopContext) {
+                moduleConsumer.accept(null);
+            }
+
+            @Override
+            public Object getValue() {
+                return module;
             }
         }
 

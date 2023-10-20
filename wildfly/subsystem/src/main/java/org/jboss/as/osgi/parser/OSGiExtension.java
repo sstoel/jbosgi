@@ -31,6 +31,8 @@ import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
 import org.jboss.as.controller.SubsystemRegistration;
 import org.jboss.as.controller.parsing.ExtensionParsingContext;
+import org.jboss.as.controller.transform.ExtensionTransformerRegistration;
+import org.jboss.as.controller.transform.SubsystemTransformerRegistration;
 import org.jboss.as.controller.transform.description.DiscardAttributeChecker;
 import org.jboss.as.controller.transform.description.RejectAttributeChecker;
 import org.jboss.as.controller.transform.description.ResourceTransformationDescriptionBuilder;
@@ -90,38 +92,45 @@ public class OSGiExtension implements Extension {
 
         boolean registerRuntimeOnly = context.isRuntimeOnlyRegistrationValid();
 
-        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, MANAGEMENT_API_MAJOR_VERSION,
-                MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION);
+        final SubsystemRegistration subsystem = context.registerSubsystem(SUBSYSTEM_NAME, ModelVersion.create(MANAGEMENT_API_MAJOR_VERSION,
+                MANAGEMENT_API_MINOR_VERSION, MANAGEMENT_API_MICRO_VERSION));
         subsystem.registerSubsystemModel(new OSGiRootResource(registerRuntimeOnly));
 
         subsystem.registerXMLElementWriter(OSGiSubsystemWriter.INSTANCE);
+    }
 
-        if (context.isRegisterTransformers()) {
+    public static final class TransformerRegistration implements ExtensionTransformerRegistration {
+        @Override
+        public String getSubsystemName() {
+            return SUBSYSTEM_NAME;
+        }
+
+        @Override
+        public void registerTransformers(final SubsystemTransformerRegistration subsystem) {
             registerTransformers1_0_0(subsystem);
         }
+
+        private static void registerTransformers1_0_0(SubsystemTransformerRegistration subsystem) {
+
+            // Root resource
+            final ResourceTransformationDescriptionBuilder subsystemRoot = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
+            subsystemRoot.getAttributeBuilder()
+                    .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, OSGiRootResource.ACTIVATION);
+
+            // Capabilities
+            subsystemRoot.addChildResource(FrameworkCapabilityResource.CAPABILITY_PATH)
+                    .getAttributeBuilder()
+                    /** 1.0.0 does not like "start-level"=>undefined, so we remove this here */
+                    .setDiscard(DiscardAttributeChecker.UNDEFINED, FrameworkCapabilityResource.STARTLEVEL)
+                    .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, FrameworkCapabilityResource.STARTLEVEL);
+
+            // Properties
+            subsystemRoot.addChildResource(FrameworkPropertyResource.PROPERTY_PATH)
+                    .getAttributeBuilder()
+                    .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, FrameworkPropertyResource.VALUE);
+
+            // Register
+            TransformationDescription.Tools.register(subsystemRoot.build(), subsystem, ModelVersion.create(1, 0, 0));
+        }
     }
-
-    private void registerTransformers1_0_0(SubsystemRegistration subsystem) {
-
-        // Root resource
-        final ResourceTransformationDescriptionBuilder subsystemRoot = TransformationDescriptionBuilder.Factory.createSubsystemInstance();
-        subsystemRoot.getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, OSGiRootResource.ACTIVATION);
-
-        // Capabilities
-        subsystemRoot.addChildResource(FrameworkCapabilityResource.CAPABILITY_PATH)
-                .getAttributeBuilder()
-                /** 1.0.0 does not like "start-level"=>undefined, so we remove this here */
-                .setDiscard(DiscardAttributeChecker.UNDEFINED, FrameworkCapabilityResource.STARTLEVEL)
-                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, FrameworkCapabilityResource.STARTLEVEL);
-
-        // Properties
-        subsystemRoot.addChildResource(FrameworkPropertyResource.PROPERTY_PATH)
-                .getAttributeBuilder()
-                .addRejectCheck(RejectAttributeChecker.SIMPLE_EXPRESSIONS, FrameworkPropertyResource.VALUE);
-
-        // Register
-        TransformationDescription.Tools.register(subsystemRoot.build(), subsystem, ModelVersion.create(1, 0, 0));
-    }
-
 }

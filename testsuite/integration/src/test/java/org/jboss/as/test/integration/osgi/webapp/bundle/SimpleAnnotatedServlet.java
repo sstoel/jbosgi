@@ -24,7 +24,7 @@ package org.jboss.as.test.integration.osgi.webapp.bundle;
 import java.io.IOException;
 import java.io.Writer;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;

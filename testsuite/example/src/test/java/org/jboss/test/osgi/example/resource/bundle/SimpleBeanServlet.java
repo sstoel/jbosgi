@@ -24,7 +24,7 @@ package org.jboss.test.osgi.example.resource.bundle;
 import java.io.IOException;
 import java.io.Writer;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;

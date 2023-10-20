@@ -25,7 +25,7 @@ package org.jboss.as.test.integration.osgi.cdi;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.ManagedBean;
+import jakarta.annotation.ManagedBean;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;

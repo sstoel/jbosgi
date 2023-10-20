@@ -24,7 +24,7 @@ package org.jboss.as.test.integration.osgi.cdi.impl;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.annotation.ManagedBean;
+import jakarta.annotation.ManagedBean;
 
 
 /**

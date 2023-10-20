@@ -25,9 +25,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.jar.Manifest;
 
-import javax.servlet.Servlet;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
 
 import org.jboss.osgi.metadata.OSGiManifestBuilder;
 import org.osgi.framework.Bundle;

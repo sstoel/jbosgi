@@ -23,6 +23,8 @@ package org.jboss.as.osgi.parser;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
+import java.util.EnumSet;
+
 import org.jboss.as.controller.OperationDefinition;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
@@ -54,7 +56,7 @@ public class OSGiRootResource extends SimpleResourceDefinition {
     private static final ResourceDescriptionResolver RESOLVER = OSGiResolvers.getResolver(OSGiExtension.SUBSYSTEM_NAME);
     public static final SimpleAttributeDefinition ACTIVATION = new SimpleAttributeDefinitionBuilder(ModelConstants.ACTIVATION, ModelType.STRING, false)
             .setDefaultValue(new ModelNode(SubsystemState.DEFAULT_ACTIVATION.toString()))
-            .setValidator(new EnumValidator<Activation>(Activation.class, false, false))
+            .setValidator(new EnumValidator<>(Activation.class, EnumSet.allOf(Activation.class)))
             .setAllowExpression(true)
             .addFlag(Flag.RESTART_JVM)
             .build();

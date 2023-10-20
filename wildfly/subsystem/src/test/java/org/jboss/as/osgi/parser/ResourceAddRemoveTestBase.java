@@ -21,9 +21,6 @@
  */
 package org.jboss.as.osgi.parser;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -44,6 +41,7 @@ import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceRegistry;
+import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -100,7 +98,7 @@ class ResourceAddRemoveTestBase {
                 addedSteps.add((OperationStepHandler) invocation.getArguments()[0]);
                 return null;
             }
-        }).when(context).addStep((OperationStepHandler) anyObject(), eq(OperationContext.Stage.RUNTIME));
+        }).when(context).addStep((OperationStepHandler) ArgumentMatchers.any(), ArgumentMatchers.eq(OperationContext.Stage.RUNTIME));
         doAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -111,13 +109,13 @@ class ResourceAddRemoveTestBase {
                 }
                 return null;
             }
-        }).when(context).completeStep(any(OperationContext.RollbackHandler.class));
+        }).when(context).completeStep(ArgumentMatchers.any(OperationContext.RollbackHandler.class));
         doAnswer(new Answer<ModelNode>() {
             @Override
             public ModelNode answer(InvocationOnMock invocation) throws Throwable {
                 return (ModelNode)invocation.getArguments()[0];
             }
-        }).when(context).resolveExpressions(any(ModelNode.class));
+        }).when(context).resolveExpressions(ArgumentMatchers.any(ModelNode.class));
         return context;
     }
 
@@ -136,7 +134,7 @@ class ResourceAddRemoveTestBase {
                 handler.handleRollback(context, operation);
                 return null;
             }
-        }).when(context).completeStep(any(OperationContext.RollbackHandler.class));
+        }).when(context).completeStep(ArgumentMatchers.any(OperationContext.RollbackHandler.class));
     }
 
     protected void configureForSuccess(final OperationContext context) {
@@ -145,6 +143,6 @@ class ResourceAddRemoveTestBase {
             public Void answer(InvocationOnMock invocation) throws Throwable {
                 return null;
             }
-        }).when(context).completeStep(any(OperationContext.RollbackHandler.class));
+        }).when(context).completeStep(ArgumentMatchers.any(OperationContext.RollbackHandler.class));
     }
 }

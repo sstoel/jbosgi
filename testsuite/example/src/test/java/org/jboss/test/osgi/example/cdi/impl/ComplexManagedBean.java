@@ -25,10 +25,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import javax.annotation.ManagedBean;
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.enterprise.inject.Produces;
+import jakarta.annotation.ManagedBean;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
+import jakarta.enterprise.inject.Produces;
 
 import org.jboss.test.osgi.example.api.PaymentProvider;
 import org.osgi.framework.BundleContext;
