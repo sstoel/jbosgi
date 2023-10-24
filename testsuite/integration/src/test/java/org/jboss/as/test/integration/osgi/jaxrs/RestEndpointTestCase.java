@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Application;
 
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;

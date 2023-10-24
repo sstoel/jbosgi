@@ -51,17 +51,11 @@
             <groupId>org.jboss.osgi.framework</groupId>
             <artifactId>jbosgi-framework-core</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-8.0</artifactId>
-            <type>pom</type>
-            <scope>provided</scope>
-        </dependency>
 
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-testsuite-shared</artifactId>
-            <version>30.0.0.Beta1</version>
+            <version>30.0.0.Final</version>
             <exclusions>
             	<exclusion>
 		            <groupId>org.apache.directory.jdbm</groupId>

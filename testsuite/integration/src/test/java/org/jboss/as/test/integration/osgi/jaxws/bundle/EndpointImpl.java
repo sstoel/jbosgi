@@ -21,7 +21,7 @@
  */
 package org.jboss.as.test.integration.osgi.jaxws.bundle;
 
-import javax.jws.WebService;
+import jakarta.jws.WebService;
 
 import org.jboss.logging.Logger;
 

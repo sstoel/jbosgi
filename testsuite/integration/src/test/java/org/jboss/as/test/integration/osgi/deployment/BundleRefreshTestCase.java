@@ -97,7 +97,7 @@ public class BundleRefreshTestCase {
             webapp.start();
 
             String result = performCall("bundle-v200", "simple", null);
-            Assert.assertEquals("Revision deployment.v200.jar:main", result);
+            Assert.assertEquals("Revision deployment.v200.jar", result);
             result = performCall("bundle-v200", "message.txt", null);
             Assert.assertEquals("Resource V2.0.0", result);
 
@@ -105,7 +105,7 @@ public class BundleRefreshTestCase {
 
             // The wiring should not be effected
             result = performCall("bundle-v200", "simple", null);
-            Assert.assertEquals("Revision deployment.v200.jar:main", result);
+            Assert.assertEquals("Revision deployment.v200.jar", result);
             result = performCall("bundle-v200", "message.txt", null);
             Assert.assertEquals("Resource V2.0.0", result);
 
@@ -113,7 +113,7 @@ public class BundleRefreshTestCase {
 
             // The wiring should have changed
             result = performCall("bundle-v200", "simple", null);
-            Assert.assertEquals("Revision deployment.v200.jar:main", result);
+            Assert.assertEquals("Revision deployment.v200.jar", result);
             result = performCall("bundle-v200", "message.txt", null);
             Assert.assertEquals("Resource V2.0.0", result);
         } finally {

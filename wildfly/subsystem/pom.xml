@@ -88,13 +88,6 @@
 
         <!-- Test Dependencies -->
         <dependency>
-            <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-8.0</artifactId>
-            <type>pom</type>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
         </dependency>
@@ -125,7 +118,7 @@
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-weld-common</artifactId>
-            <version>30.0.0.Beta1</version>
+            <version>30.0.0.Final</version>
         </dependency>
     </dependencies>
 

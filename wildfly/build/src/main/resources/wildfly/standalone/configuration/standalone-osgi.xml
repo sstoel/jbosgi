@@ -119,13 +119,12 @@
             </properties>
             <capabilities>
                 <!-- modules registered with the OSGi layer on startup -->
-                <capability name="javax.jws.api"/>
-                <capability name="javax.persistence.api"/>
-                <capability name="javax.servlet.api"/>
-                <capability name="javax.transaction.api"/>
-                <capability name="javax.ws.rs.api"/>
-                <capability name="javax.xml.bind.api"/>
-                <capability name="javax.xml.ws.api"/>
+                <capability name="jakarta.persistence.api"/>
+                <capability name="jakarta.servlet.api"/>
+                <capability name="jakarta.transaction.api"/>
+                <capability name="jakarta.ws.rs.api"/>
+                <capability name="jakarta.xml.bind.api"/>
+                <capability name="jakarta.xml.ws.api"/>
 
                 <!-- bundles started in startlevel 1 -->
                 <capability name="org.apache.felix.log" startlevel="1"/>

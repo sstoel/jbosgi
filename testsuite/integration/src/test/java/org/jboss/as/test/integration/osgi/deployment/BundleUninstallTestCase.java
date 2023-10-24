@@ -182,7 +182,7 @@ public class BundleUninstallTestCase {
             webapp.start();
 
             String result = performCall("bundle-v200", "simple", null);
-            Assert.assertEquals("Revision deployment.v200.jar:main", result);
+            Assert.assertEquals("Revision deployment.v200.jar", result);
             result = performCall("bundle-v200", "message.txt", null);
             Assert.assertEquals("Resource V2.0.0", result);
 
@@ -196,7 +196,7 @@ public class BundleUninstallTestCase {
 
             // The wiring should not be effected
             result = performCall("bundle-v200", "simple", null);
-            Assert.assertEquals("Revision deployment.v200.jar:main", result);
+            Assert.assertEquals("Revision deployment.v200.jar", result);
             result = performCall("bundle-v200", "message.txt", null);
             Assert.assertEquals("Resource V2.0.0", result);
         } finally {
@@ -221,7 +221,7 @@ public class BundleUninstallTestCase {
         Long resid = brev.getAttachment(XResource.RESOURCE_IDENTIFIER_KEY);
         try {
             String result = performCall("bundle-v200", "simple", null);
-            Assert.assertEquals("Revision deployment.v200.jar:main", result);
+            Assert.assertEquals("Revision deployment.v200.jar", result);
             result = performCall("bundle-v200", "message.txt", null);
             Assert.assertEquals("Resource V2.0.0", result);
 
@@ -235,7 +235,7 @@ public class BundleUninstallTestCase {
 
             // The wiring should not be effected
             result = performCall("bundle-v200", "simple", null);
-            Assert.assertEquals("Revision deployment.v200.jar:main", result);
+            Assert.assertEquals("Revision deployment.v200.jar", result);
             result = performCall("bundle-v200", "message.txt", null);
             Assert.assertEquals("Resource V2.0.0", result);
         } finally {

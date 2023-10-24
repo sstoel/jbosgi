@@ -48,12 +48,6 @@
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging-processor</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-8.0</artifactId>
-            <type>pom</type>
-            <scope>provided</scope>
-        </dependency>
 
     </dependencies>
 

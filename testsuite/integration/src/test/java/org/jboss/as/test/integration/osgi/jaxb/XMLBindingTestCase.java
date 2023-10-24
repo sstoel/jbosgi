@@ -27,9 +27,9 @@ import static org.junit.Assert.assertNotNull;
 import java.io.InputStream;
 import java.net.URL;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBElement;
+import jakarta.xml.bind.Unmarshaller;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -70,7 +70,7 @@ public class XMLBindingTestCase {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
-                builder.addImportPackages("javax.xml.bind", "javax.xml.bind.annotation");
+                builder.addImportPackages("jakarta.xml.bind", "jakarta.xml.bind.annotation");
                 builder.addImportPackages("javax.xml.datatype", "javax.xml.namespace");
                 return builder.openStream();
             }

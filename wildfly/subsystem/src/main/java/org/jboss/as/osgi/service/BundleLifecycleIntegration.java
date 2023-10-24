@@ -355,31 +355,14 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
 
             depUnit.getAttachment(Attachments.DEFERRED_ACTIVATION_COUNT).incrementAndGet();
 
-            StabilityMonitor monitor = new StabilityMonitor();
-            monitor.addController(parentDeploymentService);
-            monitor.addController(phaseService);
             Set<ServiceController<?>> failed = new HashSet<>();
             Set<ServiceController<?>> problems = new HashSet<>();
-            CountDownLatch latch = new CountDownLatch(1);
-            LifecycleListener listener = (controller, event) -> {
-                switch (event)
-                {
-                    case UP:
-                    case FAILED:
-                        latch.countDown();
-                }
-            };
 
             try {
-                phaseService.addListener(listener);
                 phaseService.setMode(Mode.ACTIVE);
-                latch.await(10, TimeUnit.SECONDS);
-                monitor.awaitStability(failed, problems);
+                phaseService.getServiceContainer().awaitStability(failed, problems);
             } catch (final InterruptedException ex) {
                 // ignore
-            } finally {
-                phaseService.removeListener(listener);
-                monitor.clear();
             }
 
             // In case of failure we go back to NEVER

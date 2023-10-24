@@ -20,9 +20,9 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.Servlet;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
+import jakarta.servlet.Servlet;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
 
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -140,7 +140,7 @@ public class BundleUpdateTestCase {
             bundleB.start();
 
             String result = performCall("bundle-v200", "simple", null);
-            Assert.assertEquals("Revision deployment.v200.jar:main", result);
+            Assert.assertEquals("Revision deployment.v200.jar", result);
             result = performCall("bundle-v200", "message.txt", null);
             Assert.assertEquals("Resource V2.0.0", result);
 
@@ -148,7 +148,7 @@ public class BundleUpdateTestCase {
 
             // The wiring should not be effected
             result = performCall("bundle-v200", "simple", null);
-            Assert.assertEquals("Revision deployment.v200.jar:main", result);
+            Assert.assertEquals("Revision deployment.v200.jar", result);
             result = performCall("bundle-v200", "message.txt", null);
             Assert.assertEquals("Resource V2.0.0", result);
 
@@ -158,7 +158,7 @@ public class BundleUpdateTestCase {
 
             // The wiring should have changed
             result = performCall("bundle-v200", "simple", null);
-            Assert.assertEquals("Revision deployment.v200-rev1.jar:main", result);
+            Assert.assertEquals("Revision deployment.v200-rev1.jar", result);
             result = performCall("bundle-v200", "message.txt", null);
             Assert.assertEquals("Resource V2.0.0", result);
         } finally {

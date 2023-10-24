@@ -1,13 +1,18 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2010, Red Hat, Inc., and individual contributors
+ * JBoss",
+"Home of Professional Open Source.
+ * Copyright 2010",
+"Red Hat",
+"Inc.",
+"and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
+ * the License",
+"or (at your option) any later version.
  *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,9 +20,16 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not, write to the Free
- * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
- * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ * License along with this software; if not",
+"write to the Free
+ * Software Foundation",
+"Inc.",
+"51 Franklin St",
+"Fifth Floor",
+"Boston",
+"MA
+ * 02110-1301 USA",
+"or see the FSF site: http://www.fsf.org.
  */
 
 package org.jboss.as.osgi.service;
@@ -32,7 +44,7 @@ interface SystemPackagesIntegration  {
 
     String[] DEFAULT_SYSTEM_MODULES = new String[] {
         "javax.api",
-        "javax.inject.api",
+        "jakarta.inject.api",
         "org.apache.xerces",
         "org.jboss.as.controller-client",
         "org.jboss.as.osgi",
@@ -49,7 +61,7 @@ interface SystemPackagesIntegration  {
     };
 
     String[] DEFAULT_INTEGRATION_PACKAGES = new String[] {
-        "javax.inject",
+        "jakarta.inject",
         "org.apache.xerces.jaxp",
         "org.jboss.as.controller.client",
         "org.jboss.as.controller.client.helpers",
@@ -74,7 +86,6 @@ interface SystemPackagesIntegration  {
     String[] JAVAX_API_PACKAGES = new String[] {
         "javax.accessibility",
         "javax.annotation.processing",
-        "javax.activity",
         "javax.crypto",
         "javax.crypto.interfaces",
         "javax.crypto.spec",
@@ -83,6 +94,7 @@ interface SystemPackagesIntegration  {
         "javax.imageio.metadata",
         "javax.imageio.plugins.bmp",
         "javax.imageio.plugins.jpeg",
+        "javax.imageio.plugins.tiff",
         "javax.imageio.spi",
         "javax.imageio.stream",
         "javax.lang.model",
@@ -102,6 +114,7 @@ interface SystemPackagesIntegration  {
         "javax.naming.directory",
         "javax.naming.event",
         "javax.naming.ldap",
+        "javax.naming.ldap.spi",
         "javax.naming.spi",
         "javax.net",
         "javax.net.ssl",
@@ -128,13 +141,18 @@ interface SystemPackagesIntegration  {
         "javax.sql.rowset.serial",
         "javax.sql.rowset.spi",
         "javax.swing",
+        "javax.swing.beaninfo.images",
         "javax.swing.border",
         "javax.swing.colorchooser",
         "javax.swing.event",
         "javax.swing.filechooser",
         "javax.swing.plaf",
         "javax.swing.plaf.basic",
+        "javax.swing.plaf.basic.icons",
         "javax.swing.plaf.metal",
+        "javax.swing.plaf.metal.icons",
+        "javax.swing.plaf.metal.icons.ocean",
+        "javax.swing.plaf.metal.sounds",
         "javax.swing.plaf.multi",
         "javax.swing.plaf.nimbus",
         "javax.swing.plaf.synth",
@@ -143,10 +161,13 @@ interface SystemPackagesIntegration  {
         "javax.swing.text.html",
         "javax.swing.text.html.parser",
         "javax.swing.text.rtf",
+        "javax.swing.text.rtf.charsets",
         "javax.swing.tree",
         "javax.swing.undo",
         "javax.tools",
+        "javax.transaction.xa",
         "javax.xml",
+        "javax.xml.catalog",
         "javax.xml.crypto",
         "javax.xml.crypto.dom",
         "javax.xml.crypto.dsig",
@@ -159,7 +180,6 @@ interface SystemPackagesIntegration  {
         "javax.xml.stream",
         "javax.xml.stream.events",
         "javax.xml.stream.util",
-        "javax.transaction.xa",
         "javax.xml.transform",
         "javax.xml.transform.dom",
         "javax.xml.transform.sax",
@@ -168,15 +188,17 @@ interface SystemPackagesIntegration  {
         "javax.xml.validation",
         "javax.xml.xpath",
         "org.ietf.jgss",
+        "org.jcp.xml.dsig.internal",
+        "org.jcp.xml.dsig.internal.dom",
         "org.w3c.dom",
         "org.w3c.dom.bootstrap",
         "org.w3c.dom.css",
         "org.w3c.dom.events",
         "org.w3c.dom.html",
+        "org.w3c.dom.ls",
         "org.w3c.dom.ranges",
         "org.w3c.dom.stylesheets",
         "org.w3c.dom.traversal",
-        "org.w3c.dom.ls",
         "org.w3c.dom.views",
         "org.w3c.dom.xpath",
         "org.xml.sax",
