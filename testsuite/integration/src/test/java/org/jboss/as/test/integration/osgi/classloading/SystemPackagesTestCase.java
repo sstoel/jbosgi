@@ -108,7 +108,7 @@ public class SystemPackagesTestCase {
 		String[] javaxAPIPackages = (String[]) javaxAPIPackagesField.get(null);
 
 		List<String> javaxApiPaths = javaxApiModule.getExportedPaths().stream().map(x -> x.replace('/', '.'))
-				.filter(x -> x.startsWith("javax") || x.startsWith("org")).sorted(String::compareTo)
+				.filter(x -> x.startsWith("javax") || x.startsWith("org") || x.startsWith("java")).sorted(String::compareTo)
 				.collect(Collectors.toList());
 		List<String> declaredPackages = new ArrayList<String>(Arrays.asList(javaxAPIPackages));
 		declaredPackages.sort(String::compareTo);

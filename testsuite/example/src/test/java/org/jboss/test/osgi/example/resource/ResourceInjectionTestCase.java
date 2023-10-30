@@ -64,6 +64,7 @@ public class ResourceInjectionTestCase {
                 builder.addBundleManifestVersion(2);
                 builder.addBundleActivator(ResourceInjectionActivator.class);
                 builder.addImportPackages(DataSource.class, BundleActivator.class);
+                builder.addImportPackages("java.sql");
                 return builder.openStream();
             }
         });

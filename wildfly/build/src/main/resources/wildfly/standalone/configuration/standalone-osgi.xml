@@ -127,6 +127,7 @@
                 <capability name="jakarta.xml.ws.api"/>
 
                 <!-- bundles started in startlevel 1 -->
+                <capability name="org.glassfish.jaxb" startlevel="1"/>
                 <capability name="org.apache.felix.log" startlevel="1"/>
                 <capability name="org.jboss.osgi.logging" startlevel="1"/>
                 <capability name="org.apache.felix.configadmin" startlevel="1"/>

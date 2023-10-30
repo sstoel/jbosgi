@@ -69,6 +69,6 @@ public class BundleNestedInWarTestCase {
         ClassLoader warLoader = BundleNestedInWarTestCase.class.getClassLoader();
         Class<?> clazz = warLoader.loadClass(WebInfLibClass.class.getName());
         ClassLoader bundleLoader = clazz.getClassLoader();
-        assertTrue(bundleLoader.toString().contains("ModuleClassLoader for Module \"deployment.as945.war:main\""));
+        assertTrue(bundleLoader.toString().contains("ModuleClassLoader for Module \"deployment.as945.war\""));
     }
 }

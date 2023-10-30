@@ -65,7 +65,7 @@ public class BundleContextBindingProcessor implements DeploymentUnitProcessor {
     private static final ModuleIdentifier ORG_OSGI_CORE = ModuleIdentifier.create("org.osgi.core");
     
     private static final DotName RESOURCE_DOT_NAME = DotName.createSimple(Resource.class.getName());
-    private static final DotName INJECT_DOT_NAME = DotName.createSimple("javax.inject.Inject");
+    private static final DotName INJECT_DOT_NAME = DotName.createSimple("jakarta.inject.Inject");
     private static final DotName TARGET_DOT_NAME = DotName.createSimple(BundleContext.class.getName());
 
     @Override

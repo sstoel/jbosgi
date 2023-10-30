@@ -124,7 +124,7 @@ public final class FrameworkManagement {
     }
 
     public static Long getBundleId(ModelControllerClient client, String symbolicName, Version version) throws Exception {
-        Long result = new Long(-1);
+        Long result = -1L;
         ModelNode op = createOpNode("subsystem=osgi", ModelDescriptionConstants.READ_RESOURCE_OPERATION);
         op.get(ModelDescriptionConstants.INCLUDE_RUNTIME).set("true");
         op.get(ModelDescriptionConstants.RECURSIVE).set("true");
@@ -135,14 +135,14 @@ public final class FrameworkManagement {
             ModelNode symbolicNameNode = valueNode.get(ModelConstants.SYMBOLIC_NAME);
             if (symbolicNameNode.asString().equals(symbolicName)) {
                 if (version == null) {
-                    result = new Long(propNode.getName());
+                    result = valueNode.get("id").asLong();
                     break;
                 }
                 ModelNode versionNode = valueNode.get(ModelConstants.VERSION);
                 if (versionNode.isDefined()) {
                     Version auxver = Version.parseVersion(versionNode.asString());
                     if (version.equals(auxver)) {
-                        result = new Long(propNode.getName());
+                        result = valueNode.get("id").asLong();
                         break;
                     }
                 }

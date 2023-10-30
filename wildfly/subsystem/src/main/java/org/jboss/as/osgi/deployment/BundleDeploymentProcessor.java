@@ -164,6 +164,8 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
                 // JBOSGI-751, JBOSGI-761, JBOSGI-793, JBOSGI-794
                 excludedSubsystems.add("webservices");
                 excludedSubsystems.add("ee");
+                excludedSubsystems.add("elytron");
+                excludedSubsystems.add("microprofile-config-smallrye");
             }
 
             if (noExistingSubsystems) {

@@ -72,6 +72,7 @@ public class XMLBindingTestCase {
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages("jakarta.xml.bind", "jakarta.xml.bind.annotation");
                 builder.addImportPackages("javax.xml.datatype", "javax.xml.namespace");
+                builder.addImportPackages("org.glassfish.jaxb.runtime.v2");
                 return builder.openStream();
             }
         });

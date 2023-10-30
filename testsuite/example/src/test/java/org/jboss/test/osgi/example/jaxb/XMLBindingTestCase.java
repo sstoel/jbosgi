@@ -70,8 +70,9 @@ public class XMLBindingTestCase {
                 OSGiManifestBuilder builder = OSGiManifestBuilder.newInstance();
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
-                builder.addImportPackages("javax.xml.bind", "javax.xml.bind.annotation");
+                builder.addImportPackages("jakarta.xml.bind", "jakarta.xml.bind.annotation");
                 builder.addImportPackages("javax.xml.datatype", "javax.xml.namespace");
+                builder.addImportPackages("org.glassfish.jaxb.runtime.v2");
                 return builder.openStream();
             }
         });
