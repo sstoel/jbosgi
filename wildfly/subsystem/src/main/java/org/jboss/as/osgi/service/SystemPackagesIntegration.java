@@ -46,6 +46,7 @@ interface SystemPackagesIntegration  {
         "javax.api",
         "jakarta.inject.api",
         "org.apache.xerces",
+        "org.apache.cxf",
         "org.jboss.as.controller-client",
         "org.jboss.as.osgi",
         "org.jboss.dmr",
@@ -79,7 +80,7 @@ interface SystemPackagesIntegration  {
     };
 
     String[] DEFAULT_CAPABILITIES = new String[] {
-        "javax.annotation.api"
+        "jakarta.annotation.api"
     };
 
     // Keep in sync with module javax.api

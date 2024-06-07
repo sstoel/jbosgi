@@ -55,6 +55,9 @@
 		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/osgi/core/main/org.osgi.core-${version.osgi}.jar" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/org.osgi.core-*.jar" />
 		</copy>
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/apache/xerces/main/xercesImpl-2.12.2.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/xercesImpl-2.12.2.jar" />
+		</copy>
 		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/http/main/jbosgi-wildfly-http-${project.version}.jar" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-http-*.jar" />
 		</copy>

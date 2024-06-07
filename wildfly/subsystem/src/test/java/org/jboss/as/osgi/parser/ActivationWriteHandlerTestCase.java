@@ -26,6 +26,8 @@ import java.util.Locale;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.registry.AttributeAccess;
+import org.jboss.as.controller.registry.ImmutableManagementResourceRegistration;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.osgi.management.ActivationAttributeHandler;
 import org.jboss.as.osgi.parser.SubsystemState.Activation;
@@ -49,8 +51,15 @@ public class ActivationWriteHandlerTestCase {
 
         OperationContext context = mock(OperationContext.class);
         Resource resource = mock(Resource.class);
+        ImmutableManagementResourceRegistration registration = mock(ImmutableManagementResourceRegistration.class);
         when(resource.getModel()).thenReturn(targetNode);
         when(context.readResourceForUpdate(PathAddress.EMPTY_ADDRESS)).thenReturn(resource);
+        AttributeAccess access = mock(AttributeAccess.class);
+        when(registration.getAttributeAccess(PathAddress.EMPTY_ADDRESS, "activation")).thenReturn(access);
+        when(context.getResourceRegistration()).thenReturn(registration);
+
+        when(access.getAccessType()).thenReturn(AttributeAccess.AccessType.READ_WRITE);
+        when(access.getAttributeDefinition()).thenReturn(OSGiRootResource.ACTIVATION);
 
         ModelNode operation = new ModelNode();
         operation.get(ModelDescriptionConstants.NAME).set(ModelConstants.ACTIVATION);

@@ -118,6 +118,11 @@
                 <property name="org.osgi.framework.startlevel.beginning">1</property>
             </properties>
             <capabilities>
+                <capability name="jakarta.activation.api" startlevel="1"  />
+                <capability name="jakarta.mail.api" startlevel="1"  />
+                <capability name="org.eclipse.angus.mail" startlevel="1" />
+                <capability name="org.eclipse.angus.activation" startlevel="1" />
+
                 <!-- modules registered with the OSGi layer on startup -->
                 <capability name="jakarta.persistence.api"/>
                 <capability name="jakarta.servlet.api"/>

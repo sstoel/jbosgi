@@ -38,8 +38,9 @@
             </imports>
         </module>
         <module name="javax.api"/>
-        <module name="javax.annotation.api"/>
-        <module name="javax.inject.api"/>
+        <module name="jakarta.annotation.api"/>
+        <module name="jakarta.inject.api"/>
+        <module name="org.apache.commons.configuration2"/>
         <module name="org.apache.xerces" services="import"/>
         <module name="org.jboss.as.controller"/>
         <module name="org.jboss.as.ee" optional="true"/>

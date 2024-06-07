@@ -22,6 +22,7 @@
                 <include>org.jboss.shrinkwrap:*:*</include>
                 <include>*:org.apache.felix*:jar</include>
                 <include>*:org.apache.aries*:jar</include>
+                <include>xerces:*:jar</include>
             </includes>
             <scope>compile</scope>
             <unpack>false</unpack>
