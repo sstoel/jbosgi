@@ -49,7 +49,7 @@
         <version.apache.felix.scr.ds.annotations>1.2.10</version.apache.felix.scr.ds.annotations>
         <version.apache.felix.scr.generator>1.26.4</version.apache.felix.scr.generator>
         <version.apache.felix.webconsole>4.2.14</version.apache.felix.webconsole>
-        <version.codehaus.izpack>4.3.5</version.codehaus.izpack>
+        <version.codehaus.izpack>5.2.1</version.codehaus.izpack>
         <version.jboss.osgi.deployment>5.2.0.Final</version.jboss.osgi.deployment>
         <version.jboss.osgi.framework>6.2.0.Final</version.jboss.osgi.framework>
         <version.jboss.osgi.logging>4.2.0.Final</version.jboss.osgi.logging>
@@ -109,7 +109,7 @@
             <!-- Codehaus -->
             <dependency>
                 <groupId>org.codehaus.izpack</groupId>
-                <artifactId>izpack-standalone-compiler</artifactId>
+                <artifactId>izpack-ant</artifactId>
                 <version>${version.codehaus.izpack}</version>
             </dependency>
 

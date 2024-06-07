@@ -116,6 +116,14 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-scr-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm-analysis</artifactId>
+                        <version>9.7</version>
+                        <scope>compile</scope>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>scrdescriptor</id>

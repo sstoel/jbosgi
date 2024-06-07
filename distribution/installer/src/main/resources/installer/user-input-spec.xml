@@ -1,8 +1,8 @@
-<userInput>
-  <panel order="0" id="jboss.home.select">
+<izpack:userinput version="5.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:izpack="http://izpack.org/schema/userinput" xsi:schemaLocation="http://izpack.org/schema/userinput http://izpack.org/schema/5.0/izpack-userinput-5.0.xsd">
+  <panel id="jboss.home.select">
     <createForPack name="WildFly OSGi Integration" />
     <field type="dir" align="left" variable="wildFlyInstallPath">
       <spec txt="WildFly Home:" size="20" set="${jboss.home}" />
     </field>
   </panel>
-</userInput>
+</izpack:userinput>
