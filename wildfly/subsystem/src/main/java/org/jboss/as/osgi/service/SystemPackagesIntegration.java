@@ -157,6 +157,7 @@ interface SystemPackagesIntegration  {
         "java.util.spi",
         "java.util.stream",
         "java.util.zip",
+        "java.xml",
         "javax.accessibility",
         "javax.annotation.processing",
         "javax.crypto",
