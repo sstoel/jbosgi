@@ -50,7 +50,7 @@
     
     <!-- Modules -->
     <modules>
-        <module>installer</module>
+<!--        <module>installer</module>-->
 <!--        <module>javadoc</module>-->
     </modules>
 
