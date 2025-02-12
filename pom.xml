@@ -353,7 +353,7 @@
                 </property>
             </activation>
             <properties>
-                <version.jboss.wildfly>34.0.1.Final</version.jboss.wildfly>
+                <version.jboss.wildfly>35.0.1.Final</version.jboss.wildfly>
                 <wildfly.dist.dir>/Users/sander/wildfly/wildfly/build/target/wildfly-${version.jboss.wildfly}</wildfly.dist.dir>
             </properties>
         </profile>
