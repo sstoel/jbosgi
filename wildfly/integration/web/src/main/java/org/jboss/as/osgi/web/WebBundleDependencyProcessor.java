@@ -52,7 +52,7 @@ public class WebBundleDependencyProcessor implements DeploymentUnitProcessor {
 
         final ModuleSpecification moduleSpecification = depUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
         final ModuleLoader moduleLoader = Module.getBootModuleLoader();
-        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, OSGI_WEB, false, false, true, false));
+        moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, OSGI_WEB.toString(), false, false, true, false));
     }
 
     @Override

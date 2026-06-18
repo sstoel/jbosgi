@@ -128,8 +128,9 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
         if (deployment != null) {
 
             // Make sure the framework uses the same module id as the server
-            ModuleIdentifier identifier = depUnit.getAttachment(Attachments.MODULE_IDENTIFIER);
-            deployment.putAttachment(IntegrationConstants.MODULE_IDENTIFIER_KEY, identifier);
+            String identifier = depUnit.getAttachment(Attachments.MODULE_NAME);
+            deployment.putAttachment(IntegrationConstants.MODULE_IDENTIFIER_KEY,
+                    ModuleIdentifier.fromString(identifier));
 
             // Allow additional dependencies for the set of supported deployment types
             if (allowAdditionalModuleDependencies(depUnit)) {

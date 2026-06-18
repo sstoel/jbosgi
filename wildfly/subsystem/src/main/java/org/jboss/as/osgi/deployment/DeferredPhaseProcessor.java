@@ -52,7 +52,7 @@ public class DeferredPhaseProcessor implements DeploymentUnitProcessor {
             return;
 
         // Add a dependency on the Module service
-        ServiceName moduleService = ServiceModuleLoader.moduleServiceName(brev.getModuleIdentifier());
+        ServiceName moduleService = ServiceModuleLoader.moduleServiceName(brev.getModuleIdentifier().toString());
         phaseContext.addDeploymentDependency(moduleService, Attachments.MODULE);
 
         // Defer the module phase if the bundle is not resolved

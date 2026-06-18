@@ -247,7 +247,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             DeploymentUnit depUnit = deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY);
             if (depUnit == null) {
                 ModuleIdentifier identifier = bundle.getBundleRevision().getModuleIdentifier();
-                ServiceName moduleServiceName = ServiceModuleLoader.moduleServiceName(identifier);
+                ServiceName moduleServiceName = ServiceModuleLoader.moduleServiceName(identifier.toString());
                 ServiceRegistry serviceRegistry = bundleManager.getServiceContainer();
                 ServiceController<?> controller = serviceRegistry.getRequiredService(moduleServiceName);
                 FutureServiceValue<?> future = new FutureServiceValue(controller);

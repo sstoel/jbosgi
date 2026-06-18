@@ -124,8 +124,8 @@ public class BundleContextBindingProcessor implements DeploymentUnitProcessor {
         if (hasBundleContextResource) {
             ModuleLoader moduleLoader = Module.getBootModuleLoader();
             ModuleSpecification moduleSpecification = depUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
-            ModuleDependency coreDep = new ModuleDependency(moduleLoader, ORG_OSGI_CORE, false, false, false, false);
-            ModuleDependency resolverDep = new ModuleDependency(moduleLoader, ORG_JBOSS_OSGI_RESOLVER, false, false, false, false);
+            ModuleDependency coreDep = new ModuleDependency(moduleLoader, ORG_OSGI_CORE.toString(), false, false, false, false);
+            ModuleDependency resolverDep = new ModuleDependency(moduleLoader, ORG_JBOSS_OSGI_RESOLVER.toString(), false, false, false, false);
             moduleSpecification.addSystemDependencies(Arrays.asList(coreDep, resolverDep));
             // Add a dependency on the binder service
             ServiceName binderServiceName = BundleContextBindingService.getBinderServiceName();

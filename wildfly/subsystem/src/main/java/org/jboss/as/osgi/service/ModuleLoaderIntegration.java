@@ -111,7 +111,7 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
 
                 @Override
                 protected ModuleSpec findModule(ModuleIdentifier identifier) throws ModuleLoadException {
-                    ModuleSpec moduleSpec = injectedModuleLoader.getValue().findModule(identifier);
+                    ModuleSpec moduleSpec = findModule(identifier);
                     if (moduleSpec == null)
                         LOGGER.debugf("Cannot obtain module spec for: %s", identifier);
                     return moduleSpec;
@@ -171,7 +171,7 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
                 List<ModuleDependency> dependencies = moduleSpecification.getAllDependencies();
                 LOGGER.debugf("Adding integration dependencies: %d", dependencies.size());
                 for (ModuleDependency moduleDep : dependencies) {
-                    ModuleIdentifier moduleId = moduleDep.getIdentifier();
+                    ModuleIdentifier moduleId = ModuleIdentifier.fromString(moduleDep.getDependencyModule());
                     if (moduleDependencies.get(moduleId) != null) {
                         LOGGER.debugf("  -dependency on %s (skipped)", moduleId);
                         continue;
@@ -202,7 +202,7 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
          */
         @Override
         public void addModuleSpec(XBundleRevision brev, final ModuleSpec moduleSpec) {
-            ModuleIdentifier identifier = moduleSpec.getModuleIdentifier();
+            String identifier = moduleSpec.getName();
             LOGGER.tracef("Add module spec to loader: %s", identifier);
             ServiceName moduleSpecName = ServiceModuleLoader.moduleSpecServiceName(identifier);
 
@@ -292,18 +292,18 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             List<ModuleDependency> dependencies = new ArrayList<ModuleDependency>();
             if (depUnit != null && depUnit.getParent() != null) {
                 String parentName = depUnit.getParent().getName();
-                ModuleIdentifier depId = ModuleIdentifier.create(MODULE_PREFIX + parentName);
+                String depId = ModuleIdentifier.create(MODULE_PREFIX + parentName).toString();
                 dependencies.add(new ModuleDependency(null, depId, false, false, false, false));
             }
 
             // Add dependencies on all modules this brev has a wire to
             for (BundleWire wire : wires) {
                 XBundleRevision provider = (XBundleRevision) wire.getProvider();
-                ModuleIdentifier providerid = provider.getModuleIdentifier();
+                String providerid = provider.getModuleIdentifier().toString();
                 dependencies.add(new ModuleDependency(null, providerid, false, false, false, false));
             }
 
-            ModuleIdentifier identifier = brev.getModuleIdentifier();
+            String identifier = brev.getModuleIdentifier().toString();
             return ModuleLoadService.install(serviceTarget, identifier, dependencies, new ArrayList<ModuleDependency>(),
                     new ArrayList<ModuleDependency>());
         }
@@ -317,7 +317,7 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             ModuleIdentifier identifier = brev.getModuleIdentifier();
             serviceNames.add(getModuleSpecServiceName(identifier));
             serviceNames.add(getModuleServiceName(identifier));
-            serviceNames.add(ServiceModuleLoader.moduleResolvedServiceName(identifier));
+            serviceNames.add(ServiceModuleLoader.moduleResolvedServiceName(identifier.toString()));
             for (ServiceName serviceName : serviceNames) {
                 ServiceController<?> controller = serviceContainer.getService(serviceName);
                 if (controller != null) {
@@ -329,11 +329,11 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
 
         @Override
         public ServiceName getModuleServiceName(ModuleIdentifier identifier) {
-            return ServiceModuleLoader.moduleServiceName(identifier);
+            return ServiceModuleLoader.moduleServiceName(identifier.toString());
         }
 
         private ServiceName getModuleSpecServiceName(ModuleIdentifier identifier) {
-            return ServiceModuleLoader.moduleSpecServiceName(identifier);
+            return ServiceModuleLoader.moduleSpecServiceName(identifier.toString());
         }
 
         @Override
