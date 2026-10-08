@@ -27,7 +27,7 @@
     <parent>
         <groupId>org.jboss.osgi</groupId>
         <artifactId>jbosgi</artifactId>
-        <version>2.11.0.Final</version>
+        <version>2.12.0.Final</version>
     </parent>
 
     <name>JBossOSGi WildFly</name>
@@ -57,9 +57,9 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-jmx</artifactId>
-                <version>${version.jboss.wildfly}</version>
+                <version>${version.jboss.wildfly.core}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -75,9 +75,9 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-server</artifactId>
-                <version>${version.jboss.wildfly}</version>
+                <version>${version.jboss.wildfly.core}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -87,8 +87,9 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-subsystem-test</artifactId>
+                <version>${version.jboss.wildfly.core}</version>
                 <type>pom</type>
             </dependency>
             <dependency>

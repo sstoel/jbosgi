@@ -15,7 +15,7 @@
     <parent>
         <groupId>org.jboss.osgi</groupId>
         <artifactId>jbosgi</artifactId>
-        <version>2.11.0.Final</version>
+        <version>2.12.0.Final</version>
     </parent>
 
     <name>JBossOSGi Arquillian Extension for WildFly</name>
@@ -55,7 +55,7 @@
         <dependency>
             <groupId>org.wildfly.core</groupId>
             <artifactId>wildfly-server</artifactId>
-            <version>25.0.0.Final</version>
+            <version>${version.jboss.wildfly.core}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
