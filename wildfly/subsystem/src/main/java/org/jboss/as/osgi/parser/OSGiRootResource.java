@@ -35,6 +35,7 @@ import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
 import org.jboss.as.controller.operations.validation.EnumValidator;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -61,6 +62,8 @@ public class OSGiRootResource extends SimpleResourceDefinition {
             .addFlag(Flag.RESTART_JVM)
             .build();
     public static final SimpleAttributeDefinition STARTLEVEL = new SimpleAttributeDefinitionBuilder(ModelConstants.STARTLEVEL, ModelType.INT, true)
+            // The framework start level must be greater than zero
+            .setValidator(new IntRangeValidator(1, true))
             .setStorageRuntime()
             .addFlag(Flag.RESTART_NONE)
             .build();
