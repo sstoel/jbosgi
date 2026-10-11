@@ -19,13 +19,19 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import org.jboss.arquillian.container.osgi.AbstractOSGiApplicationArchiveProcessor;
+import org.jboss.arquillian.container.spi.Container;
+import org.jboss.arquillian.container.spi.ContainerRegistry;
 import org.jboss.arquillian.container.test.spi.client.deployment.ApplicationArchiveProcessor;
+import org.jboss.arquillian.core.api.Instance;
+import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.test.spi.TestClass;
+import org.jboss.as.arquillian.container.WildFlyArquillianConfiguration;
 import org.jboss.osgi.metadata.OSGiManifestBuilder;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ArchivePath;
@@ -44,6 +50,9 @@ public class JBOSGiApplicationArchiveProcessor implements ApplicationArchiveProc
     private static final ArchivePath MANIFEST_PATH = ArchivePaths.create(JarFile.MANIFEST_NAME);
     private static final String ESSENTIAL_DEPENDENCIES = "org.jboss.as.osgi,deployment.arquillian-service";
 
+    @Inject
+    private Instance<ContainerRegistry> containerRegistry;
+
     @Override
     public void process(Archive<?> appArchive, TestClass testClass) {
         if (isValidOSGiBundleArchive(appArchive)) {
@@ -54,6 +63,7 @@ public class JBOSGiApplicationArchiveProcessor implements ApplicationArchiveProc
                 }
             };
             processor.process(appArchive, testClass);
+            addContainerConfiguration(appArchive);
         } else {
             // Add or replace the manifest in the archive
             try {
@@ -89,6 +99,27 @@ public class JBOSGiApplicationArchiveProcessor implements ApplicationArchiveProc
                 throw new RuntimeException("Unable to customize existing application manifest", e);
             }
         }
+    }
+
+    /**
+     * Add the configuration that an in-container ManagementClient is created from.
+     *
+     * It is a resource of the arquillian-service, which a test that runs in a bundle cannot see.
+     */
+    @SuppressWarnings("rawtypes")
+    private void addContainerConfiguration(Archive<?> appArchive) {
+        ContainerRegistry registry = containerRegistry != null ? containerRegistry.get() : null;
+        if (registry == null)
+            return;
+
+        List<Container> containers = registry.getContainers();
+        Container<?> container = containers.size() == 1 ? containers.get(0) : null;
+        for (Container aux : containers) {
+            if (container == null && aux.getContainerConfiguration().isDefault())
+                container = aux;
+        }
+        if (container != null)
+            WildFlyArquillianConfiguration.addConfiguration(container.getContainerConfiguration().getContainerProperties(), appArchive);
     }
 
     public static boolean isValidOSGiBundleArchive(Archive<?> appArchive) {

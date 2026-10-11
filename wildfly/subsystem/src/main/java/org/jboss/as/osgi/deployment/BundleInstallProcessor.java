@@ -99,14 +99,17 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
         XBundle bundle = brev.getBundle();
         BundleManager bundleManager = depUnit.getAttachment(OSGiConstants.BUNDLE_MANAGER_KEY);
         if (uninstallRequired(depUnit, brev)) {
+            BundleLifecycleIntegration.setDeploymentUndeploy(true);
             try {
                 int options = getUninstallOptions(bundleManager);
                 bundleManager.uninstallBundle(bundle, options);
             } catch (BundleException ex) {
                 Deployment dep = depUnit.getAttachment(OSGiConstants.DEPLOYMENT_KEY);
                 LOGGER.errorFailedToUninstallDeployment(ex, dep);
+            } finally {
+                BundleLifecycleIntegration.setDeploymentUndeploy(false);
             }
-        } else {
+        } else if (brev.getState() != State.UNINSTALLED) {
             BundleWiring wiring = brev.getWiringSupport().getWiring(false);
             if (wiring == null || !wiring.isInUse()) {
                 bundleManager.removeRevision(brev, 0);

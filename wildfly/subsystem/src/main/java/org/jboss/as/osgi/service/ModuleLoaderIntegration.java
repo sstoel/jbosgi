@@ -38,6 +38,8 @@ import java.util.function.Consumer;
 
 import org.jboss.as.osgi.deployment.BundleDeploymentProcessor;
 import org.jboss.as.server.deployment.DeploymentUnit;
+import org.jboss.as.server.deployment.DeploymentUtils;
+import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.module.FilterSpecification;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
@@ -349,6 +351,8 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
          */
         @Override
         public void removeModule(XBundleRevision brev) {
+            deactivateDeferredPhase(brev);
+
             Set<ServiceName> serviceNames = new HashSet<ServiceName>();
             ModuleIdentifier identifier = brev.getModuleIdentifier();
             bundleModules.remove(identifier.toString());
@@ -364,6 +368,26 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
                     LOGGER.debugf("Remove from loader: %s", serviceName);
                     controller.setMode(Mode.REMOVE);
                 }
+            }
+        }
+
+        /**
+         * The activated deferred phase of a deployment depends on the module of the bundle.
+         *
+         * A bundle that is uninstalled while it is in use stays deployed. Its module is removed when it is not in
+         * use any more, the deployment must not have a missing dependency then.
+         */
+        private void deactivateDeferredPhase(XBundleRevision brev) {
+            Deployment deployment = brev.getBundle().adapt(Deployment.class);
+            DeploymentUnit depUnit = deployment != null ? deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY) : null;
+            if (depUnit == null || DeploymentUtils.getDeferredModules(depUnit).contains(depUnit.getName()) == false)
+                return;
+
+            ServiceName phaseName = DeploymentUtils.getDeploymentUnitPhaseServiceName(depUnit, Phase.FIRST_MODULE_USE);
+            ServiceController<?> phaseService = serviceContainer.getService(phaseName);
+            if (phaseService != null && phaseService.getMode() == Mode.ACTIVE) {
+                LOGGER.debugf("Deactivate deferred module phase for: %s", brev);
+                phaseService.setMode(Mode.NEVER);
             }
         }
 

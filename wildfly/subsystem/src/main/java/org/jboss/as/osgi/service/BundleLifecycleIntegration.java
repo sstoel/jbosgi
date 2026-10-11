@@ -38,7 +38,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -112,6 +114,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     private static final AttachmentKey<Boolean> BUNDLE_REFRESHING_KEY = AttachmentKey.create(Boolean.class);
 
     private static final Map<String, Deployment> deploymentMap = new HashMap<String, Deployment>();
+    private static final ThreadLocal<Boolean> deploymentUndeploy = new ThreadLocal<Boolean>();
 
     private final InjectedValue<ModelControllerClientFactory> injectedModelControllerClientFactory = new InjectedValue<ModelControllerClientFactory>();
     private final InjectedValue<BundleManager> injectedBundleManager = new InjectedValue<BundleManager>();
@@ -122,6 +125,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     private final InjectedValue<LockManager> injectedLockManager = new InjectedValue<LockManager>();
     private ServerDeploymentManager serverDeploymentManager;
     private ModelControllerClient modelControllerClient;
+    private ExecutorService undeployExecutor;
 
     @Override
     protected void addServiceDependencies(ServiceBuilder<BundleLifecycle> builder) {
@@ -142,10 +146,19 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         ModelControllerClientFactory mcff = injectedModelControllerClientFactory.getValue();
         modelControllerClient = mcff.createClient(Executors.newCachedThreadPool());
         serverDeploymentManager =  ServerDeploymentManager.Factory.create(modelControllerClient);
+        undeployExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable run) {
+                Thread thread = new Thread(run, "OSGi Bundle Undeploy Thread");
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
     }
 
     @Override
     public void stop(StopContext context) {
+        undeployExecutor.shutdownNow();
         try {
             modelControllerClient.close();
         } catch (IOException ex) {
@@ -175,6 +188,18 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         synchronized (deploymentMap) {
             deploymentMap.put(runtimeName, dep);
         }
+    }
+
+    /**
+     * Mark the current thread as the thread that undeploys a bundle deployment.
+     *
+     * A management operation is active then. Other deployments cannot be undeployed before it completed.
+     */
+    public static void setDeploymentUndeploy(boolean flag) {
+        if (flag)
+            deploymentUndeploy.set(Boolean.TRUE);
+        else
+            deploymentUndeploy.remove();
     }
 
     public static boolean isBundleRefreshing(XBundle bundle) {
@@ -315,14 +340,41 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             }
         }
 
-        private void undeployRevision(XBundleRevision brev) {
-            ServerDeploymentHelper server = new ServerDeploymentHelper(serverDeploymentManager);
-            try {
-                Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
-                server.undeploy(getRuntimeName(deployment));
-            } catch (Exception ex) {
-                LOGGER.warnCannotUndeployBundleRevision(ex, brev);
-            }
+        private void undeployRevision(final XBundleRevision brev) {
+            final Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
+            final String runtimeName = getRuntimeName(deployment);
+            final boolean deferred = Boolean.TRUE.equals(deploymentUndeploy.get());
+            Runnable undeploy = new Runnable() {
+                @Override
+                public void run() {
+                    // The deployment may be gone already, or it is part of another deployment
+                    if (deferred && isDeployed(deployment) == false)
+                        return;
+
+                    ServerDeploymentHelper server = new ServerDeploymentHelper(serverDeploymentManager);
+                    try {
+                        server.undeploy(runtimeName);
+                    } catch (Exception ex) {
+                        LOGGER.warnCannotUndeployBundleRevision(ex, brev);
+                    }
+                }
+            };
+
+            // A bundle that was uninstalled while it was in use is removed when another bundle gets undeployed.
+            // Its deployment can only be undeployed after that operation
+            if (deferred)
+                undeployExecutor.execute(undeploy);
+            else
+                undeploy.run();
+        }
+
+        private boolean isDeployed(Deployment deployment) {
+            DeploymentUnit depUnit = deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY);
+            if (depUnit == null || depUnit.getParent() != null)
+                return false;
+
+            ServiceController<?> controller = bundleManager.getServiceContainer().getService(depUnit.getServiceName());
+            return controller != null && controller.getMode() != Mode.REMOVE;
         }
 
         @Override

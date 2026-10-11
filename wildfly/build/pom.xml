@@ -45,6 +45,10 @@
             <artifactId>org.apache.felix.log</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.hk2</groupId>
+            <artifactId>osgi-resource-locator</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.metatype</artifactId>
         </dependency>

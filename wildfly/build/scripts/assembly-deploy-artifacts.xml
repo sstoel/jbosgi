@@ -21,6 +21,7 @@
                 <include>*:jboss-osgi-*:jar</include>
                 <include>org.jboss.shrinkwrap:*:*</include>
                 <include>*:org.apache.felix*:jar</include>
+                <include>org.glassfish.hk2:osgi-resource-locator:jar</include>
                 <include>*:org.apache.aries*:jar</include>
                 <include>xerces:*:jar</include>
             </includes>

@@ -50,6 +50,7 @@
         <version.apache.felix.scr.generator>1.26.4</version.apache.felix.scr.generator>
         <version.apache.felix.webconsole>4.2.14</version.apache.felix.webconsole>
         <version.codehaus.izpack>5.2.1</version.codehaus.izpack>
+        <version.glassfish.hk2.osgi.resource.locator>2.5.0-b42</version.glassfish.hk2.osgi.resource.locator>
         <version.jboss.osgi.deployment>5.7.0.Final</version.jboss.osgi.deployment>
         <version.jboss.osgi.framework>6.7.0.Final</version.jboss.osgi.framework>
         <version.jboss.osgi.logging>4.7.0.Final</version.jboss.osgi.logging>
@@ -111,6 +112,13 @@
                 <groupId>org.codehaus.izpack</groupId>
                 <artifactId>izpack-ant</artifactId>
                 <version>${version.codehaus.izpack}</version>
+            </dependency>
+
+            <!-- HK2 -->
+            <dependency>
+                <groupId>org.glassfish.hk2</groupId>
+                <artifactId>osgi-resource-locator</artifactId>
+                <version>${version.glassfish.hk2.osgi.resource.locator}</version>
             </dependency>
 
             <!-- JBOSGi -->
