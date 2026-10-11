@@ -93,6 +93,7 @@ public class ConfiguredReferenceTestCase {
 
         Bundle bundleD1 = context.installBundle(BUNDLE_D1, deployer.getDeployment(BUNDLE_D1));
         Bundle bundleD = context.installBundle(BUNDLE_D, deployer.getDeployment(BUNDLE_D));
+        Configuration config = null;
         try {
             bundleD1.start();
             bundleD.start();
@@ -106,7 +107,7 @@ public class ConfiguredReferenceTestCase {
             Assert.assertEquals("ServiceD1#1:null:Hello", srvD1.doStuff("Hello"));
 
             ConfigurationAdmin configAdmin = ConfigurationAdminSupport.getConfigurationAdmin(bundleD1);
-            Configuration config = configAdmin.getConfiguration(ServiceD1.class.getName());
+            config = configAdmin.getConfiguration(ServiceD1.class.getName());
             Assert.assertNotNull("Config not null", config);
             Assert.assertNull("Config is empty, but was: " + config.getProperties(), config.getProperties());
 
@@ -120,6 +121,9 @@ public class ConfiguredReferenceTestCase {
             Assert.assertEquals("ServiceD1#1:bar:Hello", srvD1.doStuff("Hello"));
 
         } finally {
+            // The configuration is persistent
+            if (config != null)
+                config.delete();
             bundleD.uninstall();
             bundleD1.uninstall();
         }

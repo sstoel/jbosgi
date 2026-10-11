@@ -24,14 +24,14 @@ package org.jboss.as.test.integration.osgi.cdi.impl;
 import java.util.Arrays;
 import java.util.List;
 
-import jakarta.annotation.ManagedBean;
+import jakarta.enterprise.context.Dependent;
 
 
 /**
  * @author Thomas.Diesler@jboss.com
  * @since 09-Jul-2012
  */
-@ManagedBean
+@Dependent
 public class SimpleManagedBean {
 
     public List<String> getPaymentProviders() {

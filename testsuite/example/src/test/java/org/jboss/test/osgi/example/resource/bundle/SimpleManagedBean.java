@@ -21,7 +21,7 @@
  */
 package org.jboss.test.osgi.example.resource.bundle;
 
-import jakarta.annotation.ManagedBean;
+import jakarta.enterprise.context.Dependent;
 import jakarta.annotation.Resource;
 
 import org.jboss.osgi.resolver.XBundle;
@@ -31,10 +31,10 @@ import org.osgi.framework.BundleContext;
  * @author thomas.diesler@jboss.com
  * @since 10-Jul-2012
  */
-@ManagedBean("SimpleManagedBean")
+@Dependent
 public class SimpleManagedBean {
 
-    @Resource
+    @Resource(lookup = "java:jboss/osgi/BundleContext")
     BundleContext context;
 
     public String getContextName() {

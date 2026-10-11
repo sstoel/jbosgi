@@ -80,6 +80,8 @@ public class WebServiceClientTestCase {
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(WebService.class, SOAPBinding.class, QName.class, Service.class);
+                // Jakarta Activation finds its provider with the HK2 resource locator
+                builder.addImportPackages("org.glassfish.hk2.osgiresourcelocator");
                 builder.addImportPackages(ManagementClient.class);
                 return builder.openStream();
             }

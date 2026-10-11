@@ -25,13 +25,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import jakarta.annotation.ManagedBean;
+import jakarta.enterprise.context.Dependent;
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Resource;
 import jakarta.enterprise.inject.Produces;
 
 import org.jboss.as.test.integration.osgi.api.PaymentProvider;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 
@@ -40,21 +40,16 @@ import org.osgi.util.tracker.ServiceTracker;
  * @author Thomas.Diesler@jboss.com
  * @since 09-Jul-2012
  */
-@ManagedBean
+@Dependent
 public class ComplexManagedBean {
-
-    private BundleContext context;
-
-    @Resource
-    public void setContext(BundleContext context) {
-        this.context = context;
-    }
 
     private List<PaymentProvider> providers = new ArrayList<PaymentProvider>();
 
     @PostConstruct
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void start() {
+        // The bean is part of a bundle
+        BundleContext context = FrameworkUtil.getBundle(ComplexManagedBean.class).getBundleContext();
         ServiceTracker tracker = new ServiceTracker(context, PaymentProvider.class.getName(), null) {
 
             @Override

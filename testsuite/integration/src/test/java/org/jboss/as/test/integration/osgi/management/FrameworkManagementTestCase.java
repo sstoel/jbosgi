@@ -192,9 +192,23 @@ public class FrameworkManagementTestCase {
             ModelNode resultMap = FrameworkManagement.getBundleInfo(getControllerClient(), testBundleId);
             assertEquals("ACTIVE", resultMap.get(ModelConstants.STATE).asString());
 
-            FrameworkManagement.setFrameworkStartLevel(getControllerClient(), 0);
-            if (!waitForBundleStateAfterStartLevelChange("RESOLVED", testBundleId, 10000)) {
-                fail("Bundle not RESOLVED");
+            // The framework start level must be greater than zero
+            try {
+                FrameworkManagement.setFrameworkStartLevel(getControllerClient(), 0);
+                fail("Start level zero expected to fail");
+            } catch (IllegalStateException ex) {
+                // expected
+            }
+            assertEquals(initial, (int) FrameworkManagement.getFrameworkStartLevel(getControllerClient()));
+
+            // The start level is changed asynchronously
+            FrameworkManagement.setFrameworkStartLevel(getControllerClient(), 2);
+            for (int i = 0; i < 20 && FrameworkManagement.getFrameworkStartLevel(getControllerClient()) != 2; i++) {
+                Thread.sleep(500);
+            }
+            assertEquals(2, (int) FrameworkManagement.getFrameworkStartLevel(getControllerClient()));
+            if (!waitForBundleStateAfterStartLevelChange("ACTIVE", testBundleId, 10000)) {
+                fail("Bundle not ACTIVE");
             }
         } finally {
             FrameworkManagement.setFrameworkStartLevel(getControllerClient(), initial);

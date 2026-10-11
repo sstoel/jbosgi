@@ -24,7 +24,7 @@ package org.jboss.as.test.integration.osgi.cdi.impl;
 import java.io.IOException;
 import java.io.Writer;
 
-import jakarta.annotation.Resource;
+import jakarta.inject.Inject;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,7 +37,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @WebServlet(name = "ComplexBeanServlet", urlPatterns = { "/servlet" })
 public class ComplexBeanServlet extends HttpServlet {
 
-    @Resource
+    @Inject
     ComplexManagedBean bean;
 
     @Override

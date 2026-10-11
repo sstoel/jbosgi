@@ -25,7 +25,7 @@ package org.jboss.as.test.integration.osgi.cdi;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
-import jakarta.annotation.ManagedBean;
+import jakarta.annotation.Resource;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -101,12 +101,13 @@ public class ManagedBeansTestCase {
     public static Archive<?> getSimpleEar() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, SIMPLE_WAR);
         war.addClasses(SimpleBeanServlet.class);
+        war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
         JavaArchive jar = ShrinkWrap.create(JavaArchive.class, SIMPLE_CDI_JAR);
         jar.addClasses(SimpleManagedBean.class);
         jar.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
         EnterpriseArchive ear = ShrinkWrap.create(EnterpriseArchive.class, SIMPLE_EAR);
         ear.addAsModule(war);
-        ear.addAsModule(jar);
+        ear.addAsLibrary(jar);
         return ear;
     }
 
@@ -114,6 +115,7 @@ public class ManagedBeansTestCase {
     public static Archive<?> getComplexEar() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, COMPLEX_WAR);
         war.addClasses(ComplexBeanServlet.class);
+        war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
         JavaArchive jar = ShrinkWrap.create(JavaArchive.class, COMPLEX_CDI_JAR);
         jar.addClasses(ComplexManagedBean.class);
         jar.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
@@ -124,7 +126,7 @@ public class ManagedBeansTestCase {
                 builder.addBundleSymbolicName(COMPLEX_CDI_JAR);
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(PaymentProvider.class);
-                builder.addImportPackages(BundleContext.class, ServiceTracker.class, ManagedBean.class);
+                builder.addImportPackages(BundleContext.class, ServiceTracker.class, Resource.class);
                 return builder.openStream();
             }
         });

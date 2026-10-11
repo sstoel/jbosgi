@@ -100,11 +100,13 @@ public class BundleContextInjectionTestCase {
     public static Archive<?> getManagedBeanEar() {
         WebArchive war = ShrinkWrap.create(WebArchive.class, MANAGED_BEAN_WAR);
         war.addClasses(SimpleBeanServlet.class);
+        war.addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
         JavaArchive jar = ShrinkWrap.create(JavaArchive.class, MANAGED_BEAN_JAR);
         jar.addClasses(SimpleManagedBean.class);
         jar.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
         EnterpriseArchive ear = ShrinkWrap.create(EnterpriseArchive.class, MANAGED_BEAN_EAR);
-        ear.addAsModules(jar, war);
+        ear.addAsLibrary(jar);
+        ear.addAsModule(war);
         return ear;
     }
 

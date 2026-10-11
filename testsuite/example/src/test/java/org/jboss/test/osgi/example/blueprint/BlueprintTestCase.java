@@ -142,6 +142,8 @@ public class BlueprintTestCase {
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages("org.osgi.service.blueprint; version='[1.0.0,2.0.0)'");
                 builder.addImportPackages(BlueprintContainer.class, MBeanServer.class);
+                // The proxy of the MBeanServer needs all types of its methods
+                builder.addImportPackages("javax.management.loading");
                 builder.addImportPackages(ServiceA.class);
                 return builder.openStream();
             }
