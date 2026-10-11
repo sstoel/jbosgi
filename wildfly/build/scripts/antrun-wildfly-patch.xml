@@ -126,9 +126,6 @@
 		<copy todir="${wildfly.patch.dir}/bundles/org/glassfish/hk2/main" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/osgi-resource-locator-*.jar" />
 		</copy>
-		<copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/log/main" overwrite="true">
-			<fileset file="${deploy.artifacts.lib}/org.apache.felix.log-*.jar" />
-		</copy>
 		<copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/metatype/main" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/org.apache.felix.metatype-*.jar" />
 		</copy>

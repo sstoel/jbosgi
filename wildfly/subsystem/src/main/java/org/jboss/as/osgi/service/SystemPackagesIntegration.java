@@ -72,7 +72,7 @@ interface SystemPackagesIntegration  {
         "org.jboss.logging;version=3.1.0",
         "org.jboss.osgi.provision;version=1.0",
         "org.jboss.osgi.repository;version=1.0",
-        "org.osgi.service.repository;version=1.0",
+        "org.osgi.service.repository;version=1.0;uses:=\"org.osgi.resource\"",
         "org.slf4j;version=1.7",
         "org.slf4j.spi;version=1.7",
         "org.slf4j.helpers;version=1.7",
