@@ -25,14 +25,22 @@ import static org.jboss.as.osgi.parser.SubsystemState.PROP_JBOSS_OSGI_SYSTEM_MOD
 import static org.jboss.as.osgi.parser.SubsystemState.PROP_JBOSS_OSGI_SYSTEM_MODULES_EXTRA;
 import static org.jboss.osgi.framework.Constants.JBOSGI_PREFIX;
 
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.modules.DependencySpec;
+import org.jboss.modules.LocalLoader;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.ModuleSpec;
+import org.jboss.modules.Resource;
+import org.jboss.modules.ResourceLoader;
+import org.jboss.modules.ResourceLoaderSpec;
 import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.msc.service.ServiceBuilder;
@@ -73,7 +81,32 @@ final class FrameworkModuleIntegration extends FrameworkModuleProviderPlugin {
 
     class FrameworkModuleProviderImpl implements FrameworkModuleProvider {
 
+        private final List<ResourceLoaderSpec> extensionLoaders = new ArrayList<ResourceLoaderSpec>();
+        private FrameworkModuleLoader moduleLoader;
+        private volatile boolean hasExtensions;
         private Module frameworkModule;
+
+        @Override
+        public boolean supportsExtensions() {
+            return true;
+        }
+
+        /**
+         * Add the content of a framework extension bundle to the framework module.
+         * The classes of the extension are defined by the class loader of the framework module.
+         */
+        @Override
+        public synchronized boolean addExtensionContent(URL contentURL, ResourceLoader resourceLoader) {
+            Module module = getFrameworkModule();
+            hasExtensions = true;
+            extensionLoaders.add(ResourceLoaderSpec.createResourceLoaderSpec(resourceLoader));
+            try {
+                moduleLoader.refreshResourceLoaders(module, extensionLoaders);
+            } catch (ModuleLoadException ex) {
+                throw new IllegalStateException(ex);
+            }
+            return false;
+        }
 
         @Override
         public Module getFrameworkModule() {
@@ -109,27 +142,68 @@ final class FrameworkModuleIntegration extends FrameworkModuleProviderPlugin {
                 }
             }
 
+            // The content of the framework extensions
+            specBuilder.addDependency(DependencySpec.createLocalDependencySpec());
+
+            // Classes of a framework extension can use all classes of the framework implementation
+            final ClassLoader frameworkClassLoader = BundleManager.class.getClassLoader();
+            specBuilder.setFallbackLoader(new LocalLoader() {
+
+                @Override
+                public Class<?> loadClassLocal(String name, boolean resolve) {
+                    if (hasExtensions == false)
+                        return null;
+                    try {
+                        return frameworkClassLoader.loadClass(name);
+                    } catch (ClassNotFoundException ex) {
+                        return null;
+                    }
+                }
+
+                @Override
+                public Package loadPackageLocal(String name) {
+                    return null;
+                }
+
+                @Override
+                public List<Resource> loadResourceLocal(String name) {
+                    return Collections.emptyList();
+                }
+            });
+
             XBundle systemBundle = injectedBundleManager.getValue().getSystemBundle();
             specBuilder.setModuleClassLoaderFactory(new BundleReferenceClassLoader.Factory<XBundle>(systemBundle));
 
             try {
-                final ModuleSpec moduleSpec = specBuilder.create();
-                ModuleLoader moduleLoader = new ModuleLoader() {
-
-                    @Override
-                    protected ModuleSpec findModule(ModuleIdentifier identifier) throws ModuleLoadException {
-                        return (moduleSpec.getModuleIdentifier().equals(identifier) ? moduleSpec : null);
-                    }
-
-                    @Override
-                    public String toString() {
-                        return "FrameworkModuleLoader";
-                    }
-                };
+                moduleLoader = new FrameworkModuleLoader(specBuilder.create());
                 return moduleLoader.loadModule(specBuilder.getIdentifier());
             } catch (ModuleLoadException ex) {
                 throw new IllegalStateException(ex);
             }
+        }
+    }
+
+    private static final class FrameworkModuleLoader extends ModuleLoader {
+
+        private final ModuleSpec moduleSpec;
+
+        FrameworkModuleLoader(ModuleSpec moduleSpec) {
+            this.moduleSpec = moduleSpec;
+        }
+
+        @Override
+        protected ModuleSpec findModule(ModuleIdentifier identifier) throws ModuleLoadException {
+            return (moduleSpec.getModuleIdentifier().equals(identifier) ? moduleSpec : null);
+        }
+
+        void refreshResourceLoaders(Module module, List<ResourceLoaderSpec> loaders) throws ModuleLoadException {
+            setAndRefreshResourceLoaders(module, loaders);
+            relink(module);
+        }
+
+        @Override
+        public String toString() {
+            return "FrameworkModuleLoader";
         }
     }
 }
