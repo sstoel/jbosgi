@@ -26,6 +26,7 @@ import static org.jboss.as.osgi.OSGiConstants.SERVICE_BASE_NAME;
 import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 import static org.jboss.as.osgi.OSGiMessages.MESSAGES;
 import static org.jboss.as.osgi.parser.SubsystemState.PROP_JBOSS_OSGI_SYSTEM_MODULES;
+import static org.jboss.osgi.framework.Constants.PROPERTY_STRICT_BOOT_DELEGATION;
 
 import java.io.File;
 import java.util.Arrays;
@@ -124,8 +125,8 @@ public class FrameworkBootstrapService implements Service<Void> {
             builder.createFrameworkServices(serviceContainer, true);
             builder.registerIntegrationService(FrameworkPhase.CREATE, new BundleLifecycleIntegration());
             builder.registerIntegrationService(FrameworkPhase.CREATE, new EnvironmentIntegration());
-            builder.registerIntegrationService(FrameworkPhase.CREATE, new FrameworkModuleIntegration(props));
-            builder.registerIntegrationService(FrameworkPhase.CREATE, new ModuleLoaderIntegration());
+            builder.registerIntegrationService(FrameworkPhase.CREATE, new FrameworkModuleIntegration(props, injectedServerEnvironment.getValue().getServerTempDir()));
+            builder.registerIntegrationService(FrameworkPhase.CREATE, new ModuleLoaderIntegration(Boolean.parseBoolean(props.get(PROPERTY_STRICT_BOOT_DELEGATION))));
             builder.registerIntegrationService(FrameworkPhase.CREATE, new LockManagerIntegration());
             builder.registerIntegrationService(FrameworkPhase.CREATE, new AbstractResolverIntegration());
             builder.registerIntegrationService(FrameworkPhase.CREATE, new SystemServicesIntegration(resource, extensions));

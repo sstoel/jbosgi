@@ -70,7 +70,7 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
     public static final AttachmentKey<DeploymentUnit> DEPLOYMENT_UNIT_KEY = AttachmentKey.create(DeploymentUnit.class);
     public static final AttachmentKey<ModuleSpecification> MODULE_SPECIFICATION_KEY = AttachmentKey.create(ModuleSpecification.class);
 
-    public final String [] EXCLUDED_SUBSYSTEMS = {"batch", "batch-jberet"};
+    public final String [] EXCLUDED_SUBSYSTEMS = {"batch-jberet"};
 
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
@@ -127,10 +127,12 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
         // Attach the deployment
         if (deployment != null) {
 
-            // Make sure the framework uses the same module id as the server
+            // Make sure the framework uses the same module id as the server.
+            // A fragment does not have a module
             String identifier = depUnit.getAttachment(Attachments.MODULE_NAME);
-            deployment.putAttachment(IntegrationConstants.MODULE_IDENTIFIER_KEY,
-                    ModuleIdentifier.fromString(identifier));
+            if (identifier != null) {
+                deployment.putAttachment(IntegrationConstants.MODULE_IDENTIFIER_KEY, ModuleIdentifier.fromString(identifier));
+            }
 
             // Allow additional dependencies for the set of supported deployment types
             if (allowAdditionalModuleDependencies(depUnit)) {
@@ -165,6 +167,7 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
                 // JBOSGI-751, JBOSGI-761, JBOSGI-793, JBOSGI-794
                 excludedSubsystems.add("webservices");
                 excludedSubsystems.add("ee");
+                excludedSubsystems.add("ejb3");
                 excludedSubsystems.add("elytron");
                 excludedSubsystems.add("microprofile-config-smallrye");
             }

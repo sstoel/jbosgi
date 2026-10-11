@@ -94,7 +94,7 @@ public class FrameworkActivateProcessor implements DeploymentUnitProcessor {
     }
 
     private boolean hasValidInjectionPoint(DeploymentUnit depUnit) {
-        return hasInjectionPoint(depUnit, "javax.inject.Inject") || hasInjectionPoint(depUnit, "javax.annotation.Resource");
+        return hasInjectionPoint(depUnit, "jakarta.inject.Inject") || hasInjectionPoint(depUnit, "jakarta.annotation.Resource");
     }
 
     private boolean isInjectingOsgi(String typeName) {

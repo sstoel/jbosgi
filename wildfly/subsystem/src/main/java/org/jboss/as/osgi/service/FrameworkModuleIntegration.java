@@ -25,13 +25,22 @@ import static org.jboss.as.osgi.parser.SubsystemState.PROP_JBOSS_OSGI_SYSTEM_MOD
 import static org.jboss.as.osgi.parser.SubsystemState.PROP_JBOSS_OSGI_SYSTEM_MODULES_EXTRA;
 import static org.jboss.osgi.framework.Constants.JBOSGI_PREFIX;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
 
 import org.jboss.modules.DependencySpec;
+import org.jboss.modules.IterableResourceLoader;
 import org.jboss.modules.LocalLoader;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -41,6 +50,7 @@ import org.jboss.modules.ModuleSpec;
 import org.jboss.modules.Resource;
 import org.jboss.modules.ResourceLoader;
 import org.jboss.modules.ResourceLoaderSpec;
+import org.jboss.modules.ResourceLoaders;
 import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.msc.service.ServiceBuilder;
@@ -63,9 +73,14 @@ final class FrameworkModuleIntegration extends FrameworkModuleProviderPlugin {
 
     private final InjectedValue<BundleManager> injectedBundleManager = new InjectedValue<BundleManager>();
     private final Map<String, String> props;
+    private final File tempDir;
 
-    FrameworkModuleIntegration(Map<String, String> props) {
+    /**
+     * @param tempDir The directory for the content of framework extension bundles
+     */
+    FrameworkModuleIntegration(Map<String, String> props, File tempDir) {
         this.props = props;
+        this.tempDir = tempDir;
     }
 
     @Override
@@ -99,13 +114,48 @@ final class FrameworkModuleIntegration extends FrameworkModuleProviderPlugin {
         public synchronized boolean addExtensionContent(URL contentURL, ResourceLoader resourceLoader) {
             Module module = getFrameworkModule();
             hasExtensions = true;
-            extensionLoaders.add(ResourceLoaderSpec.createResourceLoaderSpec(resourceLoader));
             try {
+                extensionLoaders.add(ResourceLoaderSpec.createResourceLoaderSpec(copyContent(resourceLoader)));
                 moduleLoader.refreshResourceLoaders(module, extensionLoaders);
+            } catch (IOException ex) {
+                throw new IllegalStateException(ex);
             } catch (ModuleLoadException ex) {
                 throw new IllegalStateException(ex);
             }
             return false;
+        }
+
+        /**
+         * Copy the content of an extension to a jar file.
+         *
+         * The content stays part of the framework until the server is stopped. It is given as the content of a
+         * deployment, which is not available any more when the extension is undeployed.
+         */
+        private ResourceLoader copyContent(ResourceLoader resourceLoader) throws IOException {
+            if (resourceLoader instanceof IterableResourceLoader == false)
+                return resourceLoader;
+
+            tempDir.mkdirs();
+            File file = File.createTempFile("osgi-extension", ".jar", tempDir);
+            file.deleteOnExit();
+            JarOutputStream output = new JarOutputStream(new FileOutputStream(file));
+            try {
+                Iterator<Resource> resources = ((IterableResourceLoader) resourceLoader).iterateResources("", true);
+                while (resources.hasNext()) {
+                    Resource resource = resources.next();
+                    output.putNextEntry(new JarEntry(resource.getName()));
+                    InputStream input = resource.openStream();
+                    try {
+                        input.transferTo(output);
+                    } finally {
+                        input.close();
+                    }
+                    output.closeEntry();
+                }
+            } finally {
+                output.close();
+            }
+            return ResourceLoaders.createJarResourceLoader(new JarFile(file));
         }
 
         @Override

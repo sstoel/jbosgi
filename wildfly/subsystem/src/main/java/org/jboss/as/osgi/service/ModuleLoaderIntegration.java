@@ -26,12 +26,14 @@ import static org.jboss.as.server.Services.JBOSS_SERVICE_MODULE_LOADER;
 import static org.jboss.as.server.moduleservice.ServiceModuleLoader.MODULE_PREFIX;
 import static org.jboss.osgi.framework.spi.IntegrationConstants.MODULE_IDENTIFIER_KEY;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import org.jboss.as.osgi.deployment.BundleDeploymentProcessor;
@@ -44,6 +46,7 @@ import org.jboss.as.server.moduleservice.ModuleLoadService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.Module;
+import org.jboss.modules.ModuleDependencySpec;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoadException;
 import org.jboss.modules.ModuleLoader;
@@ -82,8 +85,19 @@ import org.osgi.framework.wiring.BundleWire;
 final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
 
     private final InjectedValue<ServiceModuleLoader> injectedModuleLoader = new InjectedValue<ServiceModuleLoader>();
+    private final Set<String> bundleModules = ConcurrentHashMap.newKeySet();
+    private final Set<String> strictModules = new HashSet<String>();
+    private final boolean strictBootDelegation;
     private ServiceContainer serviceContainer;
     private ServiceTarget serviceTarget;
+
+    /**
+     * @param strictBootDelegation If true, the modules of bundles do not get the dependency on the java.base module
+     *        that every module has by default
+     */
+    ModuleLoaderIntegration(boolean strictBootDelegation) {
+        this.strictBootDelegation = strictBootDelegation;
+    }
 
     @Override
     protected void addServiceDependencies(ServiceBuilder<FrameworkModuleLoader> builder) {
@@ -103,6 +117,33 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
         return new FrameworkModuleLoaderImpl();
     }
 
+    /**
+     * Remove the dependency on the java.base module from the module of a bundle.
+     *
+     * The module is defined by the {@link ServiceModuleLoader}, which is the only loader that can change its dependencies.
+     * This is done when the framework gets the module, that is before it loads a class of the bundle.
+     */
+    private void removeBaseDependency(Module module) {
+        String name = module.getName();
+        synchronized (strictModules) {
+            if (bundleModules.contains(name) == false || strictModules.add(name) == false)
+                return;
+
+            List<DependencySpec> dependencies = new ArrayList<DependencySpec>();
+            for (DependencySpec dependency : module.getDependencies()) {
+                if (dependency instanceof ModuleDependencySpec == false || "java.base".equals(((ModuleDependencySpec) dependency).getName()) == false)
+                    dependencies.add(dependency);
+            }
+            try {
+                Method method = ModuleLoader.class.getDeclaredMethod("setAndRelinkDependencies", Module.class, List.class);
+                method.setAccessible(true);
+                method.invoke(module.getModuleLoader(), module, dependencies);
+            } catch (Exception ex) {
+                LOGGER.warnCannotApplyStrictBootDelegation(ex, name);
+            }
+        }
+    }
+
     class FrameworkModuleLoaderImpl implements FrameworkModuleLoader {
 
         @Override
@@ -110,18 +151,12 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             class DelegatingModuleLoader extends ModuleLoader {
 
                 @Override
-                protected ModuleSpec findModule(ModuleIdentifier identifier) throws ModuleLoadException {
-                    ModuleSpec moduleSpec = findModule(identifier);
-                    if (moduleSpec == null)
-                        LOGGER.debugf("Cannot obtain module spec for: %s", identifier);
-                    return moduleSpec;
-                }
-
-                @Override
                 protected Module preloadModule(ModuleIdentifier identifier) throws ModuleLoadException {
                     Module module = ModuleLoader.preloadModule(identifier, injectedModuleLoader.getValue());
                     if (module == null)
                         LOGGER.debugf("Cannot obtain module for: %s", identifier);
+                    else if (strictBootDelegation)
+                        removeBaseDependency(module);
                     return module;
                 }
 
@@ -185,7 +220,7 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
                     // Build export filter
                     MultiplePathFilterBuilder exportBuilder = PathFilters.multiplePathFilterBuilder(true);
                     for (FilterSpecification filter : moduleDep.getExportFilters()) {
-                        importBuilder.addFilter(filter.getPathFilter(), filter.isInclude());
+                        exportBuilder.addFilter(filter.getPathFilter(), filter.isInclude());
                     }
                     PathFilter exportFilter = exportBuilder.create();
                     ModuleLoader moduleLoader = moduleDep.getModuleLoader();
@@ -204,6 +239,7 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
         public void addModuleSpec(XBundleRevision brev, final ModuleSpec moduleSpec) {
             String identifier = moduleSpec.getName();
             LOGGER.tracef("Add module spec to loader: %s", identifier);
+            bundleModules.add(identifier);
             ServiceName moduleSpecName = ServiceModuleLoader.moduleSpecServiceName(identifier);
 
             ServiceBuilder sb = serviceTarget.addService(moduleSpecName);
@@ -315,6 +351,10 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
         public void removeModule(XBundleRevision brev) {
             Set<ServiceName> serviceNames = new HashSet<ServiceName>();
             ModuleIdentifier identifier = brev.getModuleIdentifier();
+            bundleModules.remove(identifier.toString());
+            synchronized (strictModules) {
+                strictModules.remove(identifier.toString());
+            }
             serviceNames.add(getModuleSpecServiceName(identifier));
             serviceNames.add(getModuleServiceName(identifier));
             serviceNames.add(ServiceModuleLoader.moduleResolvedServiceName(identifier.toString()));

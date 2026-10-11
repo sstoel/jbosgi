@@ -125,4 +125,8 @@ public interface OSGiLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 11917, value = "Deactivate deferred module phase for: %s")
     void warnDeactivateDeferredModulePhase(Bundle bundle);
+
+    @LogMessage(level = WARN)
+    @Message(id = 11918, value = "Cannot apply strict boot delegation to module: %s")
+    void warnCannotApplyStrictBootDelegation(@Cause Throwable cause, String moduleName);
 }

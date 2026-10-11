@@ -56,7 +56,12 @@ public abstract class StartLevelHandler implements OperationStepHandler {
             OSGiRootResource.STARTLEVEL.getValidator().validateParameter(ModelDescriptionConstants.VALUE, value);
             int startlevel = value.asInt();
             FrameworkStartLevel frameworkStartLevel = sysbundle.adapt(FrameworkStartLevel.class);
-            frameworkStartLevel.setStartLevel(startlevel);
+            try {
+                frameworkStartLevel.setStartLevel(startlevel);
+            } catch (IllegalStateException ex) {
+                // The start level cannot be changed before the framework is started
+                throw new OperationFailedException(ex.getMessage());
+            }
         }
     };
 
