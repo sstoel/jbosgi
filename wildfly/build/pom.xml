@@ -155,12 +155,11 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.2</version>
         </dependency>
         <dependency>
             <groupId>xerces</groupId>
             <artifactId>xercesImpl</artifactId>
-            <version>2.12.2</version>
+            <version>${version.xerces}</version>
         </dependency>
     </dependencies>
 
@@ -332,7 +331,7 @@
                                 <configuration>
                                     <target>
                                         <mkdir dir="${jboss.home}/standalone/deployments" />
-                                        <copy todir="${jboss.home}" failonerror="false" overwrite="true">
+                                        <copy todir="${jboss.home}" overwrite="true">
                                             <fileset dir="${wildfly.dist.dir}">
                                                 <include name="bin/**" />
                                                 <include name="modules/**" />

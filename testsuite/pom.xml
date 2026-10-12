@@ -100,7 +100,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -289,7 +288,7 @@
                                 <configuration>
                                     <target>
                                         <mkdir dir="${jboss.home}/standalone/deployments" />
-                                        <copy todir="${jboss.home}" failonerror="false" overwrite="true">
+                                        <copy todir="${jboss.home}" overwrite="true">
                                             <fileset dir="${wildfly.dist.dir}">
                                                 <include name="bin/**" />
                                                 <include name="modules/**" />

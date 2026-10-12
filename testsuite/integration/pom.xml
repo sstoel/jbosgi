@@ -61,7 +61,7 @@
         <dependency>
             <groupId>org.wildfly</groupId>
             <artifactId>wildfly-testsuite-shared</artifactId>
-            <version>30.0.0.Final</version>
+            <version>${version.jboss.wildfly}</version>
             <exclusions>
             	<exclusion>
 		            <groupId>org.apache.directory.jdbm</groupId>
@@ -78,7 +78,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.2</version>
             <scope>provided</scope>
         </dependency>
         <!-- Test -->

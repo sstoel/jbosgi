@@ -60,6 +60,7 @@
         <version.jboss.osgi.spi>7.8.0.Final</version.jboss.osgi.spi>
         <version.jboss.osgi.testing>5.8.0.Final</version.jboss.osgi.testing>
         <version.jboss.osgi.vfs>5.8.0.Final</version.jboss.osgi.vfs>
+        <version.xerces>2.12.2</version.xerces>
     </properties>
 
     <!-- Modules -->
@@ -350,7 +351,8 @@
             </activation>
             <properties>
                 <version.jboss.wildfly>41.0.1.Final</version.jboss.wildfly>
-                <wildfly.dist.dir>/home/sander/wildfly/wildfly/build/target/wildfly-${version.jboss.wildfly}</wildfly.dist.dir>
+                <!-- Override with -Dwildfly.dist.dir when the WildFly fork is checked out somewhere else -->
+                <wildfly.dist.dir>${user.home}/wildfly/wildfly/build/target/wildfly-${version.jboss.wildfly}</wildfly.dist.dir>
             </properties>
         </profile>
     </profiles>

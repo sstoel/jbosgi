@@ -9,7 +9,7 @@
     </properties>
 
     <resources>
-        <resource-root path="xercesImpl-2.12.2.jar"/>
+        <resource-root path="xercesImpl-@version.xerces@.jar"/>
     </resources>
 
     <dependencies>

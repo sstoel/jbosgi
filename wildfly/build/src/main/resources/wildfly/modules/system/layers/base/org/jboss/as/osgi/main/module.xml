@@ -32,11 +32,6 @@
     </resources>
 
     <dependencies>
-        <module name="sun.jdk" >
-            <imports>
-                <include path="sun/misc/Unsafe" />
-            </imports>
-        </module>
         <module name="javax.api"/>
         <module name="jakarta.annotation.api"/>
         <module name="jakarta.inject.api"/>
@@ -46,6 +41,7 @@
         <module name="org.jboss.as.ee" optional="true"/>
         <module name="org.jboss.as.network"/>
         <module name="org.jboss.as.weld" optional="true"/>
+        <module name="org.jboss.as.weld.common" optional="true"/>
         <module name="org.wildfly.security.manager"/>
         <module name="org.jboss.as.server"/>
         <module name="org.jboss.jandex"/>

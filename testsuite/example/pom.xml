@@ -139,7 +139,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.2</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -222,9 +221,8 @@
             </activation>
             <dependencies>
                 <dependency>
-                    <groupId>org.wildfly</groupId>
+                    <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-controller-client</artifactId>
-                    <version>${version.jboss.wildfly.stable}</version>
                 </dependency>
             </dependencies>
             <build>

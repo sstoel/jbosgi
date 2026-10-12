@@ -39,6 +39,7 @@
 			<filterset>
 				<filter token="project.version" value="${project.version}" />
 				<filter token="version.osgi" value="${version.osgi}" />
+				<filter token="version.xerces" value="${version.xerces}" />
 				<filter token="version.shrinkwrap" value="${version.shrinkwrap}" />
 				<filter token="version.jboss.osgi.deployment" value="${version.jboss.osgi.deployment}" />
 				<filter token="version.jboss.osgi.framework" value="${version.jboss.osgi.framework}" />
@@ -55,8 +56,8 @@
 		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/osgi/core/main/org.osgi.core-${version.osgi}.jar" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/osgi.core-*.jar" />
 		</copy>
-		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/apache/xerces/main/xercesImpl-2.12.2.jar" overwrite="true">
-			<fileset file="${deploy.artifacts.lib}/xercesImpl-2.12.2.jar" />
+		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/apache/xerces/main/xercesImpl-${version.xerces}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/xercesImpl-${version.xerces}.jar" />
 		</copy>
 		<copy tofile="${wildfly.patch.dir}/modules/system/layers/base/org/jboss/as/osgi/http/main/jbosgi-wildfly-http-${project.version}.jar" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/jbosgi-wildfly-http-*.jar" />
