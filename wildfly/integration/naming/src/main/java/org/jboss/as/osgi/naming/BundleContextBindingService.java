@@ -23,6 +23,8 @@ package org.jboss.as.osgi.naming;
 
 import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.jboss.as.naming.ManagedReferenceInjector;
 import org.jboss.as.naming.ServiceBasedNamingStore;
 import org.jboss.as.naming.deployment.ContextNames;
@@ -45,6 +47,7 @@ final class BundleContextBindingService {
 
     static ServiceController<?> addService(final ServiceTarget serviceTarget) {
         ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(BUNDLE_CONTEXT_BINDING_NAME);
+        final AtomicBoolean bound = new AtomicBoolean();
         BinderService binderService = new BinderService(bindInfo.getBindName()) {
             @Override
             public synchronized void start(StartContext context) throws StartException {
@@ -58,11 +61,14 @@ final class BundleContextBindingService {
         builder.addDependency(bindInfo.getParentContextServiceName(), ServiceBasedNamingStore.class, binderService.getNamingStoreInjector()).addListener((controller, event) -> {
             switch (event) {
                 case UP: {
+                    bound.set(true);
                     LOGGER.infoBoundSystemContext(BUNDLE_CONTEXT_BINDING_NAME);
                     break;
                 }
                 case DOWN: {
-                    LOGGER.infoUnboundSystemContext(BUNDLE_CONTEXT_BINDING_NAME);
+                    // The listener also gets this event when the service is installed
+                    if (bound.getAndSet(false))
+                        LOGGER.infoUnboundSystemContext(BUNDLE_CONTEXT_BINDING_NAME);
                     break;
                 }
             }

@@ -75,6 +75,7 @@ import org.jboss.msc.value.InjectedValue;
 import org.jboss.osgi.deployment.deployer.Deployment;
 import org.jboss.osgi.framework.spi.FrameworkModuleLoader;
 import org.jboss.osgi.framework.spi.FrameworkModuleLoaderPlugin;
+import org.jboss.osgi.framework.spi.IntegrationConstants;
 import org.jboss.osgi.resolver.XBundle;
 import org.jboss.osgi.resolver.XBundleRevision;
 import org.jboss.osgi.resolver.XIdentityCapability;
@@ -420,7 +421,10 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
          * use any more, the deployment must not have a missing dependency then.
          */
         private void deactivateDeferredPhase(XBundleRevision brev) {
-            Deployment deployment = brev.getBundle().adapt(Deployment.class);
+            // The deployment of the revision, the bundle has the deployment of its current revision
+            Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
+            if (deployment == null)
+                deployment = brev.getBundle().adapt(Deployment.class);
             DeploymentUnit depUnit = deployment != null ? deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY) : null;
             if (depUnit == null || DeploymentUtils.getDeferredModules(depUnit).contains(depUnit.getName()) == false)
                 return;

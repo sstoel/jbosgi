@@ -127,6 +127,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     private ServerDeploymentManager serverDeploymentManager;
     private ModelControllerClient modelControllerClient;
     private ExecutorService undeployExecutor;
+    private ExecutorService clientExecutor;
 
     @Override
     protected void addServiceDependencies(ServiceBuilder<BundleLifecycle> builder) {
@@ -145,7 +146,8 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     public void start(StartContext startContext) throws StartException {
         super.start(startContext);
         ModelControllerClientFactory mcff = injectedModelControllerClientFactory.getValue();
-        modelControllerClient = mcff.createClient(Executors.newCachedThreadPool());
+        clientExecutor = Executors.newCachedThreadPool();
+        modelControllerClient = mcff.createClient(clientExecutor);
         serverDeploymentManager =  ServerDeploymentManager.Factory.create(modelControllerClient);
         undeployExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
@@ -165,6 +167,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         } catch (IOException ex) {
             // ignore
         }
+        clientExecutor.shutdown();
         super.stop(context);
     }
 

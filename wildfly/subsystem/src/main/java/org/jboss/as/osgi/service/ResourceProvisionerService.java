@@ -25,6 +25,7 @@ package org.jboss.as.osgi.service;
 import static org.jboss.as.server.Services.JBOSS_SERVER_CONTROLLER;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.jboss.as.controller.ModelController;
@@ -57,6 +58,7 @@ public final class ResourceProvisionerService implements Service<XResourceProvis
     private final InjectedValue<XPersistentRepository> injectedRepository = new InjectedValue<XPersistentRepository>();
     private final InjectedValue<XResolver> injectedResolver = new InjectedValue<XResolver>();
     private ModelControllerClient modelControllerClient;
+    private ExecutorService clientExecutor;
     private XResourceProvisioner provisioner;
 
     public static ServiceController<?> addService(final ServiceTarget target) {
@@ -74,7 +76,8 @@ public final class ResourceProvisionerService implements Service<XResourceProvis
     @Override
     public void start(StartContext startContext) throws StartException {
         ModelControllerClientFactory mcff = injectedModelControllerClientFactory.getValue();
-        modelControllerClient = mcff.createClient(Executors.newCachedThreadPool());
+        clientExecutor = Executors.newCachedThreadPool();
+        modelControllerClient = mcff.createClient(clientExecutor);
 
         final XResolver resolver = injectedResolver.getValue();
         final XPersistentRepository repository = injectedRepository.getValue();
@@ -88,6 +91,7 @@ public final class ResourceProvisionerService implements Service<XResourceProvis
         } catch (IOException ex) {
             // ignore
         }
+        clientExecutor.shutdown();
     }
 
     @Override
