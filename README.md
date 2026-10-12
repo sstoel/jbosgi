@@ -13,6 +13,32 @@ Setup the JBoss Maven Repository
 
 To use dependencies from JBoss.org, you need to add the JBoss Maven Repositories to your Maven settings.xml. For details see http://community.jboss.org/wiki/MavenGettingStarted-Users
 
+Prerequisites for the WildFly OSGi subsystem
+--------------------------------------------
+
+The OSGi subsystem does not build against a stock WildFly. It needs the OSGi branches of the WildFly forks, which
+add the deployment phases, attachments and module handling that the subsystem relies on
+
+* https://github.com/sstoel/wildfly-core branch `33.0.1.Final-osgi`
+* https://github.com/sstoel/wildfly branch `41.0.1.Final-osgi`
+
+Build both with `mvn install -DskipTests` first. They install their artifacts under the versions of the WildFly
+release that they are based on, so that these replace the stock artifacts in the local Maven repository.
+
+The injection of the system bundle context with `@Resource BundleContext context` without a lookup name is part of
+the WildFly fork as well. With `@Resource(lookup = "java:jboss/osgi/BundleContext")` it does not depend on that.
+
+The sibling repositories (jbosgi-parent, jbosgi-vfs, jbosgi-metadata, jbosgi-spi, jbosgi-testing, jbosgi-deployment,
+jbosgi-resolver, jbosgi-repository, jbosgi-provision, jbosgi-logging, jbosgi-framework) have to be installed in that order
+before this project is built.
+
+The tests start a WildFly server that uses the management port 9990 and connect to a server that is already running
+on that port. Use another port when it is taken
+
+<pre>
+$ mvn clean install -Darq.container.jboss.configuration.managementPort=19990 -Darq.container.jboss.configuration.javaVmArguments=-Djboss.management.http.port=19990
+</pre>
+
 Build with Maven
 ----------------
 

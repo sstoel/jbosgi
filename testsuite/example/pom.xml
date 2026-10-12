@@ -45,6 +45,12 @@
             <artifactId>osgi.core</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!-- The Http Service API with the jakarta servlet types -->
+        <dependency>
+            <groupId>org.jboss.osgi.wildfly</groupId>
+            <artifactId>jbosgi-wildfly-http</artifactId>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.configadmin</artifactId>

@@ -247,6 +247,43 @@ public class BundleUninstallTestCase {
         Assert.assertNull("BundleWiring null", brev.getWiring());
     }
 
+    @Test
+    @InSequence(70)
+    public void testDependentJarRedeploy() throws Exception {
+        ServerDeploymentHelper server = new ServerDeploymentHelper(managementClient.getControllerClient());
+        String jarName = server.deploy(V200_JAR, deployer.getDeployment(V200_JAR));
+        String webappName = server.deploy(BUNDLE_V200_WAB, deployer.getDeployment(BUNDLE_V200_WAB));
+
+        Bundle jar = FrameworkUtils.getBundles(context, V200_JAR, null)[0];
+        XBundleRevision brev = (XBundleRevision) jar.adapt(BundleRevision.class);
+        try {
+            Assert.assertEquals("Revision deployment.v200.jar", performCall("bundle-v200", "simple", null));
+
+            // [JBOSGI-800] The jar is undeployed while the webapp is wired to it
+            server.undeploy(jarName);
+            Assert.assertEquals(Bundle.UNINSTALLED, jar.getState());
+            Assert.assertTrue("BundleWiring in use", brev.getWiring().isInUse());
+
+            // The same jar can be deployed again
+            String redeployedName = server.deploy(V200_JAR, deployer.getDeployment(V200_JAR));
+            try {
+                Bundle[] bundles = FrameworkUtils.getBundles(context, V200_JAR, null);
+                Assert.assertEquals("One installed bundle", 1, bundles.length);
+                Assert.assertNotSame(jar, bundles[0]);
+                bundles[0].start();
+                Assert.assertEquals(Bundle.ACTIVE, bundles[0].getState());
+
+                // The webapp still uses the revision that it is wired to
+                Assert.assertEquals("Revision deployment.v200.jar", performCall("bundle-v200", "simple", null));
+            } finally {
+                server.undeploy(redeployedName);
+            }
+        } finally {
+            server.undeploy(webappName);
+        }
+        Assert.assertNull("BundleWiring null", brev.getWiring());
+    }
+
     private String performCall(String context, String pattern, String param) throws Exception {
         String urlspec = managementClient.getWebUri() + "/" + context + "/";
         URL url = new URL(urlspec + pattern + (param != null ? "?input=" + param : ""));

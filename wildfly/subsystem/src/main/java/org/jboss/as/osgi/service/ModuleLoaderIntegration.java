@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.jboss.as.osgi.deployment.BundleDeploymentProcessor;
@@ -57,6 +59,8 @@ import org.jboss.modules.ModuleSpec.Builder;
 import org.jboss.modules.filter.MultiplePathFilterBuilder;
 import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
+import org.jboss.msc.service.LifecycleEvent;
+import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceContainer;
@@ -89,6 +93,7 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
     private final InjectedValue<ServiceModuleLoader> injectedModuleLoader = new InjectedValue<ServiceModuleLoader>();
     private final Set<String> bundleModules = ConcurrentHashMap.newKeySet();
     private final Set<String> strictModules = new HashSet<String>();
+    private final Map<String, XBundleRevision> moduleOwners = new ConcurrentHashMap<String, XBundleRevision>();
     private final boolean strictBootDelegation;
     private ServiceContainer serviceContainer;
     private ServiceTarget serviceTarget;
@@ -244,6 +249,14 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             bundleModules.add(identifier);
             ServiceName moduleSpecName = ServiceModuleLoader.moduleSpecServiceName(identifier);
 
+            // [JBOSGI-800] The identifier comes from the deployment name. A revision of a bundle that was uninstalled
+            // while it was in use can still have it, the revision that is deployed now takes it over
+            XBundleRevision previous = moduleOwners.put(identifier, brev);
+            if (previous != brev && serviceContainer.getService(moduleSpecName) != null) {
+                LOGGER.debugf("Module %s is taken over from: %s", identifier, previous);
+                removeModuleServices(brev.getModuleIdentifier(), true);
+            }
+
             ServiceBuilder sb = serviceTarget.addService(moduleSpecName);
             Consumer<ModuleDefinition> c = sb.provides(moduleSpecName);
             sb.setInstance(new ModuleDefinitionService(c, new ModuleDefinition(identifier, Collections.emptySet(), moduleSpec)));
@@ -353,20 +366,49 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
         public void removeModule(XBundleRevision brev) {
             deactivateDeferredPhase(brev);
 
-            Set<ServiceName> serviceNames = new HashSet<ServiceName>();
+            // The services belong to another revision when that has taken over the identifier
             ModuleIdentifier identifier = brev.getModuleIdentifier();
+            if (moduleOwners.remove(identifier.toString(), brev) == false && moduleOwners.containsKey(identifier.toString()))
+                return;
+
             bundleModules.remove(identifier.toString());
             synchronized (strictModules) {
                 strictModules.remove(identifier.toString());
             }
+            removeModuleServices(identifier, false);
+        }
+
+        private void removeModuleServices(ModuleIdentifier identifier, boolean awaitRemoval) {
+            Set<ServiceName> serviceNames = new HashSet<ServiceName>();
             serviceNames.add(getModuleSpecServiceName(identifier));
             serviceNames.add(getModuleServiceName(identifier));
             serviceNames.add(ServiceModuleLoader.moduleResolvedServiceName(identifier.toString()));
+            List<ServiceController<?>> controllers = new ArrayList<ServiceController<?>>();
             for (ServiceName serviceName : serviceNames) {
                 ServiceController<?> controller = serviceContainer.getService(serviceName);
-                if (controller != null) {
-                    LOGGER.debugf("Remove from loader: %s", serviceName);
-                    controller.setMode(Mode.REMOVE);
+                if (controller != null)
+                    controllers.add(controller);
+            }
+            final CountDownLatch latch = new CountDownLatch(controllers.size());
+            for (ServiceController<?> controller : controllers) {
+                LOGGER.debugf("Remove from loader: %s", controller.getName());
+                if (awaitRemoval) {
+                    controller.addListener(new LifecycleListener() {
+                        @Override
+                        public void handleEvent(ServiceController<?> controller, LifecycleEvent event) {
+                            if (event == LifecycleEvent.REMOVED)
+                                latch.countDown();
+                        }
+                    });
+                }
+                controller.setMode(Mode.REMOVE);
+            }
+            if (awaitRemoval) {
+                try {
+                    if (latch.await(30, TimeUnit.SECONDS) == false)
+                        LOGGER.debugf("Timeout removing the services of module: %s", identifier);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
                 }
             }
         }
