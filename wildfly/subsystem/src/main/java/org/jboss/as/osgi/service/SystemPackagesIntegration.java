@@ -50,6 +50,7 @@ interface SystemPackagesIntegration  {
     };
 
     // Keep the versions in sync with the modules org.jboss.dmr, org.jboss.logging and org.slf4j
+    // The module org.jboss.osgi.repository provides org.osgi.util.promise
     // The slf4j api is exported in version 1.7 as well, like the slf4j-api artefact does for the bundles that were built against 1.7
     String[] DEFAULT_INTEGRATION_PACKAGES = new String[] {
         "jakarta.inject",
@@ -63,6 +64,7 @@ interface SystemPackagesIntegration  {
         "org.jboss.osgi.provision;version=1.0",
         "org.jboss.osgi.repository;version=1.0",
         "org.osgi.service.repository;version=1.0;uses:=\"org.osgi.resource\"",
+        "org.osgi.util.promise;version=1.0",
         "org.slf4j;version=2.0",
         "org.slf4j;version=1.7",
         "org.slf4j.event;version=2.0",
