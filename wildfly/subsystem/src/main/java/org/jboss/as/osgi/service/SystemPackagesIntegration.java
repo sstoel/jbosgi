@@ -1,18 +1,13 @@
 /*
- * JBoss",
-"Home of Professional Open Source.
- * Copyright 2010",
-"Red Hat",
-"Inc.",
-"and individual contributors
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2010, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
  * This is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as
  * published by the Free Software Foundation; either version 2.1 of
- * the License",
-"or (at your option) any later version.
+ * the License, or (at your option) any later version.
  *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,16 +15,9 @@
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this software; if not",
-"write to the Free
- * Software Foundation",
-"Inc.",
-"51 Franklin St",
-"Fifth Floor",
-"Boston",
-"MA
- * 02110-1301 USA",
-"or see the FSF site: http://www.fsf.org.
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
 package org.jboss.as.osgi.service;
@@ -61,6 +49,8 @@ interface SystemPackagesIntegration  {
         "org.slf4j.impl"
     };
 
+    // Keep the versions in sync with the modules org.jboss.dmr, org.jboss.logging and org.slf4j
+    // The slf4j api is exported in version 1.7 as well, like the slf4j-api artefact does for the bundles that were built against 1.7
     String[] DEFAULT_INTEGRATION_PACKAGES = new String[] {
         "jakarta.inject",
         "org.apache.xerces.jaxp",
@@ -68,13 +58,17 @@ interface SystemPackagesIntegration  {
         "org.jboss.as.controller.client.helpers",
         "org.jboss.as.controller.client.helpers.domain",
         "org.jboss.as.controller.client.helpers.standalone",
-        "org.jboss.dmr;version=1.1.1",
-        "org.jboss.logging;version=3.1.0",
+        "org.jboss.dmr;version=1.7",
+        "org.jboss.logging;version=3.6",
         "org.jboss.osgi.provision;version=1.0",
         "org.jboss.osgi.repository;version=1.0",
         "org.osgi.service.repository;version=1.0;uses:=\"org.osgi.resource\"",
+        "org.slf4j;version=2.0",
         "org.slf4j;version=1.7",
+        "org.slf4j.event;version=2.0",
+        "org.slf4j.spi;version=2.0",
         "org.slf4j.spi;version=1.7",
+        "org.slf4j.helpers;version=2.0",
         "org.slf4j.helpers;version=1.7",
         "org.slf4j.impl;version=1.7"
     };

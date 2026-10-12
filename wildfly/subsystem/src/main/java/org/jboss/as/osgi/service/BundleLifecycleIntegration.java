@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -382,6 +383,17 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             return new RecreateCurrentRevisionPolicy();
         }
 
+        private void retainDeploymentServices(Set<ServiceController<?>> controllers, ServiceController<?> phaseService, ServiceController<?> parentDeploymentService) {
+            for (Iterator<ServiceController<?>> it = controllers.iterator(); it.hasNext();) {
+                boolean related = false;
+                for (ServiceController<?> aux = it.next(); aux != null && !related; aux = aux.getParent()) {
+                    related = aux == phaseService || aux == parentDeploymentService;
+                }
+                if (!related)
+                    it.remove();
+            }
+        }
+
         private void activateDeferredPhase(XBundle bundle, int options, DeploymentUnit depUnit, ServiceController<Phase> phaseService,
                 ServiceController<DeploymentUnit> parentDeploymentService) throws BundleException {
 
@@ -416,6 +428,10 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             } catch (final InterruptedException ex) {
                 // ignore
             }
+
+            // The container reports every service that failed or has a problem, only those of this deployment are relevant
+            retainDeploymentServices(failed, phaseService, parentDeploymentService);
+            retainDeploymentServices(problems, phaseService, parentDeploymentService);
 
             // In case of failure we go back to NEVER
 

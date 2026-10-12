@@ -24,6 +24,7 @@ package org.jboss.as.osgi.management;
 import org.jboss.as.controller.AbstractRuntimeOnlyHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
+import org.jboss.as.osgi.service.FrameworkActivator;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -49,6 +50,9 @@ public class ActivateOperationHandler extends AbstractRuntimeOnlyHandler  {
         // also so it knows to await full MSC ServiceContainer stability before proceeding to Stage.VERIFY
         // So, ask for the service registry as a way of communicating this.
         context.getServiceRegistry(true);
+
+        // Problems with the services that this installs are reported by the context when it verifies the container stability
+        FrameworkActivator.activateEagerly();
 
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
