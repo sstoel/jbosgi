@@ -104,7 +104,7 @@ class WebContextLifecycleInterceptor extends AbstractLifecycleInterceptor implem
         }
     }
 
-    private void injectBundleContext(ServletContext webContext, BundleContext bundleContext) {
+    static void injectBundleContext(ServletContext webContext, BundleContext bundleContext) {
         OSGiLogger.LOGGER.debugf("Injecting bundle context %s into %s", bundleContext, webContext);
         webContext.setAttribute(WebExtension.OSGI_BUNDLECONTEXT, bundleContext);
         registerServletContextService(webContext, bundleContext);
@@ -117,7 +117,7 @@ class WebContextLifecycleInterceptor extends AbstractLifecycleInterceptor implem
         }
     }
 
-    private void registerServletContextService(ServletContext servletContext, BundleContext bundleContext) {
+    private static void registerServletContextService(ServletContext servletContext, BundleContext bundleContext) {
         Bundle bundle = bundleContext.getBundle();
         Dictionary<String, Object> props = new Hashtable<String, Object>();
         props.put("osgi.web.symbolicname", bundle.getSymbolicName());

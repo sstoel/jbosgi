@@ -25,12 +25,21 @@ package org.jboss.as.osgi.web;
 
 
 import org.jboss.as.osgi.OSGiConstants;
+import org.jboss.as.osgi.OSGiMessages;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.web.host.ContextActivator;
+import org.jboss.msc.Service;
+import org.jboss.msc.service.ServiceBuilder;
+import org.jboss.msc.service.ServiceName;
+import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
+import org.jboss.osgi.resolver.XBundle;
 import org.jboss.osgi.resolver.XBundleRevision;
+import org.osgi.framework.Bundle;
 
 /**
  * Start/stop an OSGi webapp context according to bundle lifecycle changes.
@@ -49,6 +58,43 @@ public class WebContextActivationProcessor implements DeploymentUnitProcessor {
         if (activator != null && brev != null) {
             // Add the {@link ContextActivator} to the {@link XBundleRevision}
             brev.putAttachment(WebExtension.CONTEXT_ACTIVATOR_KEY, activator);
+
+            // The framework starts the persistent bundles at boot, maybe before the activator is attached: the context
+            // of a bundle that is ACTIVE already is started when the web deployment is up
+            XBundle bundle = brev.getBundle();
+            if (bundle.getState() == Bundle.ACTIVE) {
+                ServiceName serviceName = depUnit.getServiceName().append("osgi-wab-activation");
+                ServiceBuilder<?> builder = phaseContext.getServiceTarget().addService(serviceName);
+                builder.requires(depUnit.getServiceName().append("undertow-deployment"));
+                builder.setInstance(new ActiveBundleContextService(bundle, brev, activator));
+                builder.install();
+            }
+        }
+    }
+
+    private static final class ActiveBundleContextService implements Service {
+        private final XBundle bundle;
+        private final XBundleRevision brev;
+        private final ContextActivator activator;
+
+        ActiveBundleContextService(XBundle bundle, XBundleRevision brev, ContextActivator activator) {
+            this.bundle = bundle;
+            this.brev = brev;
+            this.activator = activator;
+        }
+
+        @Override
+        public void start(StartContext context) throws StartException {
+            // Not when the bundle was stopped meanwhile, or the interceptor started the context already
+            if (bundle.getState() != Bundle.ACTIVE || bundle.getBundleRevision() != brev || activator.getServletContext() != null)
+                return;
+            if (!activator.startContext())
+                throw new StartException(OSGiMessages.MESSAGES.startContextFailed());
+            WebContextLifecycleInterceptor.injectBundleContext(activator.getServletContext(), bundle.getBundleContext());
+        }
+
+        @Override
+        public void stop(StopContext context) {
         }
     }
 
