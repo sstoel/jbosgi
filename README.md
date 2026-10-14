@@ -39,6 +39,26 @@ on that port. Use another port when it is taken
 $ mvn clean install -Darq.container.jboss.configuration.managementPort=19990 -Darq.container.jboss.configuration.javaVmArguments=-Djboss.management.http.port=19990
 </pre>
 
+Upgrading a server from the WF41 build
+--------------------------------------
+
+The framework provides the OSGi Log Service now, the Felix Log Service bundle is not part of the server any more.
+Remove its capability from the OSGi subsystem of a configuration that was written for the WF41 build, the subsystem
+does not start otherwise
+
+<pre>
+&lt;capability name="org.apache.felix.log" startlevel="1"/&gt;
+</pre>
+
+WildFly 41 does not support the JACC policy of Elytron any more (ELYEE01000: No legacy Policy access from Jakarta EE 11
+and later). Remove it from the Elytron subsystem of that configuration, the server starts with errors otherwise
+
+<pre>
+&lt;policy name="jacc"&gt;
+    &lt;jacc-policy/&gt;
+&lt;/policy&gt;
+</pre>
+
 Build with Maven
 ----------------
 
