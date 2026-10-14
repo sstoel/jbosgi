@@ -81,6 +81,7 @@ import org.jboss.osgi.resolver.XBundleRevision;
 import org.jboss.osgi.resolver.XIdentityCapability;
 import org.osgi.framework.wiring.BundleRevisions;
 import org.osgi.framework.wiring.BundleWire;
+import org.osgi.framework.wiring.BundleWiring;
 
 /**
  * This is the single {@link ModuleLoader} that the OSGi layer uses for the modules that are associated with the bundles that
@@ -190,7 +191,16 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             XBundle bundle = brev.getBundle();
             Deployment deployment = bundle.adapt(Deployment.class);
             ModuleIdentifier identifier = deployment.getAttachment(MODULE_IDENTIFIER_KEY);
-            if (identifier == null) {
+            if (identifier != null) {
+                // [JBOSGI-800] The identifier comes from the deployment name. A bundle that is deployed again while a
+                // revision of the uninstalled bundle is still in use cannot have it, that revision keeps its module
+                XBundleRevision owner = moduleOwners.get(identifier.toString());
+                BundleWiring ownerWiring = owner != null && owner.getBundle() != bundle ? owner.getWiring() : null;
+                if (ownerWiring != null && ownerWiring.isInUse()) {
+                    identifier = ModuleIdentifier.create(identifier.getName() + "-" + bundle.getBundleId(), identifier.getSlot());
+                    LOGGER.debugf("Module %s is used by %s, %s gets: %s", deployment.getAttachment(MODULE_IDENTIFIER_KEY), owner, bundle, identifier);
+                }
+            } else {
                 XIdentityCapability icap = brev.getIdentityCapability();
                 BundleRevisions brevs = bundle.adapt(BundleRevisions.class);
                 int revsize = brevs.getRevisions().size();
@@ -250,8 +260,8 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             bundleModules.add(identifier);
             ServiceName moduleSpecName = ServiceModuleLoader.moduleSpecServiceName(identifier);
 
-            // [JBOSGI-800] The identifier comes from the deployment name. A revision of a bundle that was uninstalled
-            // while it was in use can still have it, the revision that is deployed now takes it over
+            // [JBOSGI-800] Another bundle gets an identifier of its own while the revision of an uninstalled bundle
+            // that has it is in use (see getModuleIdentifier), otherwise the revision that is deployed now takes it over
             XBundleRevision previous = moduleOwners.put(identifier, brev);
             if (previous != brev && serviceContainer.getService(moduleSpecName) != null) {
                 LOGGER.debugf("Module %s is taken over from: %s", identifier, previous);
