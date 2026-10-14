@@ -101,7 +101,8 @@ final class HttpServiceImpl implements HttpService {
         if (httpContext == null) { httpContext = createDefaultHttpContext(); }
         ResourceServlet servlet = new ResourceServlet(name, httpContext);
 
-        registerInternal(alias, servlet, null, null, Type.RESOURCE);
+        // The security of the resources is that of their HttpContext (handleSecurity)
+        registerInternal(alias, servlet, null, httpContext, Type.RESOURCE);
     }
 
     @SuppressWarnings("rawtypes")
