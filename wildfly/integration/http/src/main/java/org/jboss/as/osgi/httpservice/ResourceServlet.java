@@ -55,13 +55,16 @@ final class ResourceServlet extends HttpServlet {
     protected void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
         String path = req.getPathInfo();
-        URL resurl = context.getResource(name + path);
-        if (resurl == null) {
+        String target = path != null ? name + path : name;
+        URL resurl = context.getResource(target);
+
+        // A directory is not a resource, its URL would give the content of the whole subtree
+        if (resurl == null || target.endsWith("/") || resurl.getPath().endsWith("/")) {
             res.sendError(HttpServletResponse.SC_NOT_FOUND, req.getRequestURI());
+            return;
         }
 
         URLConnection conn = resurl.openConnection();
-        InputStream in = conn.getInputStream();
         if (conn.getContentLength() != -1) {
             res.setContentLength(conn.getContentLength());
         }
@@ -81,6 +84,8 @@ final class ResourceServlet extends HttpServlet {
             res.setDateHeader("last-modified", conn.getLastModified());
         }
         ServletOutputStream out = res.getOutputStream();
-        IOUtils.copyStream(out, in);
+        try (InputStream in = conn.getInputStream()) {
+            IOUtils.copyStream(out, in);
+        }
     }
 }
