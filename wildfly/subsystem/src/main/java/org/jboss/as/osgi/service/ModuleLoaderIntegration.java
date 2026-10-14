@@ -431,7 +431,8 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
 
             ServiceName phaseName = DeploymentUtils.getDeploymentUnitPhaseServiceName(depUnit, Phase.FIRST_MODULE_USE);
             ServiceController<?> phaseService = serviceContainer.getService(phaseName);
-            if (phaseService != null && phaseService.getMode() == Mode.ACTIVE) {
+            // The phase of a deployment of the same name that was deployed again has the same service name
+            if (phaseService != null && phaseService.getMode() == Mode.ACTIVE && BundleLifecycleIntegration.isServiceOf(phaseService, depUnit)) {
                 LOGGER.debugf("Deactivate deferred module phase for: %s", brev);
                 phaseService.setMode(Mode.NEVER);
             }

@@ -210,6 +210,22 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         return Boolean.TRUE.equals(bundle.getAttachment(BUNDLE_REFRESHING_KEY));
     }
 
+    /**
+     * Whether a deployment service belongs to the deployment of the given unit.
+     *
+     * A deployment that is deployed again under the same name gets the same service names, only the
+     * {@link DeploymentUnit} of its deployment service tells the deployments apart.
+     */
+    static boolean isServiceOf(ServiceController<?> controller, DeploymentUnit depUnit) {
+        DeploymentUnit rootUnit = depUnit.getParent() != null ? depUnit.getParent() : depUnit;
+        ServiceName rootName = rootUnit.getServiceName();
+        ServiceController<?> aux = controller;
+        while (aux != null && !rootName.equals(aux.getName()))
+            aux = aux.getParent();
+        // The value of a stopped deployment service is null
+        return aux != null && aux.getValue() == rootUnit;
+    }
+
     class BundleLifecycleImpl implements BundleLifecycle {
 
         private final BundleManager bundleManager;
@@ -377,8 +393,9 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             if (depUnit == null || depUnit.getParent() != null)
                 return false;
 
+            // A deployment of the same name that was deployed again after this one has the same service name
             ServiceController<?> controller = bundleManager.getServiceContainer().getService(depUnit.getServiceName());
-            return controller != null && controller.getMode() != Mode.REMOVE;
+            return controller != null && controller.getMode() != Mode.REMOVE && isServiceOf(controller, depUnit);
         }
 
         @Override
