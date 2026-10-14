@@ -93,6 +93,8 @@ public class BundleResourceHandler extends AbstractRuntimeOnlyHandler {
     }
 
     private void handleOperation(OperationContext context, String operationName, ModelNode operation) {
+        // The operation changes the runtime: this authorizes it for that (RBAC) and makes it audited
+        context.getServiceRegistry(true);
         try {
             if (ModelConstants.START.equals(operationName)) {
                 OperationAssociation.INSTANCE.setAssociation(operation);

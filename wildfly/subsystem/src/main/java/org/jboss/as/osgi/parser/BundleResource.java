@@ -40,8 +40,9 @@ public class BundleResource extends SimpleResourceDefinition {
 
     private static final ResourceDescriptionResolver RESOLVER = OSGiResolvers.getResolver(ModelConstants.BUNDLE);
     private static final OperationDefinition[] OPERATIONS = new OperationDefinition[] {
-        new SimpleOperationDefinitionBuilder(ModelConstants.START, RESOLVER).build(),
-        new SimpleOperationDefinitionBuilder(ModelConstants.STOP, RESOLVER).build(),
+        // Starting and stopping a bundle changes the runtime, not the configuration
+        new SimpleOperationDefinitionBuilder(ModelConstants.START, RESOLVER).setRuntimeOnly().build(),
+        new SimpleOperationDefinitionBuilder(ModelConstants.STOP, RESOLVER).setRuntimeOnly().build(),
     };
 
     public static final SimpleAttributeDefinition ID = createAttribute(ModelConstants.ID, ModelType.LONG, false);
