@@ -56,6 +56,11 @@ import org.osgi.framework.wiring.FrameworkWiring;
  * and stalls for 60 s in BundleInstallProcessor.undeploy. Same cause as the failing
  * BundleUninstallTestCase.testDependentJarRedeploy ("BundleWiring null").
  *
+ * <h3>Related</h3>
+ * Same defect as connect/25 (RefreshKeepsUninstalledDeploymentIssueTestCase, filed earlier by the verification), which
+ * also covers the 60 s block of the later uninstall (UninstallReleasesBundleUnderLocksIssueTestCase); this test only
+ * checks the refresh.
+ *
  * <h3>Component</h3>
  * jbosgi-framework, core, {@code org.jboss.osgi.framework.internal.FrameworkWiringImpl#refreshBundlesInternal}; framework
  * level reproduction: UninstalledRevisionNotRemovedByRefreshIssueTestCase (jbosgi-framework itest).
