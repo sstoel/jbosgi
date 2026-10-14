@@ -48,8 +48,14 @@ import java.util.concurrent.TimeoutException;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.helpers.standalone.DeploymentAction;
+import org.jboss.as.controller.client.helpers.standalone.DeploymentPlanBuilder;
+import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentActionResult;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentHelper;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentManager;
+import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentPlanResult;
+import org.jboss.as.controller.client.helpers.standalone.ServerUpdateActionResult;
+import org.jboss.as.controller.client.helpers.standalone.UndeployDeploymentPlanBuilder;
 import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.deployment.BundleDeploymentProcessor;
 import org.jboss.as.osgi.management.OperationAssociation;
@@ -95,6 +101,7 @@ import org.jboss.osgi.spi.AttachmentKey;
 import org.jboss.osgi.vfs.AbstractVFS;
 import org.jboss.osgi.vfs.VirtualFile;
 import org.jboss.vfs.VFSUtils;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.startlevel.BundleStartLevel;
@@ -113,6 +120,8 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
 
     private static final AttachmentKey<String> RUNTIME_NAME_KEY = AttachmentKey.create(String.class);
     private static final AttachmentKey<Boolean> BUNDLE_REFRESHING_KEY = AttachmentKey.create(Boolean.class);
+    private static final AttachmentKey<Boolean> BUNDLE_UNDEPLOYING_KEY = AttachmentKey.create(Boolean.class);
+    private static final AttachmentKey<Boolean> REVISION_UNDEPLOYED_KEY = AttachmentKey.create(Boolean.class);
 
     private static final Map<String, Deployment> deploymentMap = new HashMap<String, Deployment>();
     private static final ThreadLocal<Boolean> deploymentUndeploy = new ThreadLocal<Boolean>();
@@ -208,6 +217,14 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
 
     public static boolean isBundleRefreshing(XBundle bundle) {
         return Boolean.TRUE.equals(bundle.getAttachment(BUNDLE_REFRESHING_KEY));
+    }
+
+    /**
+     * True while Bundle.uninstall undeploys the deployment of the bundle: the bundle stays installed until the undeploy
+     * is done, a rolled back undeploy finds it as it was.
+     */
+    public static boolean isBundleUndeploying(XBundle bundle) {
+        return Boolean.TRUE.equals(bundle.getAttachment(BUNDLE_UNDEPLOYING_KEY));
     }
 
     /**
@@ -350,6 +367,64 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         }
 
         @Override
+        public void uninstall(XBundle bundle, int options) throws BundleException {
+            XBundleRevision brev = bundle.getBundleRevision();
+            Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
+            if (deployment == null || !isUndeployRequired(bundle, deployment)) {
+                bundleManager.uninstallBundle(bundle, options);
+                return;
+            }
+
+            // The deployment is undeployed first, without the locks of the framework: the undeploy may be refused (RBAC)
+            // or rolled back (a deployment depends on the bundle), the bundle is then not uninstalled. The deployments of
+            // older revisions are undeployed when these are removed
+            String runtimeName = getRuntimeName(deployment);
+            bundle.putAttachment(BUNDLE_UNDEPLOYING_KEY, Boolean.TRUE);
+            try {
+                undeployChecked(runtimeName);
+                brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
+            } catch (Exception ex) {
+                throw MESSAGES.cannotUninstallDeployedBundle(ex, bundle, runtimeName);
+            } finally {
+                bundle.removeAttachment(BUNDLE_UNDEPLOYING_KEY);
+            }
+            if (bundle.getState() != Bundle.UNINSTALLED) {
+                bundleManager.uninstallBundle(bundle, options);
+            }
+        }
+
+        private boolean isUndeployRequired(XBundle bundle, Deployment deployment) {
+            if (bundle.getState() == Bundle.UNINSTALLED || isBundleRefreshing(bundle))
+                return false;
+            // Within a management operation or under the locks of the framework the undeploy cannot complete
+            if (OperationAssociation.INSTANCE.getAssociation() != null || injectedLockManager.getValue().getCurrentLockContext() != null)
+                return false;
+            if (Boolean.TRUE.equals(deploymentUndeploy.get()))
+                return false;
+            return isDeployed(deployment);
+        }
+
+        private void undeployChecked(String runtimeName) throws Exception {
+            DeploymentPlanBuilder builder = serverDeploymentManager.newDeploymentPlan();
+            UndeployDeploymentPlanBuilder undeployBuilder = builder.undeploy(runtimeName);
+            List<DeploymentAction> actions = new ArrayList<DeploymentAction>();
+            actions.add(undeployBuilder.getLastAction());
+            builder = undeployBuilder.andRemoveUndeployed();
+            actions.add(builder.getLastAction());
+            ServerDeploymentPlanResult planResult = serverDeploymentManager.execute(builder.build()).get();
+            for (DeploymentAction action : actions) {
+                ServerDeploymentActionResult actionResult = planResult.getDeploymentActionResult(action.getId());
+                if (actionResult == null)
+                    throw new IllegalStateException("No result for: " + action.getType() + " " + runtimeName);
+                if (actionResult.getDeploymentException() != null)
+                    throw new IllegalStateException(actionResult.getDeploymentException());
+                // A rolled back undeploy carries no exception
+                if (actionResult.getResult() != ServerUpdateActionResult.Result.EXECUTED)
+                    throw new IllegalStateException(action.getType() + " of " + runtimeName + ": " + actionResult.getResult());
+            }
+        }
+
+        @Override
         public void removeRevision(XBundleRevision brev, int options) {
 
             undeployRevision(brev);
@@ -361,6 +436,10 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         }
 
         private void undeployRevision(final XBundleRevision brev) {
+            // Bundle.uninstall undeployed the deployment already
+            if (Boolean.TRUE.equals(brev.getAttachment(REVISION_UNDEPLOYED_KEY)))
+                return;
+
             final Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
             final String runtimeName = getRuntimeName(deployment);
             final boolean deferred = Boolean.TRUE.equals(deploymentUndeploy.get());

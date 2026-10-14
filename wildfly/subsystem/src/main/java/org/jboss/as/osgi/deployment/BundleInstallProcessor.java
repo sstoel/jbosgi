@@ -103,6 +103,12 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
 
         XBundle bundle = brev.getBundle();
         BundleManager bundleManager = depUnit.getAttachment(OSGiConstants.BUNDLE_MANAGER_KEY);
+
+        // Bundle.uninstall undeploys the deployment: it uninstalls the bundle itself when the undeploy is done,
+        // when the undeploy is rolled back the deployment is deployed again with the bundle as it was
+        if (BundleLifecycleIntegration.isBundleUndeploying(bundle))
+            return;
+
         if (uninstallRequired(depUnit, brev)) {
             BundleLifecycleIntegration.setDeploymentUndeploy(true);
             try {

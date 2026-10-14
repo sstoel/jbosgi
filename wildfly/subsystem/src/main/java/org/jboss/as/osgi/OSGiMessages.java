@@ -124,4 +124,7 @@ public interface OSGiMessages {
 
     @Message(id = 11974, value = "Starting web context failed")
     String startContextFailed();
+
+    @Message(id = 11975, value = "Cannot uninstall bundle %s, its deployment %s was not undeployed")
+    BundleException cannotUninstallDeployedBundle(@Cause Throwable cause, Bundle bundle, String runtimeName);
 }
