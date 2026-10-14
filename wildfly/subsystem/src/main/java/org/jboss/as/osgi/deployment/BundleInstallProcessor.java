@@ -156,6 +156,10 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
         ServiceContainer serviceContainer = bundleManager.getServiceContainer();
         ServiceController<?> controller = serviceContainer.getRequiredService(Services.JBOSS_SERVER_CONTROLLER);
         boolean stopRequested = controller.getState() == UP && (controller.getMode() == ServiceController.Mode.REMOVE || controller.getMode() == ServiceController.Mode.NEVER);
+        // A :reload stops the root service jboss.as, the server controller service keeps its mode. The bundles of the
+        // deployments stay installed like on a server stop: their persistent state and data area are kept
+        ServiceController<?> root = serviceContainer.getService(Services.JBOSS_AS);
+        stopRequested |= root != null && root.getMode() != ServiceController.Mode.ACTIVE;
         return stopRequested ? Bundle.STOP_TRANSIENT : 0;
     }
 }
