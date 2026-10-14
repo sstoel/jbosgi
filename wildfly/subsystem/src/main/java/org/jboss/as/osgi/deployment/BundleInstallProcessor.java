@@ -44,6 +44,7 @@ import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceRegistry;
 import org.jboss.osgi.deployment.deployer.Deployment;
 import org.jboss.osgi.framework.spi.BundleManager;
+import org.jboss.osgi.framework.spi.IntegrationConstants;
 import org.jboss.osgi.framework.spi.IntegrationServices;
 import org.jboss.osgi.framework.spi.StorageManager;
 import org.jboss.osgi.framework.spi.StorageState;
@@ -79,7 +80,9 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
         try {
             BundleManager bundleManager = depUnit.getAttachment(OSGiConstants.BUNDLE_MANAGER_KEY);
             BundleContext syscontext = depUnit.getAttachment(OSGiConstants.SYSTEM_CONTEXT_KEY);
-            if (deploymentTracker.hasDeploymentName(depUnit.getName())) {
+            // Every deployment of a bundle that is still in the storage gets its identity back: its id and data area
+            // (4.5.2), also deployments of the deployment scanner, which are not in the persisted management model
+            if (deploymentTracker.hasDeploymentName(depUnit.getName()) || isStoredBundle(bundleManager, deployment)) {
                 restoreStorageState(phaseContext, deployment);
             }
             // Not the service target of the deployment phase: the revision keeps it, and it references the management model
@@ -117,6 +120,13 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
                 bundleManager.removeRevision(brev, 0);
             }
         }
+    }
+
+    private boolean isStoredBundle(BundleManager bundleManager, Deployment deployment) {
+        // Not for an update or a refresh of an installed bundle: these get a new revision
+        if (deployment.isBundleUpdate() || deployment.getAttachment(IntegrationConstants.BUNDLE_KEY) != null)
+            return false;
+        return bundleManager.getBundleByLocation(deployment.getLocation()) == null;
     }
 
     private void restoreStorageState(final DeploymentPhaseContext phaseContext, final Deployment deployment) {
