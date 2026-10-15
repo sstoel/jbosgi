@@ -64,15 +64,16 @@ interface SystemPackagesIntegration  {
         "org.jboss.osgi.provision;version=1.0",
         "org.jboss.osgi.repository;version=1.0",
         "org.osgi.service.repository;version=1.0;uses:=\"org.osgi.resource\"",
-        "org.osgi.util.promise;version=1.0",
+        "org.osgi.util.function;version=1.0",
+        "org.osgi.util.promise;version=1.0;uses:=\"org.osgi.util.function\"",
         "org.slf4j;version=2.0",
         "org.slf4j;version=1.7",
         "org.slf4j.event;version=2.0",
-        "org.slf4j.spi;version=2.0",
-        "org.slf4j.spi;version=1.7",
-        "org.slf4j.helpers;version=2.0",
-        "org.slf4j.helpers;version=1.7",
-        "org.slf4j.impl;version=1.7"
+        "org.slf4j.spi;version=2.0;uses:=\"org.slf4j\"",
+        "org.slf4j.spi;version=1.7;uses:=\"org.slf4j\"",
+        "org.slf4j.helpers;version=2.0;uses:=\"org.slf4j\"",
+        "org.slf4j.helpers;version=1.7;uses:=\"org.slf4j\"",
+        "org.slf4j.impl;version=1.7;uses:=\"org.slf4j\""
     };
 
     String[] DEFAULT_CAPABILITIES = new String[] {

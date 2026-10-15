@@ -39,9 +39,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.jboss.as.osgi.deployment.BundleDeploymentProcessor;
+import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUtils;
 import org.jboss.as.server.deployment.Phase;
+import org.jboss.as.server.deployment.Services;
 import org.jboss.as.server.deployment.module.FilterSpecification;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
@@ -74,11 +76,13 @@ import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.osgi.deployment.deployer.Deployment;
 import org.jboss.osgi.framework.spi.FrameworkModuleLoader;
+import org.jboss.osgi.framework.spi.FutureServiceValue;
 import org.jboss.osgi.framework.spi.FrameworkModuleLoaderPlugin;
 import org.jboss.osgi.framework.spi.IntegrationConstants;
 import org.jboss.osgi.resolver.XBundle;
 import org.jboss.osgi.resolver.XBundleRevision;
 import org.jboss.osgi.resolver.XIdentityCapability;
+import org.jboss.osgi.resolver.spi.AbstractBundleWiring;
 import org.osgi.framework.wiring.BundleRevisions;
 import org.osgi.framework.wiring.BundleWire;
 import org.osgi.framework.wiring.BundleWiring;
@@ -153,6 +157,30 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
         }
     }
 
+    /**
+     * Whether a deployment names the module as a module dependency
+     */
+    static boolean isModuleUsedByDeployments(ServiceContainer serviceContainer, String moduleName) {
+        for (ServiceName serviceName : serviceContainer.getServiceNames()) {
+            ServiceName parent = serviceName.getParent();
+            boolean unitName = Services.JBOSS_DEPLOYMENT_UNIT.equals(parent) || (parent != null && Services.JBOSS_DEPLOYMENT_SUB_UNIT.equals(parent.getParent()));
+            if (!unitName)
+                continue;
+            ServiceController<?> controller = serviceContainer.getService(serviceName);
+            Object value = controller != null && controller.getState() == ServiceController.State.UP ? controller.getValue() : null;
+            if (!(value instanceof DeploymentUnit))
+                continue;
+            ModuleSpecification moduleSpec = ((DeploymentUnit) value).getAttachment(Attachments.MODULE_SPECIFICATION);
+            if (moduleSpec == null)
+                continue;
+            for (ModuleDependency moduleDep : moduleSpec.getAllDependencies()) {
+                if (moduleName.equals(moduleDep.getDependencyModule()))
+                    return true;
+            }
+        }
+        return false;
+    }
+
     class FrameworkModuleLoaderImpl implements FrameworkModuleLoader {
 
         @Override
@@ -193,12 +221,17 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             ModuleIdentifier identifier = deployment.getAttachment(MODULE_IDENTIFIER_KEY);
             if (identifier != null) {
                 // [JBOSGI-800] The identifier comes from the deployment name. A bundle that is deployed again while a
-                // revision of the uninstalled bundle is still in use cannot have it, that revision keeps its module
-                XBundleRevision owner = moduleOwners.get(identifier.toString());
-                BundleWiring ownerWiring = owner != null && owner.getBundle() != bundle ? owner.getWiring() : null;
-                if (ownerWiring != null && ownerWiring.isInUse()) {
-                    identifier = ModuleIdentifier.create(identifier.getName() + "-" + bundle.getBundleId(), identifier.getSlot());
-                    LOGGER.debugf("Module %s is used by %s, %s gets: %s", deployment.getAttachment(MODULE_IDENTIFIER_KEY), owner, bundle, identifier);
+                // revision of the uninstalled bundle is still in use cannot have it, that revision keeps its module.
+                // Likewise the new revision of an updated bundle while the revision before the update is in use
+                if (isTakenByRevisionInUse(identifier, brev)) {
+                    ModuleIdentifier taken = identifier;
+                    ModuleIdentifier revisionIdentifier = deployment.getAttachment(BundleDeploymentProcessor.REVISION_MODULE_IDENTIFIER_KEY);
+                    if (revisionIdentifier != null && !isTakenByRevisionInUse(revisionIdentifier, brev)) {
+                        identifier = revisionIdentifier;
+                    } else {
+                        identifier = ModuleIdentifier.create(identifier.getName() + "-" + bundle.getBundleId(), identifier.getSlot());
+                    }
+                    LOGGER.debugf("Module %s is used by %s, %s gets: %s", taken, moduleOwners.get(taken.toString()), brev, identifier);
                 }
             } else {
                 XIdentityCapability icap = brev.getIdentityCapability();
@@ -211,6 +244,35 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
                 identifier = ModuleIdentifier.create(MODULE_PREFIX + name, "" + icap.getVersion());
             }
             return identifier;
+        }
+
+        /**
+         * Whether the module of the identifier belongs to another revision that is in use. The revision that a bundle
+         * had before its update is in use when other bundles or deployments use it, not because it is current.
+         */
+        private boolean isTakenByRevisionInUse(ModuleIdentifier identifier, XBundleRevision brev) {
+            XBundleRevision owner = moduleOwners.get(identifier.toString());
+            if (owner == null || owner == brev)
+                return false;
+            BundleWiring wiring = owner.getWiring();
+            if (wiring == null)
+                return false;
+            if (owner.getBundle() != brev.getBundle())
+                return wiring.isInUse() || isModuleInUse(owner);
+            boolean usedByBundles = wiring instanceof AbstractBundleWiring && ((AbstractBundleWiring) wiring).isInUseForUninstall();
+            return usedByBundles || isModuleInUse(owner);
+        }
+
+        /**
+         * The module of the revision is in use when a deployment that is not the bundle names it as a module dependency
+         * (a WAR with Dependencies: deployment.&lt;bundle&gt;). The framework does not see these as wires.
+         */
+        @Override
+        public boolean isModuleInUse(XBundleRevision brev) {
+            ModuleIdentifier identifier = brev.getModuleIdentifier();
+            if (identifier == null || moduleOwners.get(identifier.toString()) != brev)
+                return false;
+            return isModuleUsedByDeployments(serviceContainer, identifier.toString());
         }
 
         @Override
@@ -271,9 +333,17 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             ServiceBuilder sb = serviceTarget.addService(moduleSpecName);
             Consumer<ModuleDefinition> c = sb.provides(moduleSpecName);
             sb.setInstance(new ModuleDefinitionService(c, new ModuleDefinition(identifier, Collections.emptySet(), moduleSpec)));
-            sb.install();
+            ServiceController<?> specController = sb.install();
 
             ServiceModuleLoader.installModuleResolvedService(serviceTarget, identifier);
+
+            // The ServiceModuleLoader does not find a module whose spec service is not UP yet: a class load right
+            // after the resolve would fail. The spec service has no dependencies, it comes up at once.
+            try {
+                new FutureServiceValue(specController).get(10, TimeUnit.SECONDS);
+            } catch (Exception ex) {
+                LOGGER.debugf(ex, "Module spec service not up: %s", moduleSpecName);
+            }
         }
 
         /**

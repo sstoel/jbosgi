@@ -49,10 +49,13 @@ public class OSGiFrameworkPropertyRemove extends AbstractRemoveStepHandler {
         }
 
         final String oldVal = subsystemState.setProperty(propName, null);
+        // The framework is created with its properties
+        context.reloadRequired();
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override
             public void handleRollback(OperationContext context, ModelNode operation) {
                 subsystemState.setProperty(propName, oldVal);
+                context.revertReloadRequired();
             }
         });
     }

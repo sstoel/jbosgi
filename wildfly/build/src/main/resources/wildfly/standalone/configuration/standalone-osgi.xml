@@ -149,11 +149,6 @@
                 <capability name="org.apache.aries.jndi" startlevel="1"/>
                 <capability name="org.apache.aries.proxy" startlevel="1"/>
                 <capability name="org.apache.aries.util" startlevel="1"/>
-                <!--
-                    While Felix Webconsole technically works, it's insecure!
-                    Use at OWN RISK!
-                    <capability name="org.apache.felix.webconsole" startlevel="1"/>
-                 -->
             </capabilities>
         </subsystem>
         <subsystem xmlns="urn:jboss:domain:batch-jberet:3.0">

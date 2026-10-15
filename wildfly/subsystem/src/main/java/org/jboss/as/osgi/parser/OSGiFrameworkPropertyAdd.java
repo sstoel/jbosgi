@@ -44,6 +44,7 @@ public class OSGiFrameworkPropertyAdd extends AbstractAddStepHandler {
     @Override
     protected void populateModel(ModelNode operation, ModelNode model) throws OperationFailedException {
         FrameworkPropertyResource.VALUE.validateAndSet(operation, model);
+        FrameworkPropertyResource.validatePersistentValue(model.get(ModelConstants.VALUE));
     }
 
     @Override
@@ -56,6 +57,8 @@ public class OSGiFrameworkPropertyAdd extends AbstractAddStepHandler {
         if (subsystemState != null) {
             subsystemState.setProperty(propName, propValue);
         }
+        // The framework is created with its properties
+        context.reloadRequired();
     }
 
     @Override
@@ -65,6 +68,7 @@ public class OSGiFrameworkPropertyAdd extends AbstractAddStepHandler {
         if (subsystemState != null) {
             subsystemState.setProperty(propName, null);
         }
+        context.revertReloadRequired();
     }
 
 }

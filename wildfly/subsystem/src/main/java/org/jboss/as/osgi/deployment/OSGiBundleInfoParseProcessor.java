@@ -63,7 +63,9 @@ public class OSGiBundleInfoParseProcessor implements DeploymentUnitProcessor {
             try {
                 // Construct and attach the {@link BundleInfo} from {@link OSGiMetaData}
                 VirtualFile virtualFile = depUnit.getAttachment(Attachments.DEPLOYMENT_ROOT).getRoot();
-                BundleInfo info = BundleInfo.createBundleInfo(AbstractVFS.adapt(virtualFile), runtimeName, metadata);
+                // The location of an updated bundle is the name of its deployment, not the runtime name of the revision
+                String location = BundleLifecycleIntegration.getBundleLocation(depUnit);
+                BundleInfo info = BundleInfo.createBundleInfo(AbstractVFS.adapt(virtualFile), location, metadata);
                 depUnit.putAttachment(OSGiConstants.BUNDLE_INFO_KEY, info);
             } catch (BundleException ex) {
                 throw MESSAGES.cannotCreateBundleDeployment(ex, depUnit);

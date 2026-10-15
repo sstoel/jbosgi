@@ -31,8 +31,8 @@ import java.util.Map;
 import org.jboss.modules.Module;
 import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
+import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
@@ -40,17 +40,21 @@ import org.jboss.msc.service.StartException;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.osgi.framework.Services;
+import org.jboss.osgi.framework.spi.AbstractBundleAdaptor;
 import org.jboss.osgi.framework.spi.AbstractBundleRevisionAdaptor;
 import org.jboss.osgi.framework.spi.BundleManager;
 import org.jboss.osgi.framework.spi.IntegrationConstants;
 import org.jboss.osgi.framework.spi.IntegrationServices;
 import org.jboss.osgi.metadata.OSGiMetaData;
+import org.jboss.osgi.resolver.XBundle;
 import org.jboss.osgi.resolver.XBundleRevision;
 import org.jboss.osgi.resolver.XBundleRevisionBuilderFactory;
 import org.jboss.osgi.resolver.XEnvironment;
 import org.jboss.osgi.resolver.XResourceBuilder;
 import org.jboss.osgi.resolver.spi.OSGiMetaDataProcessor;
 import org.osgi.framework.BundleContext;
+import org.osgi.resource.Wire;
+import org.osgi.resource.Wiring;
 
 /**
  * A service that tracks module registrations.
@@ -149,7 +153,25 @@ public class ModuleRegistrationTracker implements Service<Void> {
     private void unregisterInternal(final XEnvironment env, final Registration reg) {
         assert reg.brev != null : "BundleRevision not null";
         LOGGER.infoUnregisterModule(reg.module.getIdentifier());
+
+        // A module that bundles are wired to stays removal pending until they are refreshed
+        XBundle bundle = reg.brev.getBundle();
+        if (bundle instanceof AbstractBundleAdaptor && hasRequirers(reg.brev)) {
+            ((AbstractBundleAdaptor) bundle).uninstallRemovalPending();
+            return;
+        }
         env.uninstallResources(reg.brev);
+    }
+
+    private static boolean hasRequirers(XBundleRevision brev) {
+        Wiring wiring = brev.getWiringSupport().getWiring(false);
+        if (wiring != null) {
+            for (Wire wire : wiring.getProvidedResourceWires(null)) {
+                if (wire.getRequirer() != brev)
+                    return true;
+            }
+        }
+        return false;
     }
 
     @Override

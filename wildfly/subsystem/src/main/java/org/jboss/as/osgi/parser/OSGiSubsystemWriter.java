@@ -64,7 +64,9 @@ class OSGiSubsystemWriter implements XMLStreamConstants, XMLElementWriter<Subsys
                 String val = properties.get(key).get(ModelConstants.VALUE).asString();
                 writer.writeStartElement(Element.PROPERTY.getLocalName());
                 writer.writeAttribute(Attribute.NAME.getLocalName(), key);
-                writer.writeCharacters(val);
+                // Write the value as is: writeCharacters(String) puts the text on an indented line of its own and
+                // indents every further line, which the parser (trim) can not undo for a multi-line value
+                writer.writeCharacters(val.toCharArray(), 0, val.length());
                 writer.writeEndElement();
             }
             writer.writeEndElement();

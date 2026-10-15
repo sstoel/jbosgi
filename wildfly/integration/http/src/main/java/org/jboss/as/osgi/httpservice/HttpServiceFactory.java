@@ -111,6 +111,21 @@ final class HttpServiceFactory implements ServiceFactory<HttpService> {
             return registrations.get(alias) != null;
         }
 
+        /**
+         * The longest registered alias other than the given one that matches the request path (102.4)
+         */
+        synchronized String findMatchingAlias(String requestPath, String excludedAlias) {
+            String result = null;
+            for (String alias : registrations.keySet()) {
+                if (alias.equals(excludedAlias))
+                    continue;
+                boolean matches = alias.equals("/") || requestPath.equals(alias) || requestPath.startsWith(alias + "/");
+                if (matches && (result == null || alias.length() > result.length()))
+                    result = alias;
+            }
+            return result;
+        }
+
         synchronized Registration unregister(String alias, Bundle bundle) {
 
             if (!exists(alias)) {

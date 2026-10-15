@@ -21,7 +21,7 @@
  */
 package org.jboss.as.osgi.management;
 
-import org.jboss.as.controller.ModelOnlyWriteAttributeHandler;
+import org.jboss.as.controller.ReloadRequiredWriteAttributeHandler;
 import org.jboss.as.osgi.parser.OSGiRootResource;
 
 /**
@@ -29,7 +29,7 @@ import org.jboss.as.osgi.parser.OSGiRootResource;
  *
  * @author David Bosschaert
  */
-public class ActivationAttributeHandler extends ModelOnlyWriteAttributeHandler {
+public class ActivationAttributeHandler extends ReloadRequiredWriteAttributeHandler {
 
     public static final ActivationAttributeHandler INSTANCE = new ActivationAttributeHandler();
 

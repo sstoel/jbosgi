@@ -22,10 +22,12 @@
 package org.jboss.as.osgi.jta;
 
 import jakarta.transaction.TransactionManager;
+import jakarta.transaction.TransactionSynchronizationRegistry;
 import jakarta.transaction.UserTransaction;
 
 import org.jboss.as.osgi.AbstractSubsystemExtension;
 import org.jboss.as.txn.service.TransactionManagerService;
+import org.jboss.as.txn.service.TransactionSynchronizationRegistryService;
 import org.jboss.as.txn.service.UserTransactionService;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceName;
@@ -44,12 +46,14 @@ public class TransactionsExtension extends AbstractSubsystemExtension {
 
     private final InjectedValue<TransactionManager> injectedTransactionManager = new InjectedValue<TransactionManager>();
     private final InjectedValue<UserTransaction> injectedUserTransaction = new InjectedValue<UserTransaction>();
+    private final InjectedValue<TransactionSynchronizationRegistry> injectedSynchronizationRegistry = new InjectedValue<TransactionSynchronizationRegistry>();
 
     @Override
     public void configureServiceDependencies(ServiceName serviceName, ServiceBuilder<?> builder) {
         if (serviceName.equals(IntegrationServices.SYSTEM_SERVICES_PLUGIN)) {
             builder.addDependency(TransactionManagerService.SERVICE_NAME, TransactionManager.class, injectedTransactionManager);
             builder.addDependency(UserTransactionService.SERVICE_NAME, UserTransaction.class, injectedUserTransaction);
+            builder.addDependency(TransactionSynchronizationRegistryService.SERVICE_NAME, TransactionSynchronizationRegistry.class, injectedSynchronizationRegistry);
         }
     }
 
@@ -59,5 +63,8 @@ public class TransactionsExtension extends AbstractSubsystemExtension {
         systemContext.registerService(TransactionManager.class.getName(), transactionManager, null);
         UserTransaction userTransaction = injectedUserTransaction.getValue();
         systemContext.registerService(UserTransaction.class.getName(), userTransaction, null);
+        // The third JTA Transaction Service (123.1.4)
+        TransactionSynchronizationRegistry synchronizationRegistry = injectedSynchronizationRegistry.getValue();
+        systemContext.registerService(TransactionSynchronizationRegistry.class.getName(), synchronizationRegistry, null);
     }
 }

@@ -249,6 +249,10 @@ class BootstrapBundlesIntegration extends BootstrapBundlesInstall<Void> {
     }
 
     private boolean isValidModuleIdentifier(String identifier) {
+        // ModuleIdentifier.fromString accepts Maven coordinates too (g:a:v parses as name 'g', slot 'a:v')
+        if (isValidMavenIdentifier(identifier)) {
+            return false;
+        }
         try {
             ModuleIdentifier.fromString(identifier);
             return true;
@@ -286,6 +290,12 @@ class BootstrapBundlesIntegration extends BootstrapBundlesInstall<Void> {
 
         BootstrapResolveIntegration(ServiceName baseName, Set<XBundleRevision> installedRevisions) {
             super(baseName, installedRevisions);
+        }
+
+        @Override
+        protected boolean isLenientBootstrapResolve() {
+            // A capability that cannot be resolved must not take down the framework
+            return true;
         }
 
         @Override

@@ -50,11 +50,38 @@ public abstract class StartLevelHandler implements OperationStepHandler {
     };
 
     public static final StartLevelHandler WRITE_HANDLER = new StartLevelHandler() {
+
+        // The start level is changed in the RUNTIME stage, which declares the change of the runtime: the operation is
+        // authorized and audited as one. A rollback restores the previous start level.
         @Override
-        void invokeOperation(Bundle sysbundle, OperationContext context, ModelNode operation) throws OperationFailedException {
+        public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
             ModelNode value = operation.require(ModelDescriptionConstants.VALUE);
             OSGiRootResource.STARTLEVEL.getValidator().validateParameter(ModelDescriptionConstants.VALUE, value);
-            int startlevel = value.asInt();
+            context.addStep(new OperationStepHandler() {
+                @Override
+                public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
+                    ServiceController<?> controller = context.getServiceRegistry(true).getService(Services.SYSTEM_BUNDLE);
+                    if (controller == null || controller.getState() != ServiceController.State.UP) {
+                        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+                        return;
+                    }
+                    Bundle sysbundle = (Bundle) controller.getValue();
+                    final FrameworkStartLevel frameworkStartLevel = sysbundle.adapt(FrameworkStartLevel.class);
+                    final int previous = frameworkStartLevel.getStartLevel();
+                    invokeOperation(sysbundle, context, operation);
+                    context.completeStep(new OperationContext.RollbackHandler() {
+                        @Override
+                        public void handleRollback(OperationContext context, ModelNode operation) {
+                            frameworkStartLevel.setStartLevel(previous);
+                        }
+                    });
+                }
+            }, OperationContext.Stage.RUNTIME);
+        }
+
+        @Override
+        void invokeOperation(Bundle sysbundle, OperationContext context, ModelNode operation) throws OperationFailedException {
+            int startlevel = operation.require(ModelDescriptionConstants.VALUE).asInt();
             FrameworkStartLevel frameworkStartLevel = sysbundle.adapt(FrameworkStartLevel.class);
             try {
                 frameworkStartLevel.setStartLevel(startlevel);

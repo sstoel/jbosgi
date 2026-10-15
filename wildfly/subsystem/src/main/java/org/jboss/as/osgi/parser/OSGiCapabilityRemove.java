@@ -50,10 +50,13 @@ public class OSGiCapabilityRemove extends AbstractRemoveStepHandler {
         }
 
         final OSGiCapability oldVal = subsystemState.removeCapability(identifier);
+        // The capabilities are installed when the framework is created
+        context.reloadRequired();
         context.completeStep(new OperationContext.RollbackHandler() {
             @Override
             public void handleRollback(OperationContext context, ModelNode operation) {
                 subsystemState.addCapability(oldVal);
+                context.revertReloadRequired();
             }
         });
     }

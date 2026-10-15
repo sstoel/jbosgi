@@ -106,6 +106,7 @@ public class NamingExtension extends AbstractSubsystemExtension {
     public void stopSystemServices(StopContext stopContext, BundleContext systemContext) {
         if (jndiServiceListener != null) {
             systemContext.removeServiceListener(jndiServiceListener);
+            jndiServiceListener.removeAll();
         }
     }
 }

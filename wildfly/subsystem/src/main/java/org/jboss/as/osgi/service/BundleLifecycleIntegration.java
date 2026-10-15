@@ -25,6 +25,7 @@ import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 import static org.jboss.as.osgi.OSGiMessages.MESSAGES;
 import static org.jboss.as.server.Services.JBOSS_SERVER_CONTROLLER;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -48,6 +49,8 @@ import java.util.concurrent.TimeoutException;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerClientFactory;
 import org.jboss.as.controller.client.ModelControllerClient;
+import org.jboss.as.controller.client.OperationBuilder;
+import org.jboss.as.controller.client.helpers.ClientConstants;
 import org.jboss.as.controller.client.helpers.standalone.DeploymentAction;
 import org.jboss.as.controller.client.helpers.standalone.DeploymentPlanBuilder;
 import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentActionResult;
@@ -64,6 +67,7 @@ import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUtils;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
+import org.jboss.dmr.ModelNode;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
@@ -122,6 +126,12 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     private static final AttachmentKey<Boolean> BUNDLE_REFRESHING_KEY = AttachmentKey.create(Boolean.class);
     private static final AttachmentKey<Boolean> BUNDLE_UNDEPLOYING_KEY = AttachmentKey.create(Boolean.class);
     private static final AttachmentKey<Boolean> REVISION_UNDEPLOYED_KEY = AttachmentKey.create(Boolean.class);
+    // The revision is resolved with its deployment: other deployments need its module
+    public static final AttachmentKey<Boolean> RESOLVE_ON_DEPLOY_KEY = AttachmentKey.create(Boolean.class);
+    // The revision of a bundle whose deployment is replaced by Bundle.update
+    private static final AttachmentKey<XBundleRevision> BUNDLE_UPDATING_KEY = AttachmentKey.create(XBundleRevision.class);
+    // The content of an undeployed revision that is still in use, closed when the revision is removed
+    public static final AttachmentKey<Closeable> RETAINED_CONTENT_KEY = AttachmentKey.create(Closeable.class);
 
     private static final Map<String, Deployment> deploymentMap = new HashMap<String, Deployment>();
     private static final ThreadLocal<Boolean> deploymentUndeploy = new ThreadLocal<Boolean>();
@@ -197,6 +207,12 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         }
     }
 
+    private static void removeDeployment(String runtimeName, Deployment dep) {
+        synchronized (deploymentMap) {
+            deploymentMap.remove(runtimeName, dep);
+        }
+    }
+
     private void putDeployment(String runtimeName, final Deployment dep) {
         synchronized (deploymentMap) {
             deploymentMap.put(runtimeName, dep);
@@ -215,8 +231,113 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             deploymentUndeploy.remove();
     }
 
+    // The undeployed revisions in use that keep the content of their deployment, by deployment name
+    private static final Map<String, XBundleRevision> retainedContents = new HashMap<String, XBundleRevision>();
+
+    /**
+     * The revision keeps the mount of the content of its deployment until it is removed
+     */
+    public static void retainContent(String deploymentName, XBundleRevision brev, Closeable mount) {
+        synchronized (retainedContents) {
+            brev.putAttachment(RETAINED_CONTENT_KEY, mount);
+            XBundleRevision previous = retainedContents.put(deploymentName, brev);
+            if (previous != null && previous != brev)
+                VFSUtils.safeClose(previous.removeAttachment(RETAINED_CONTENT_KEY));
+        }
+    }
+
+    /**
+     * A deployment of the name is deployed again: its content is mounted at the same place, the mount that an older
+     * revision kept is closed
+     */
+    public static void releaseContent(String deploymentName) {
+        synchronized (retainedContents) {
+            XBundleRevision brev = retainedContents.remove(deploymentName);
+            if (brev != null)
+                VFSUtils.safeClose(brev.removeAttachment(RETAINED_CONTENT_KEY));
+        }
+    }
+
+    private static void releaseContent(XBundleRevision brev) {
+        synchronized (retainedContents) {
+            retainedContents.values().remove(brev);
+            VFSUtils.safeClose(brev.removeAttachment(RETAINED_CONTENT_KEY));
+        }
+    }
+
     public static boolean isBundleRefreshing(XBundle bundle) {
         return Boolean.TRUE.equals(bundle.getAttachment(BUNDLE_REFRESHING_KEY));
+    }
+
+    /**
+     * The revision that the bundle had before the Bundle.update that replaces its deployment now, or null.
+     *
+     * The update replaces the content of the bundle's deployment: the deployment of that revision is undeployed and the
+     * deployment of the new revision is deployed in one management operation. The bundle and the old revision stay, the
+     * old revision is removed when the bundle is refreshed.
+     */
+    public static XBundleRevision getUpdateOrigin(XBundle bundle) {
+        return bundle.getAttachment(BUNDLE_UPDATING_KEY);
+    }
+
+    /**
+     * The runtime name of the deployment of an updated bundle: an updated revision is deployed under a runtime name of
+     * its own, the revision before the update keeps its content and its module while it is in use.
+     */
+    public static String getRevisionRuntimeName(String name, int revid) {
+        int dotindex = name.length() - 4;
+        if (dotindex > 0 && name.charAt(dotindex) == '.')
+            return name.substring(0, dotindex) + "-rev" + revid + name.substring(dotindex);
+        return name + "-rev" + revid;
+    }
+
+    /**
+     * Whether the runtime name is one that {@link #getRevisionRuntimeName(String, int)} gives for the name
+     */
+    public static boolean isRevisionRuntimeName(String runtimeName, String name) {
+        String base = name;
+        String suffix = "";
+        int dotindex = name.length() - 4;
+        if (dotindex > 0 && name.charAt(dotindex) == '.') {
+            base = name.substring(0, dotindex);
+            suffix = name.substring(dotindex);
+        }
+        String prefix = base + "-rev";
+        if (!runtimeName.startsWith(prefix) || !runtimeName.endsWith(suffix) || runtimeName.length() <= prefix.length() + suffix.length())
+            return false;
+        String revid = runtimeName.substring(prefix.length(), runtimeName.length() - suffix.length());
+        for (int i = 0; i < revid.length(); i++) {
+            if (!Character.isDigit(revid.charAt(i)))
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * The location of the bundle of a deployment: its runtime name, or the name of the deployment in the management
+     * model when the deployment has the runtime name of an updated revision. An updated bundle keeps its location
+     * (4.4.1), also when the server starts again with the deployment of the update.
+     */
+    public static String getBundleLocation(DeploymentUnit depUnit) {
+        String runtimeName = depUnit.getName();
+        if (depUnit.getParent() == null) {
+            String managementName = depUnit.getAttachment(Attachments.MANAGEMENT_NAME);
+            if (managementName != null && isRevisionRuntimeName(runtimeName, managementName))
+                return managementName;
+        }
+        return runtimeName;
+    }
+
+    /**
+     * The name in the management model of the deployment of the bundle deployment, null when it is not a deployment of
+     * its own (a subdeployment, or a bundle that was installed without a deployment)
+     */
+    private static String getManagementName(Deployment deployment) {
+        DeploymentUnit depUnit = deployment != null ? deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY) : null;
+        if (depUnit == null || depUnit.getParent() != null)
+            return null;
+        String managementName = depUnit.getAttachment(Attachments.MANAGEMENT_NAME);
+        return managementName != null ? managementName : depUnit.getName();
     }
 
     /**
@@ -270,6 +391,10 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 return bundleManager.installBundleRevision(context, deployment, null);
             }
 
+            if (deployment.isBundleUpdate()) {
+                return createUpdateRevision(context, deployment);
+            }
+
             LOGGER.debugf("Install deployment: %s", deployment);
             String runtimeName = getRuntimeName(deployment);
             putDeployment(runtimeName, deployment);
@@ -285,6 +410,9 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 throw rte;
             } catch (Exception ex) {
                 throw MESSAGES.cannotDeployBundleRevision(ex, deployment);
+            } finally {
+                // A deployment that failed before its processors took the Deployment must not hand it to the next one
+                removeDeployment(runtimeName, deployment);
             }
 
             // For an already existing bundle (i.e. same location) the
@@ -292,6 +420,83 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             DeploymentUnit depUnit = deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY);
             XBundleRevision brev = depUnit.getAttachment(OSGiConstants.BUNDLE_REVISION_KEY);
             return brev;
+        }
+
+        /**
+         * Bundle.update replaces the content of the bundle's deployment: the deployment keeps its name in the management
+         * model and gets the new content, so that the server starts again with the updated bundle (4.4.9). The new
+         * revision is deployed under a runtime name of its own, the revision before the update keeps the content of its
+         * deployment while it is in use. A refresh gives the deployment the runtime name of the bundle again.
+         */
+        private XBundleRevision createUpdateRevision(BundleContext context, Deployment deployment) throws BundleException {
+            XBundle bundle = deployment.getAttachment(IntegrationConstants.BUNDLE_KEY);
+            XBundleRevision origin = bundle.getBundleRevision();
+            Deployment originDeployment = origin.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
+            String managementName = originDeployment != null && isDeployed(originDeployment) ? getManagementName(originDeployment) : null;
+
+            // A bundle without a deployment of its own gets the new revision without a deployment too
+            if (managementName == null) {
+                return bundleManager.installBundleRevision(context, deployment, null);
+            }
+
+            int revid = bundle.adapt(BundleRevisions.class).getRevisions().size();
+            String runtimeName = getRevisionRuntimeName(managementName, revid);
+            deployment.putAttachment(RUNTIME_NAME_KEY, runtimeName);
+            LOGGER.debugf("Update deployment %s with: %s", managementName, deployment);
+            putDeployment(runtimeName, deployment);
+            bundle.putAttachment(BUNDLE_UPDATING_KEY, origin);
+            try {
+                InputStream input = deployment.getRoot().openStream();
+                try {
+                    replaceDeployment(managementName, runtimeName, input);
+                } finally {
+                    VFSUtils.safeClose(input);
+                }
+                // The deployment of the old revision is gone, the revision is removed with the next refresh
+                origin.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
+            } catch (RuntimeException rte) {
+                throw rte;
+            } catch (Exception ex) {
+                throw MESSAGES.cannotDeployBundleRevision(ex, deployment);
+            } finally {
+                bundle.removeAttachment(BUNDLE_UPDATING_KEY);
+                removeDeployment(runtimeName, deployment);
+            }
+
+            DeploymentUnit depUnit = deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY);
+            return depUnit.getAttachment(OSGiConstants.BUNDLE_REVISION_KEY);
+        }
+
+        /**
+         * Replace the content of the deployment in one management operation: the deployment of the current content is
+         * undeployed and the new content is deployed, or nothing changes. The deployment stays persistent or not.
+         */
+        private void replaceDeployment(String managementName, String runtimeName, InputStream input) throws Exception {
+            ModelNode address = new ModelNode();
+            address.add(ClientConstants.DEPLOYMENT, managementName);
+            ModelNode read = new ModelNode();
+            read.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
+            read.get(ClientConstants.OP_ADDR).set(address);
+            read.get(ClientConstants.NAME).set("persistent");
+            ModelNode readResult = modelControllerClient.execute(read);
+            boolean persistent = !ClientConstants.SUCCESS.equals(readResult.get(ClientConstants.OUTCOME).asString())
+                    || !readResult.get(ClientConstants.RESULT).isDefined() || readResult.get(ClientConstants.RESULT).asBoolean();
+
+            ModelNode op = new ModelNode();
+            op.get(ClientConstants.OP).set(ClientConstants.DEPLOYMENT_FULL_REPLACE_OPERATION);
+            op.get(ClientConstants.OP_ADDR).setEmptyList();
+            op.get(ClientConstants.NAME).set(managementName);
+            op.get(ClientConstants.RUNTIME_NAME).set(runtimeName);
+            op.get("persistent").set(persistent);
+            op.get(ClientConstants.CONTENT).add().get(ClientConstants.INPUT_STREAM_INDEX).set(0);
+            OperationBuilder builder = OperationBuilder.create(op);
+            builder.addInputStream(input);
+            ModelNode result = modelControllerClient.execute(builder.build());
+            if (!ClientConstants.SUCCESS.equals(result.get(ClientConstants.OUTCOME).asString())) {
+                ModelNode failure = result.get(ClientConstants.FAILURE_DESCRIPTION);
+                throw new IllegalStateException(ClientConstants.DEPLOYMENT_FULL_REPLACE_OPERATION + " of " + managementName + " with " + runtimeName + ": "
+                        + (failure.isDefined() ? failure.asString() : "rolled back"));
+            }
         }
 
         @Override
@@ -308,8 +513,10 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             Deployment deployment = bundle.adapt(Deployment.class);
             DeploymentUnit depUnit = deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY);
             if (depUnit == null) {
+                // The module is found by the module loader once its spec service is UP, the module service itself is
+                // started on demand: nobody may ask for it while this thread waits
                 ModuleIdentifier identifier = bundle.getBundleRevision().getModuleIdentifier();
-                ServiceName moduleServiceName = ServiceModuleLoader.moduleServiceName(identifier.toString());
+                ServiceName moduleServiceName = ServiceModuleLoader.moduleSpecServiceName(identifier.toString());
                 ServiceRegistry serviceRegistry = bundleManager.getServiceContainer();
                 ServiceController<?> controller = serviceRegistry.getRequiredService(moduleServiceName);
                 FutureServiceValue<?> future = new FutureServiceValue(controller);
@@ -378,13 +585,13 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             // The deployment is undeployed first, without the locks of the framework: the undeploy may be refused (RBAC)
             // or rolled back (a deployment depends on the bundle), the bundle is then not uninstalled. The deployments of
             // older revisions are undeployed when these are removed
-            String runtimeName = getRuntimeName(deployment);
+            String managementName = getManagementName(deployment);
             bundle.putAttachment(BUNDLE_UNDEPLOYING_KEY, Boolean.TRUE);
             try {
-                undeployChecked(runtimeName);
+                undeployChecked(managementName);
                 brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
             } catch (Exception ex) {
-                throw MESSAGES.cannotUninstallDeployedBundle(ex, bundle, runtimeName);
+                throw MESSAGES.cannotUninstallDeployedBundle(ex, bundle, managementName);
             } finally {
                 bundle.removeAttachment(BUNDLE_UNDEPLOYING_KEY);
             }
@@ -394,7 +601,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         }
 
         private boolean isUndeployRequired(XBundle bundle, Deployment deployment) {
-            if (bundle.getState() == Bundle.UNINSTALLED || isBundleRefreshing(bundle))
+            if (bundle.getState() == Bundle.UNINSTALLED || isBundleRefreshing(bundle) || getManagementName(deployment) == null)
                 return false;
             // Within a management operation or under the locks of the framework the undeploy cannot complete
             if (OperationAssociation.INSTANCE.getAssociation() != null || injectedLockManager.getValue().getCurrentLockContext() != null)
@@ -433,6 +640,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             if (brev.getState() != XResource.State.UNINSTALLED) {
                 bundleManager.removeRevision(brev, options);
             }
+            releaseContent(brev);
         }
 
         private void undeployRevision(final XBundleRevision brev) {
@@ -441,18 +649,18 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 return;
 
             final Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
-            final String runtimeName = getRuntimeName(deployment);
             final boolean deferred = Boolean.TRUE.equals(deploymentUndeploy.get());
             Runnable undeploy = new Runnable() {
                 @Override
                 public void run() {
                     // The deployment may be gone already, or it is part of another deployment
-                    if (deferred && isDeployed(deployment) == false)
+                    String managementName = getManagementName(deployment);
+                    if (managementName == null || isDeployed(deployment) == false)
                         return;
 
                     ServerDeploymentHelper server = new ServerDeploymentHelper(serverDeploymentManager);
                     try {
-                        server.undeploy(runtimeName);
+                        server.undeploy(managementName);
                     } catch (Exception ex) {
                         LOGGER.warnCannotUndeployBundleRevision(ex, brev);
                     }
@@ -516,8 +724,6 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 }
             }
 
-            depUnit.getAttachment(Attachments.DEFERRED_ACTIVATION_COUNT).incrementAndGet();
-
             Set<ServiceController<?>> failed = new HashSet<>();
             Set<ServiceController<?>> problems = new HashSet<>();
 
@@ -527,6 +733,11 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             } catch (final InterruptedException ex) {
                 // ignore
             }
+
+            // The count of activations is that of the completed ones: the processors of the first activation install the
+            // bindings of the module (java:module/env), only a later activation finds them installed
+            if (failed.isEmpty() && problems.isEmpty())
+                depUnit.getAttachment(Attachments.DEFERRED_ACTIVATION_COUNT).incrementAndGet();
 
             // The container reports every service that failed or has a problem, only those of this deployment are relevant
             retainDeploymentServices(failed, phaseService, parentDeploymentService);
@@ -593,18 +804,6 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 } catch (URISyntaxException ex) {
                     // ignore
                 }
-                if (deployment.isBundleUpdate()) {
-                    String suffix = "";
-                    XBundle bundle = deployment.getAttachment(IntegrationConstants.BUNDLE_KEY);
-                    BundleRevisions brevs = bundle.adapt(BundleRevisions.class);
-                    int revid = brevs.getRevisions().size();
-                    int dotindex = runtimeName.length() - 4;
-                    if (dotindex > 0 && runtimeName.charAt(dotindex) == '.') {
-                        suffix = runtimeName.substring(runtimeName.length() - 4);
-                        runtimeName = runtimeName.substring(0, dotindex);
-                    }
-                    runtimeName += "-rev" + revid + suffix;
-                }
                 deployment.putAttachment(RUNTIME_NAME_KEY, runtimeName);
             }
             return runtimeName;
@@ -617,16 +816,25 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             return (ServiceController<Phase>) serviceContainer.getRequiredService(serviceName);
         }
 
+        /**
+         * The current revision of a bundle with a deployment of its own is recreated by replacing the content of the
+         * deployment with the same content, under the runtime name of the bundle: one management operation undeploys
+         * the deployment of the current revision and deploys the new one. A bundle without a deployment gets the new
+         * revision without a deployment.
+         */
         private final class RecreateCurrentRevisionPolicy implements BundleRefreshPolicy {
             private XBundle bundle;
             private VirtualFile rootFile;
+            private String managementName;
 
             @Override
             public void startBundleRefresh(XBundle bundle) throws BundleException {
                 this.bundle = bundle;
 
                 XBundleRevision brev = bundle.getBundleRevision();
-                Deployment deployment = bundle.adapt(Deployment.class);
+                Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
+                if (deployment == null)
+                    deployment = bundle.adapt(Deployment.class);
 
                 try {
                     InputStream inputStream = deployment.getRoot().getStreamURL().openStream();
@@ -636,7 +844,10 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 }
 
                 bundle.putAttachment(BUNDLE_REFRESHING_KEY, Boolean.TRUE);
-                undeployRevision(brev);
+                managementName = isDeployed(deployment) ? getManagementName(deployment) : null;
+                if (managementName == null) {
+                    removeRevision(brev, 0);
+                }
             }
 
             @Override
@@ -648,14 +859,27 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 deployment.putAttachment(IntegrationConstants.BUNDLE_KEY, bundle);
                 deployment.setAutoStart(false);
 
-                String runtimeName = getRuntimeName(deployment);
+                if (managementName == null) {
+                    BundleContext context = bundleManager.getSystemBundle().getBundleContext();
+                    bundleManager.installBundleRevision(context, deployment, null);
+                    return;
+                }
+
+                // The deployment gets the runtime name of the bundle again
+                String runtimeName = managementName;
+                deployment.putAttachment(RUNTIME_NAME_KEY, runtimeName);
+
+                // Deployments that depend on the module of the bundle lost it with the old revisions. The new revision
+                // is resolved with its deployment, the operation leaves them with their module again
+                String moduleName = ServiceModuleLoader.MODULE_PREFIX + runtimeName;
+                if (ModuleLoaderIntegration.isModuleUsedByDeployments(bundleManager.getServiceContainer(), moduleName))
+                    deployment.putAttachment(RESOLVE_ON_DEPLOY_KEY, Boolean.TRUE);
                 putDeployment(runtimeName, deployment);
 
                 try {
                     InputStream input = deployment.getRoot().openStream();
                     try {
-                        ServerDeploymentHelper server = new ServerDeploymentHelper(serverDeploymentManager);
-                        server.deploy(runtimeName, input);
+                        replaceDeployment(managementName, runtimeName, input);
                     } finally {
                         VFSUtils.safeClose(input);
                     }
@@ -663,6 +887,8 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                     throw rte;
                 } catch (Exception ex) {
                     throw MESSAGES.cannotDeployBundleRevision(ex, deployment);
+                } finally {
+                    removeDeployment(runtimeName, deployment);
                 }
             }
 

@@ -88,9 +88,11 @@ public class WebContextActivationProcessor implements DeploymentUnitProcessor {
             // Not when the bundle was stopped meanwhile, or the interceptor started the context already
             if (bundle.getState() != Bundle.ACTIVE || bundle.getBundleRevision() != brev || activator.getServletContext() != null)
                 return;
-            if (!activator.startContext())
-                throw new StartException(OSGiMessages.MESSAGES.startContextFailed());
-            WebContextLifecycleInterceptor.injectBundleContext(activator.getServletContext(), bundle.getBundleContext());
+            try {
+                WebContextLifecycleInterceptor.deployContext(bundle, activator);
+            } catch (RuntimeException ex) {
+                throw new StartException(OSGiMessages.MESSAGES.startContextFailed(), ex);
+            }
         }
 
         @Override

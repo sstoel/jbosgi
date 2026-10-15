@@ -47,7 +47,6 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.test.osgi.FrameworkUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.osgi.framework.Bundle;
@@ -168,7 +167,6 @@ public class BundleUpdateTestCase {
     }
 
     @Test
-    @Ignore("[AS7-6944] Cannot update OSGi WebApp")
     public void testWebAppBundleUpdate() throws Exception {
         Bundle bundleA = context.installBundle(BUNDLE_V100_WAB, deployer.getDeployment(BUNDLE_V100_WAB));
         try {

@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.jboss.as.osgi.OSGiConstants;
+import org.jboss.as.osgi.service.BundleLifecycleIntegration;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.Attachments.BundleState;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
@@ -62,7 +63,11 @@ public class BundleResolveProcessor implements DeploymentUnitProcessor {
         DeploymentUnit depUnit = phaseContext.getDeploymentUnit();
         Deployment deployment = depUnit.getAttachment(OSGiConstants.DEPLOYMENT_KEY);
         XBundleRevision brev = depUnit.getAttachment(OSGiConstants.BUNDLE_REVISION_KEY);
-        if (brev == null || !deployment.isAutoStart() || brev.getBundle().isResolved())
+        if (brev == null)
+            return;
+        // The refresh of a bundle whose module other deployments need resolves the new revision with the deployment
+        boolean resolveRevision = Boolean.TRUE.equals(deployment.getAttachment(BundleLifecycleIntegration.RESOLVE_ON_DEPLOY_KEY)) && brev.getWiring() == null;
+        if (!resolveRevision && (!deployment.isAutoStart() || brev.getBundle().isResolved()))
             return;
 
         resolveBundle(phaseContext, depUnit, brev.getBundle());

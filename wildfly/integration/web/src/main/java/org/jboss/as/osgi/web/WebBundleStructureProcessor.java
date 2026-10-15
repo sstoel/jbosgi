@@ -21,6 +21,9 @@
  */
 package org.jboss.as.osgi.web;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.jar.Manifest;
 
 import org.jboss.as.osgi.OSGiConstants;
@@ -30,9 +33,11 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
+import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.osgi.deployment.deployer.Deployment;
 import org.jboss.osgi.metadata.OSGiMetaData;
 import org.jboss.osgi.metadata.OSGiMetaDataBuilder;
+import org.osgi.framework.BundleException;
 
 /**
  * Provide OSGi metadata for webbundle:// deployments
@@ -58,7 +63,23 @@ public class WebBundleStructureProcessor implements DeploymentUnitProcessor {
 
         // Generate the OSGi metadata from a webbundle:// URI
         // [TODO] this should generate OSGiMetaData directly
-        Manifest manifest = WebBundleURIParser.parse(depUnit.getName());
+        Manifest manifest;
+        try {
+            ResourceRoot deploymentRoot = depUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
+            org.jboss.vfs.VirtualFile root = deploymentRoot != null ? deploymentRoot.getRoot() : null;
+            List<String> libraries = new ArrayList<String>();
+            org.jboss.vfs.VirtualFile libdir = root != null ? root.getChild("WEB-INF/lib") : null;
+            if (libdir != null && libdir.exists()) {
+                for (org.jboss.vfs.VirtualFile child : libdir.getChildren()) {
+                    if (child.getName().endsWith(".jar"))
+                        libraries.add("WEB-INF/lib/" + child.getName());
+                }
+            }
+            Manifest inputManifest = root != null ? org.jboss.vfs.VFSUtils.getManifest(root) : null;
+            manifest = WebBundleURIParser.parse(depUnit.getName(), inputManifest, libraries);
+        } catch (IOException | BundleException ex) {
+            throw new DeploymentUnitProcessingException(ex);
+        }
         if (manifest != null) {
             metadata = OSGiMetaDataBuilder.load(manifest);
             depUnit.putAttachment(OSGiConstants.OSGI_METADATA_KEY, metadata);

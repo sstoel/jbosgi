@@ -23,9 +23,10 @@ package org.jboss.as.osgi.parser;
 
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
 
-import java.util.EnumSet;
+import java.util.List;
 
 import org.jboss.as.controller.OperationDefinition;
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.ReloadRequiredRemoveStepHandler;
 import org.jboss.as.controller.SimpleAttributeDefinition;
@@ -34,8 +35,10 @@ import org.jboss.as.controller.SimpleOperationDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
 import org.jboss.as.controller.descriptions.ResourceDescriptionResolver;
 import org.jboss.as.controller.operations.common.GenericSubsystemDescribeHandler;
+import org.jboss.as.controller.operations.validation.AllowedValuesValidator;
 import org.jboss.as.controller.operations.validation.EnumValidator;
 import org.jboss.as.controller.operations.validation.IntRangeValidator;
+import org.jboss.as.controller.operations.validation.ParameterValidator;
 import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.as.controller.registry.OperationEntry;
@@ -57,9 +60,10 @@ public class OSGiRootResource extends SimpleResourceDefinition {
     private static final ResourceDescriptionResolver RESOLVER = OSGiResolvers.getResolver(OSGiExtension.SUBSYSTEM_NAME);
     public static final SimpleAttributeDefinition ACTIVATION = new SimpleAttributeDefinitionBuilder(ModelConstants.ACTIVATION, ModelType.STRING, false)
             .setDefaultValue(new ModelNode(SubsystemState.DEFAULT_ACTIVATION.toString()))
-            .setValidator(new EnumValidator<>(Activation.class, EnumSet.allOf(Activation.class)))
+            .setValidator(new ActivationValidator())
             .setAllowExpression(true)
-            .addFlag(Flag.RESTART_JVM)
+            // The framework services are created with the activation policy, a reload applies it
+            .addFlag(Flag.RESTART_ALL_SERVICES)
             .build();
     public static final SimpleAttributeDefinition STARTLEVEL = new SimpleAttributeDefinitionBuilder(ModelConstants.STARTLEVEL, ModelType.INT, true)
             // The framework start level must be greater than zero
@@ -101,6 +105,32 @@ public class OSGiRootResource extends SimpleResourceDefinition {
         resourceRegistration.registerSubModel(new FrameworkCapabilityResource());
         if (registerRuntimeOnly) {
             resourceRegistration.registerSubModel(new BundleResource());
+        }
+    }
+
+    /**
+     * Validates the activation policy against {@link Activation}.
+     *
+     * The {@link EnumValidator} only checks STRING values; a BOOLEAN or numeric value (e.g. activation=true) would be
+     * stored as is and persisted as a configuration that can not be parsed again. Such values are checked by their
+     * string form, so they are rejected like any other value that is not an {@link Activation}.
+     */
+    private static final class ActivationValidator implements ParameterValidator, AllowedValuesValidator {
+
+        private final EnumValidator<Activation> delegate = EnumValidator.create(Activation.class);
+
+        @Override
+        public void validateParameter(String parameterName, ModelNode value) throws OperationFailedException {
+            ModelNode checked = value;
+            if (value.isDefined() && value.getType() != ModelType.STRING && value.getType() != ModelType.EXPRESSION) {
+                checked = new ModelNode(value.asString());
+            }
+            delegate.validateParameter(parameterName, checked);
+        }
+
+        @Override
+        public List<ModelNode> getAllowedValues() {
+            return delegate.getAllowedValues();
         }
     }
 }

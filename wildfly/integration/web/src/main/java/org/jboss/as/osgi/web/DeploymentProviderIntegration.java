@@ -21,6 +21,9 @@
  */
 package org.jboss.as.osgi.web;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.jar.Manifest;
 
 import org.jboss.msc.service.StartContext;
@@ -33,6 +36,7 @@ import org.jboss.osgi.framework.spi.IntegrationConstants;
 import org.jboss.osgi.framework.spi.StorageState;
 import org.jboss.osgi.metadata.OSGiMetaData;
 import org.jboss.osgi.metadata.OSGiMetaDataBuilder;
+import org.jboss.osgi.vfs.VFSUtils;
 import org.jboss.osgi.vfs.VirtualFile;
 import org.osgi.framework.BundleException;
 
@@ -74,7 +78,22 @@ public class DeploymentProviderIntegration extends DeploymentProviderPlugin {
             if (!location.startsWith(WebExtension.WEBBUNDLE_PREFIX))
                 return defaultHandler.createDeployment(location, rootFile);
 
-            Manifest manifest = WebBundleURIParser.parse(location);
+            // The manifest of the input archive and its libraries in WEB-INF/lib
+            Manifest inputManifest = null;
+            List<String> libraries = new ArrayList<String>();
+            try {
+                inputManifest = rootFile != null ? VFSUtils.getManifest(rootFile) : null;
+                VirtualFile libdir = rootFile != null ? rootFile.getChild("WEB-INF/lib") : null;
+                if (libdir != null) {
+                    for (VirtualFile child : libdir.getChildren()) {
+                        if (child.getName().endsWith(".jar"))
+                            libraries.add("WEB-INF/lib/" + child.getName());
+                    }
+                }
+            } catch (IOException ex) {
+                throw new BundleException("Cannot read the content of: " + location, BundleException.READ_ERROR, ex);
+            }
+            Manifest manifest = WebBundleURIParser.parse(location, inputManifest, libraries);
             OSGiMetaData metadata = OSGiMetaDataBuilder.load(manifest);
             String symbolicName = metadata.getBundleSymbolicName();
 

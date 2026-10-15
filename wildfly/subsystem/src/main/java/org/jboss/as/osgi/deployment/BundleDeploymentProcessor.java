@@ -44,6 +44,7 @@ import org.jboss.as.server.deployment.EjbDeploymentMarker;
 import org.jboss.as.server.deployment.JPADeploymentMarker;
 import org.jboss.as.server.deployment.annotation.CompositeIndex;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
+import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.as.weld.WeldCapability;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
@@ -69,6 +70,8 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
 
     public static final AttachmentKey<DeploymentUnit> DEPLOYMENT_UNIT_KEY = AttachmentKey.create(DeploymentUnit.class);
     public static final AttachmentKey<ModuleSpecification> MODULE_SPECIFICATION_KEY = AttachmentKey.create(ModuleSpecification.class);
+    // The module identifier of the runtime name of an updated revision, for when the revision before it keeps the module
+    public static final AttachmentKey<ModuleIdentifier> REVISION_MODULE_IDENTIFIER_KEY = AttachmentKey.create(ModuleIdentifier.class);
 
     public final String [] EXCLUDED_SUBSYSTEMS = {"batch-jberet"};
 
@@ -131,6 +134,13 @@ public class BundleDeploymentProcessor implements DeploymentUnitProcessor {
             // A fragment does not have a module
             String identifier = depUnit.getAttachment(Attachments.MODULE_NAME);
             if (identifier != null) {
+                // The module of an updated bundle has the name of the bundle's deployment, not the runtime name of the
+                // revision: deployments that depend on the module of the bundle find it after an update too
+                String location = deployment.getLocation();
+                if (depUnit.getParent() == null && location != null && BundleLifecycleIntegration.isRevisionRuntimeName(runtimeName, location)) {
+                    deployment.putAttachment(REVISION_MODULE_IDENTIFIER_KEY, ModuleIdentifier.fromString(identifier));
+                    identifier = ModuleIdentifier.create(ServiceModuleLoader.MODULE_PREFIX + location).toString();
+                }
                 deployment.putAttachment(IntegrationConstants.MODULE_IDENTIFIER_KEY, ModuleIdentifier.fromString(identifier));
             }
 

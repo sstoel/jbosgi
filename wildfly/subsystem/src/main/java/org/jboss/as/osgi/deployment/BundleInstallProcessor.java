@@ -34,11 +34,13 @@ import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.service.BundleLifecycleIntegration;
 import org.jboss.as.osgi.service.InitialDeploymentTracker;
 import org.jboss.as.server.Services;
+import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.Attachments.BundleState;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
+import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceRegistry;
@@ -104,6 +106,18 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
         XBundle bundle = brev.getBundle();
         BundleManager bundleManager = depUnit.getAttachment(OSGiConstants.BUNDLE_MANAGER_KEY);
 
+        // Bundle.update replaces the deployment of the bundle: the bundle stays and the revision before the update keeps
+        // its content while it is in use. When the deployment of the new revision is rolled back the bundle gets back the
+        // revision it had
+        XBundleRevision updateOrigin = BundleLifecycleIntegration.getUpdateOrigin(bundle);
+        if (updateOrigin != null) {
+            if (brev != updateOrigin && brev.getState() != State.UNINSTALLED) {
+                bundleManager.removeRevision(brev, 0);
+            }
+            retainContentOfRevisionInUse(depUnit, brev);
+            return;
+        }
+
         // Bundle.uninstall undeploys the deployment: it uninstalls the bundle itself when the undeploy is done,
         // when the undeploy is rolled back the deployment is deployed again with the bundle as it was
         if (BundleLifecycleIntegration.isBundleUndeploying(bundle))
@@ -126,6 +140,25 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
                 bundleManager.removeRevision(brev, 0);
             }
         }
+        retainContentOfRevisionInUse(depUnit, brev);
+    }
+
+    /**
+     * The revision of an undeployed bundle that is still in use (removal pending) loads its classes and resources from
+     * the content of the deployment until it is removed: the revision takes the mount of the deployment root, which the
+     * deployment would close now, and closes it when it is removed.
+     */
+    private void retainContentOfRevisionInUse(DeploymentUnit depUnit, XBundleRevision brev) {
+        if (brev.getState() == State.UNINSTALLED)
+            return;
+        BundleWiring wiring = brev.getWiringSupport().getWiring(false);
+        if (wiring == null || !wiring.isInUse())
+            return;
+        ResourceRoot deploymentRoot = depUnit.getAttachment(Attachments.DEPLOYMENT_ROOT);
+        if (depUnit.getParent() != null || deploymentRoot == null || deploymentRoot.getMountHandle() == null)
+            return;
+        BundleLifecycleIntegration.retainContent(depUnit.getName(), brev, deploymentRoot.getMountHandle());
+        depUnit.putAttachment(Attachments.DEPLOYMENT_ROOT, new ResourceRoot(deploymentRoot.getRootName(), deploymentRoot.getRoot(), null));
     }
 
     private boolean isStoredBundle(BundleManager bundleManager, Deployment deployment) {
@@ -169,6 +202,13 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
     }
 
     private int getUninstallOptions(BundleManager bundleManager) {
+        return isServerStopping(bundleManager) ? Bundle.STOP_TRANSIENT : 0;
+    }
+
+    /**
+     * True when the server stops or reloads
+     */
+    static boolean isServerStopping(BundleManager bundleManager) {
         ServiceContainer serviceContainer = bundleManager.getServiceContainer();
         ServiceController<?> controller = serviceContainer.getRequiredService(Services.JBOSS_SERVER_CONTROLLER);
         boolean stopRequested = controller.getState() == UP && (controller.getMode() == ServiceController.Mode.REMOVE || controller.getMode() == ServiceController.Mode.NEVER);
@@ -176,6 +216,6 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
         // deployments stay installed like on a server stop: their persistent state and data area are kept
         ServiceController<?> root = serviceContainer.getService(Services.JBOSS_AS);
         stopRequested |= root != null && root.getMode() != ServiceController.Mode.ACTIVE;
-        return stopRequested ? Bundle.STOP_TRANSIENT : 0;
+        return stopRequested;
     }
 }

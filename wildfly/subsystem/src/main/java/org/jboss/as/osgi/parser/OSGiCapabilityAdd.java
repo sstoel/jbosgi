@@ -58,6 +58,8 @@ public class OSGiCapabilityAdd extends AbstractAddStepHandler {
         if (subsystemState != null) {
             subsystemState.addCapability(module);
         }
+        // The capabilities are installed when the framework is created
+        context.reloadRequired();
     }
 
     @Override
@@ -67,5 +69,6 @@ public class OSGiCapabilityAdd extends AbstractAddStepHandler {
         if (subsystemState != null) {
             subsystemState.removeCapability(identifier);
         }
+        context.revertReloadRequired();
     }
 }

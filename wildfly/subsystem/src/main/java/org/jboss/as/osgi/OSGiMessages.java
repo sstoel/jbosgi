@@ -24,6 +24,7 @@ package org.jboss.as.osgi;
 
 import java.io.File;
 
+import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.logging.Messages;
@@ -127,4 +128,7 @@ public interface OSGiMessages {
 
     @Message(id = 11975, value = "Cannot uninstall bundle %s, its deployment %s was not undeployed")
     BundleException cannotUninstallDeployedBundle(@Cause Throwable cause, Bundle bundle, String runtimeName);
+
+    @Message(id = 11976, value = "'%s' is an invalid value for parameter %s. A framework property value can not be persisted if it starts or ends with whitespace or contains a control character other than tab and line feed")
+    OperationFailedException invalidFrameworkPropertyValue(String value, String name);
 }

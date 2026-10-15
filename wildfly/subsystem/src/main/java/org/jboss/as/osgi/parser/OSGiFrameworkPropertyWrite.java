@@ -25,6 +25,7 @@ import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
+import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
 
 /**
@@ -36,6 +37,11 @@ public class OSGiFrameworkPropertyWrite extends AbstractWriteAttributeHandler<Ob
 
     private OSGiFrameworkPropertyWrite() {
         super(FrameworkPropertyResource.VALUE);
+    }
+
+    @Override
+    protected void validateUpdatedModel(OperationContext context, Resource model) throws OperationFailedException {
+        FrameworkPropertyResource.validatePersistentValue(model.getModel().get(ModelConstants.VALUE));
     }
 
     @Override

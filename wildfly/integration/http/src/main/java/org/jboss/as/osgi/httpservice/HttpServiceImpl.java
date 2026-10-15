@@ -25,13 +25,24 @@ import static org.jboss.as.osgi.httpservice.WebLogger.WEB_LOGGER;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import jakarta.servlet.Servlet;
 import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
@@ -74,6 +85,8 @@ final class HttpServiceImpl implements HttpService {
     // It is a WeakHashMap which means that the ApplicationContexts are remembered for as long
     // as the HttpContext exists.
     private final Map<HttpContext, ShareableContextWrapper> contexts = new WeakHashMap<HttpContext, ShareableContextWrapper>();
+    // The servlet wrappers of the registrations by alias
+    private final Map<String, SecurityServletWrapper> servletWrappers = new ConcurrentHashMap<String, SecurityServletWrapper>();
 
     HttpServiceImpl(ServerEnvironment serverEnvironment, CommonWebServer webServer, WebHost virtualHost, Bundle bundle) {
         this.registry = GlobalRegistry.INSTANCE;
@@ -99,27 +112,30 @@ final class HttpServiceImpl implements HttpService {
         validateName(name);
 
         if (httpContext == null) { httpContext = createDefaultHttpContext(); }
-        ResourceServlet servlet = new ResourceServlet(name, httpContext);
+        ResourceServlet servlet = new ResourceServlet(alias, name, httpContext);
 
         // The security of the resources is that of their HttpContext (handleSecurity)
-        registerInternal(alias, servlet, null, httpContext, Type.RESOURCE);
+        try {
+            registerInternal(alias, servlet, null, httpContext, Type.RESOURCE);
+        } catch (ServletException ex) {
+            throw new NamespaceException(WEB_LOGGER.startContextFailed(), ex);
+        }
     }
 
     @SuppressWarnings("rawtypes")
-    private synchronized ServletBuilder registerInternal(String alias, Servlet servlet, Dictionary initparams, HttpContext httpContext, Type type) throws NamespaceException {
+    private synchronized ServletBuilder registerInternal(String alias, Servlet servlet, Dictionary initparams, HttpContext httpContext, Type type) throws NamespaceException, ServletException {
         File storageDir = new File(serverEnvironment.getServerTempDir() + File.separator + alias + File.separator + "osgiservlet-root");
         storageDir.mkdirs();
 
         //ShareableContext ctx;
         WebDeploymentBuilder deploymentBuilder = new WebDeploymentBuilder();
-        ShareableContextWrapper scWrapper = null;
-        if (httpContext != null) {
-            scWrapper = contexts.get(httpContext);
-        } else {
-            scWrapper = new ShareableContextWrapper();
+        // The servlets of one HttpContext share its ServletContext (102.2)
+        if (httpContext == null) {
             httpContext = new DefaultHttpContext(bundle);
         }
-        if(scWrapper == null) {
+        ShareableContextWrapper scWrapper = contexts.get(httpContext);
+        if (scWrapper == null) {
+            scWrapper = new ShareableContextWrapper(httpContext);
             contexts.put(httpContext, scWrapper);
         }
 
@@ -142,7 +158,8 @@ final class HttpServiceImpl implements HttpService {
         ServletBuilder wrapper = new ServletBuilder();
 
         wrapper.setServletName(wrapperName);
-        wrapper.setServlet(new SecurityServletWrapper(servlet, httpContext));
+        SecurityServletWrapper servletWrapper = new SecurityServletWrapper(servlet, httpContext, scWrapper);
+        wrapper.setServlet(servletWrapper);
         wrapper.setServletClass(servlet.getClass());
 
         // Init parameters
@@ -173,7 +190,18 @@ final class HttpServiceImpl implements HttpService {
             throw new NamespaceException(WEB_LOGGER.startContextFailed(), ex);
         }
 
+        // The container only logs a failing Servlet.init, the registration fails and its alias stays free
+        Throwable initFailure = servletWrapper.getInitFailure();
+        if (initFailure != null) {
+            stopDeployment(deploymentController);
+            scWrapper.removeContext(servletWrapper.getContainerContext());
+            if (initFailure instanceof ServletException)
+                throw (ServletException) initFailure;
+            throw new ServletException(initFailure);
+        }
+
         registry.register(alias, bundle, deploymentController, servlet, type);
+        servletWrappers.put(alias, servletWrapper);
 
         // Must be added to the main mapper as no dynamic servlets usually
         /*Mapper mapper = webServer.getService().getMapper();
@@ -203,7 +231,19 @@ final class HttpServiceImpl implements HttpService {
     }
 
     void unregisterInternal(Registration reg) {
-        WebDeploymentController context = reg.getContext();
+        stopDeployment(reg.getContext());
+        SecurityServletWrapper servletWrapper = servletWrappers.remove(reg.getAlias());
+        if (servletWrapper != null) {
+            synchronized (this) {
+                ShareableContextWrapper scWrapper = servletWrapper.contextWrapper;
+                scWrapper.removeContext(servletWrapper.getContainerContext());
+                if (scWrapper.isUnused())
+                    contexts.remove(scWrapper.httpContext);
+            }
+        }
+    }
+
+    private static void stopDeployment(WebDeploymentController context) {
         try {
             context.stop();
         } catch (Exception e) {
@@ -237,16 +277,93 @@ final class HttpServiceImpl implements HttpService {
         if (registry.contains(servlet)) { throw new ServletException(OSGiMessages.MESSAGES.servletAlreadyRegistered(servlet.getServletInfo())); }
     }
 
+    /**
+     * The ServletContext of an HttpContext: one object for all its servlets, with shared attributes, whose MIME types
+     * and resources come from the HttpContext. The other methods go to the context of a registration that is up.
+     */
     static class ShareableContextWrapper implements ApplicationContextWrapper {
 
-        private Object sharedContext;
+        private final HttpContext httpContext;
+        private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
+        private final List<ServletContext> containerContexts = new CopyOnWriteArrayList<ServletContext>();
+        private ServletContext sharedContext;
+
+        ShareableContextWrapper(HttpContext httpContext) {
+            this.httpContext = httpContext;
+        }
 
         @Override
         public synchronized Object wrap(final Object context) {
-            if(sharedContext == null) {
-                this.sharedContext = context;
+            return context;
+        }
+
+        synchronized ServletContext getServletContext(ServletContext containerContext) {
+            if (containerContext != null && !containerContexts.contains(containerContext))
+                containerContexts.add(containerContext);
+            if (sharedContext == null) {
+                sharedContext = (ServletContext) Proxy.newProxyInstance(ServletContext.class.getClassLoader(), new Class<?>[] { ServletContext.class },
+                        new InvocationHandler() {
+                            @Override
+                            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                                return invokeShared(proxy, method, args);
+                            }
+                        });
             }
             return sharedContext;
+        }
+
+        void removeContext(ServletContext containerContext) {
+            if (containerContext != null)
+                containerContexts.remove(containerContext);
+        }
+
+        boolean isUnused() {
+            return containerContexts.isEmpty();
+        }
+
+        private Object invokeShared(Object proxy, Method method, Object[] args) throws Throwable {
+            String name = method.getName();
+            int argc = args != null ? args.length : 0;
+            if (name.equals("equals") && argc == 1)
+                return proxy == args[0];
+            if (name.equals("hashCode") && argc == 0)
+                return System.identityHashCode(proxy);
+            if (name.equals("toString") && argc == 0)
+                return "ServletContext[" + httpContext + "]";
+            if (name.equals("getAttribute") && argc == 1)
+                return attributes.get((String) args[0]);
+            if (name.equals("getAttributeNames") && argc == 0)
+                return Collections.enumeration(new ArrayList<String>(attributes.keySet()));
+            if (name.equals("setAttribute") && argc == 2) {
+                if (args[1] == null)
+                    attributes.remove((String) args[0]);
+                else
+                    attributes.put((String) args[0], args[1]);
+                return null;
+            }
+            if (name.equals("removeAttribute") && argc == 1) {
+                attributes.remove((String) args[0]);
+                return null;
+            }
+            if (name.equals("getMimeType") && argc == 1) {
+                String type = httpContext.getMimeType((String) args[0]);
+                if (type != null)
+                    return type;
+            }
+            if (name.equals("getResource") && argc == 1)
+                return httpContext.getResource((String) args[0]);
+            if (name.equals("getResourceAsStream") && argc == 1) {
+                URL url = httpContext.getResource((String) args[0]);
+                return url != null ? url.openStream() : null;
+            }
+            ServletContext delegate = containerContexts.isEmpty() ? null : containerContexts.get(0);
+            if (delegate == null)
+                throw new IllegalStateException("No servlet is registered with " + httpContext);
+            try {
+                return method.invoke(delegate, args);
+            } catch (InvocationTargetException ex) {
+                throw ex.getCause();
+            }
         }
     }
 
@@ -255,13 +372,25 @@ final class HttpServiceImpl implements HttpService {
     static class SecurityServletWrapper implements Servlet {
         private final HttpContext httpContext;
         private final Servlet delegate;
+        private final ShareableContextWrapper contextWrapper;
+        private volatile Throwable initFailure;
+        private volatile ServletContext containerContext;
 
-        SecurityServletWrapper(Servlet servlet, HttpContext ctx) {
+        SecurityServletWrapper(Servlet servlet, HttpContext ctx, ShareableContextWrapper contextWrapper) {
             if (servlet == null) { throw new NullPointerException(); }
             delegate = servlet;
 
             if (ctx == null) { throw new NullPointerException(); }
             httpContext = ctx;
+            this.contextWrapper = contextWrapper;
+        }
+
+        Throwable getInitFailure() {
+            return initFailure;
+        }
+
+        ServletContext getContainerContext() {
+            return containerContext;
         }
 
         @Override
@@ -280,8 +409,37 @@ final class HttpServiceImpl implements HttpService {
         }
 
         @Override
-        public void init(ServletConfig sc) throws ServletException {
-            delegate.init(sc);
+        public void init(final ServletConfig sc) throws ServletException {
+            // The servlet gets the ServletContext of its HttpContext
+            containerContext = sc.getServletContext();
+            final ServletContext servletContext = contextWrapper.getServletContext(containerContext);
+            ServletConfig config = new ServletConfig() {
+                @Override
+                public String getServletName() {
+                    return sc.getServletName();
+                }
+
+                @Override
+                public ServletContext getServletContext() {
+                    return servletContext;
+                }
+
+                @Override
+                public String getInitParameter(String name) {
+                    return sc.getInitParameter(name);
+                }
+
+                @Override
+                public Enumeration<String> getInitParameterNames() {
+                    return sc.getInitParameterNames();
+                }
+            };
+            try {
+                delegate.init(config);
+            } catch (ServletException | RuntimeException | Error ex) {
+                initFailure = ex;
+                throw ex;
+            }
         }
 
         @Override

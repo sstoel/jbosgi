@@ -26,12 +26,15 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import org.jboss.as.osgi.httpservice.HttpServiceFactory.GlobalRegistry;
 import org.osgi.service.http.HttpContext;
 
 /**
@@ -43,10 +46,12 @@ import org.osgi.service.http.HttpContext;
 @SuppressWarnings("serial")
 final class ResourceServlet extends HttpServlet {
 
+    private final String alias;
     private final String name;
     private final HttpContext context;
 
-    ResourceServlet(String name, HttpContext context) {
+    ResourceServlet(String alias, String name, HttpContext context) {
+        this.alias = alias;
         this.name = name;
         this.context = context;
     }
@@ -54,12 +59,17 @@ final class ResourceServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
 
-        String path = req.getPathInfo();
-        String target = path != null ? name + path : name;
+        // The internal name "/" stands for the root, an exact match of the alias is the name itself (102.4)
+        String pathInfo = req.getPathInfo();
+        String prefix = "/".equals(name) ? "" : name;
+        String target = (pathInfo == null || pathInfo.isEmpty()) ? name : prefix + pathInfo;
         URL resurl = context.getResource(target);
 
         // A directory is not a resource, its URL would give the content of the whole subtree
         if (resurl == null || target.endsWith("/") || resurl.getPath().endsWith("/")) {
+            // The next shorter alias that matches the request handles a resource that this registration does not have
+            if (resurl == null && dispatchToShorterAlias(req, res, pathInfo))
+                return;
             res.sendError(HttpServletResponse.SC_NOT_FOUND, req.getRequestURI());
             return;
         }
@@ -68,8 +78,14 @@ final class ResourceServlet extends HttpServlet {
         if (conn.getContentLength() != -1) {
             res.setContentLength(conn.getContentLength());
         }
-        if(conn.getContentType() != null) {
-            res.setContentType(conn.getContentType());
+        // The type is the one of the HttpContext, else the one of the servlet container
+        String type = context.getMimeType(target);
+        if (type == null)
+            type = getServletContext().getMimeType(target);
+        if (type == null)
+            type = conn.getContentType();
+        if (type != null) {
+            res.setContentType(type);
         }
         if(conn.getContentEncoding() != null) {
             res.setCharacterEncoding(conn.getContentEncoding());
@@ -87,5 +103,21 @@ final class ResourceServlet extends HttpServlet {
         try (InputStream in = conn.getInputStream()) {
             IOUtils.copyStream(out, in);
         }
+    }
+
+    private boolean dispatchToShorterAlias(HttpServletRequest req, HttpServletResponse res, String pathInfo) throws ServletException, IOException {
+        String requestPath = "/".equals(alias) ? (pathInfo != null ? pathInfo : "/") : alias + (pathInfo != null ? pathInfo : "");
+        String fallbackAlias = GlobalRegistry.INSTANCE.findMatchingAlias(requestPath, alias);
+        if (fallbackAlias == null || fallbackAlias.length() >= alias.length())
+            return false;
+        ServletContext fallbackContext = req.getServletContext().getContext("/".equals(fallbackAlias) ? "" : fallbackAlias);
+        if (fallbackContext == null)
+            return false;
+        String remaining = "/".equals(fallbackAlias) ? requestPath : requestPath.substring(fallbackAlias.length());
+        RequestDispatcher dispatcher = fallbackContext.getRequestDispatcher(remaining.isEmpty() ? "/" : remaining);
+        if (dispatcher == null)
+            return false;
+        dispatcher.forward(req, res);
+        return true;
     }
 }
