@@ -30,6 +30,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Dictionary;
@@ -122,9 +125,27 @@ final class HttpServiceImpl implements HttpService {
         }
     }
 
+    /**
+     * The (empty) document root of the registration of an alias. The alias is a URI path, not a file path: the directory
+     * is named by a digest of the alias, which is valid on every file system whatever the length and characters of the alias.
+     */
+    private File getDocumentRoot(String alias) {
+        String name;
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(alias.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder();
+            for (int i = 0; i < 16; i++)
+                hex.append(String.format("%02x", digest[i]));
+            name = hex.toString();
+        } catch (NoSuchAlgorithmException ex) {
+            name = Integer.toHexString(alias.hashCode());
+        }
+        return new File(serverEnvironment.getServerTempDir(), "osgiservlet" + File.separator + name);
+    }
+
     @SuppressWarnings("rawtypes")
     private synchronized ServletBuilder registerInternal(String alias, Servlet servlet, Dictionary initparams, HttpContext httpContext, Type type) throws NamespaceException, ServletException {
-        File storageDir = new File(serverEnvironment.getServerTempDir() + File.separator + alias + File.separator + "osgiservlet-root");
+        File storageDir = getDocumentRoot(alias);
         storageDir.mkdirs();
 
         //ShareableContext ctx;
