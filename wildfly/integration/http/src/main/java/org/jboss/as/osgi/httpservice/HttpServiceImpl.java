@@ -164,6 +164,8 @@ final class HttpServiceImpl implements HttpService {
         deploymentBuilder.setDocumentRoot(storageDir);
         deploymentBuilder.setContextRoot(alias);
         deploymentBuilder.setApplicationContextWrapper(scWrapper);
+        // An alias has no WEB-INF and META-INF directories, the registration gets every path below it (102.4)
+        deploymentBuilder.setProtectedPathsServed(true);
         //ctx.addLifecycleListener(new ContextConfig());
 
         deploymentBuilder.setClassLoader(servlet.getClass().getClassLoader());
