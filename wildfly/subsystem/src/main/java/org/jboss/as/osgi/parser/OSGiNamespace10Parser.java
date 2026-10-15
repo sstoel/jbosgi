@@ -25,6 +25,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.ADD
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.OP_ADDR;
 import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUBSYSTEM;
+import static org.jboss.as.controller.parsing.ParseUtils.invalidAttributeValue;
 import static org.jboss.as.controller.parsing.ParseUtils.missingRequired;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoAttributes;
 import static org.jboss.as.controller.parsing.ParseUtils.requireNoContent;
@@ -194,6 +195,9 @@ class OSGiNamespace10Parser implements Namespace10, XMLStreamConstants, XMLEleme
                             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                             switch (attribute) {
                                 case NAME: {
+                                    // An empty name is not a valid address of the property
+                                    if (attrValue.trim().isEmpty())
+                                        throw invalidAttributeValue(reader, i);
                                     name = attrValue;
                                     break;
                                 }
@@ -245,6 +249,9 @@ class OSGiNamespace10Parser implements Namespace10, XMLStreamConstants, XMLEleme
                             final Attribute attribute = Attribute.forName(reader.getAttributeLocalName(i));
                             switch (attribute) {
                                 case IDENTIFIER: {
+                                    // An empty identifier is not a valid address of the capability
+                                    if (reader.getAttributeValue(i).trim().isEmpty())
+                                        throw invalidAttributeValue(reader, i);
                                     moduleNode.get(OP_ADDR).set(address).add(ModelConstants.CAPABILITY, reader.getAttributeValue(i));
                                     break;
                                 }

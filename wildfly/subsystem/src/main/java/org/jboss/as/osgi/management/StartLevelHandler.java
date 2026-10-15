@@ -58,7 +58,10 @@ public abstract class StartLevelHandler implements OperationStepHandler {
         // authorized and audited as one. A rollback restores the previous start level.
         @Override
         public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-            ModelNode value = operation.require(ModelDescriptionConstants.VALUE);
+            // undefine-attribute and write-attribute without a value: the running framework always has a start level
+            if (operation.hasDefined(ModelDescriptionConstants.VALUE) == false)
+                throw MESSAGES.cannotUndefineStartLevel();
+            ModelNode value = operation.get(ModelDescriptionConstants.VALUE);
             OSGiRootResource.STARTLEVEL.getValidator().validateParameter(ModelDescriptionConstants.VALUE, value);
             context.addStep(new OperationStepHandler() {
                 @Override

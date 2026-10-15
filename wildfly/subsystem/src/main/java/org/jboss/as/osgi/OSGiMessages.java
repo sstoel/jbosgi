@@ -140,4 +140,7 @@ public interface OSGiMessages {
 
     @Message(id = 11979, value = "The system bundle cannot be stopped, the framework stops with the server")
     String cannotStopSystemBundle();
+
+    @Message(id = 11980, value = "The start level of the framework cannot be undefined")
+    OperationFailedException cannotUndefineStartLevel();
 }

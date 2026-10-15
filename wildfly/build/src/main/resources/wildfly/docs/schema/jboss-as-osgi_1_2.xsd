@@ -48,9 +48,37 @@
     </xs:complexType>
 
     <xs:simpleType name="activationType">
+        <xs:annotation>
+            <xs:documentation>
+            <![CDATA[
+                eager or lazy, or an expression ${...} that resolves to one of them.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:union memberTypes="activationValueType expressionType"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="activationValueType">
         <xs:restriction base="xs:token">
             <xs:enumeration value="eager"/>
             <xs:enumeration value="lazy"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="startlevelType">
+        <xs:annotation>
+            <xs:documentation>
+            <![CDATA[
+                A start level, or an expression ${...} that resolves to one.
+            ]]>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:union memberTypes="xs:integer expressionType"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="expressionType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value=".*\$\{.*\}.*"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -62,7 +90,7 @@
 
     <xs:complexType name="capabilityType">
         <xs:attribute name="name" type="xs:string" use="required"/>
-        <xs:attribute name="startlevel" type="xs:integer"/>
+        <xs:attribute name="startlevel" type="startlevelType"/>
     </xs:complexType>
 
     <xs:complexType name="propertiesType">
