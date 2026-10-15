@@ -25,6 +25,7 @@ import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.SimpleAttributeDefinition;
 import org.jboss.as.controller.SimpleAttributeDefinitionBuilder;
 import org.jboss.as.controller.SimpleResourceDefinition;
+import org.jboss.as.controller.operations.validation.IntRangeValidator;
 import org.jboss.as.controller.registry.AttributeAccess.Flag;
 import org.jboss.as.controller.registry.ManagementResourceRegistration;
 import org.jboss.dmr.ModelType;
@@ -38,6 +39,8 @@ public class FrameworkCapabilityResource extends SimpleResourceDefinition {
     static final PathElement CAPABILITY_PATH = PathElement.pathElement(ModelConstants.CAPABILITY);
 
     static final SimpleAttributeDefinition STARTLEVEL = new SimpleAttributeDefinitionBuilder(ModelConstants.STARTLEVEL, ModelType.INT, true)
+            // A bundle start level must be greater than zero
+            .setValidator(new IntRangeValidator(1, true, true))
             .addFlag(Flag.RESTART_NONE)
             .setAllowExpression(true)
             .build();

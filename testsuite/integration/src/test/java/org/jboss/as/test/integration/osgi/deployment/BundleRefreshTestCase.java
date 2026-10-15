@@ -142,6 +142,7 @@ public class BundleRefreshTestCase {
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(BundleReference.class);
                 builder.addImportPackages(ResourceRevisionAccess.class);
+                builder.addManifestHeader("Web-ContextPath", "/bundle-v200");
                 return builder.openStream();
             }
         });

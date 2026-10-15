@@ -33,7 +33,6 @@ import org.jboss.as.osgi.parser.ModelConstants;
 import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.osgi.framework.Services;
-import org.jboss.osgi.framework.spi.BundleManager;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -61,35 +60,40 @@ public class BundleResourceHandler extends AbstractRuntimeOnlyHandler {
 
     private void handleReadAttributeOperation(OperationContext context, ModelNode operation) {
         String name = operation.require(ModelDescriptionConstants.NAME).asString();
+        // A bundle that is uninstalled after its resource was listed has no attributes (OSGiRuntimeResource)
+        Bundle bundle = findTargetBundle(context, operation);
+        if (bundle != null && bundle.getState() != Bundle.UNINSTALLED) {
+            try {
+                readAttribute(context, bundle, name);
+            } catch (IllegalStateException ex) {
+                context.getResult().set(new ModelNode());
+            }
+        }
+        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+    }
+
+    private void readAttribute(OperationContext context, Bundle bundle, String name) {
         if (ModelConstants.ID.equals(name)) {
-            Bundle bundle = getTargetBundle(context, operation);
             context.getResult().set(bundle.getBundleId());
         } else if (ModelConstants.STARTLEVEL.equals(name)) {
-            Bundle bundle = getTargetBundle(context, operation);
             BundleStartLevel bundleStartLevel = bundle.adapt(BundleStartLevel.class);
             int startlevel = bundleStartLevel.getStartLevel();
             context.getResult().set(startlevel);
         } else if (ModelConstants.STATE.equals(name)) {
-            Bundle bundle = getTargetBundle(context, operation);
             context.getResult().set(getBundleState(bundle));
         } else if (ModelConstants.SYMBOLIC_NAME.equals(name)) {
-            Bundle bundle = getTargetBundle(context, operation);
             context.getResult().set(bundle.getSymbolicName());
         } else if (ModelConstants.LOCATION.equals(name)) {
-            Bundle bundle = getTargetBundle(context, operation);
             context.getResult().set(bundle.getLocation());
         } else if (ModelConstants.TYPE.equals(name)) {
-            Bundle bundle = getTargetBundle(context, operation);
             if (bundle.getHeaders().get(Constants.FRAGMENT_HOST) != null) {
                 context.getResult().set(ModelConstants.FRAGMENT);
             } else {
                 context.getResult().set(ModelConstants.BUNDLE);
             }
         } else if (ModelConstants.VERSION.equals(name)) {
-            Bundle bundle = getTargetBundle(context, operation);
             context.getResult().set(bundle.getVersion().toString());
         }
-        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
     }
 
     private void handleOperation(OperationContext context, String operationName, ModelNode operation) {
@@ -106,7 +110,12 @@ public class BundleResourceHandler extends AbstractRuntimeOnlyHandler {
                 }
             } else if (ModelConstants.STOP.equals(operationName)) {
                 Bundle bundle = getTargetBundle(context, operation);
-                bundle.stop();
+                // The framework runs as long as the server, a stop of the system bundle would not stop it
+                if (bundle.getBundleId() == 0) {
+                    context.getFailureDescription().set(MESSAGES.cannotStopSystemBundle());
+                } else {
+                    bundle.stop();
+                }
             } else  {
                 throw new UnsupportedOperationException(operationName);
             }
@@ -118,18 +127,30 @@ public class BundleResourceHandler extends AbstractRuntimeOnlyHandler {
     }
 
     private Bundle getTargetBundle(OperationContext context, ModelNode operation) {
-        ModelNode addr = operation.require(ModelDescriptionConstants.OP_ADDR);
-        PathAddress pathAddress = PathAddress.pathAddress(addr);
-        String value = pathAddress.getLastElement().getValue();
-        Bundle bundle = null;
-        try {
-            Long bundleId = Long.parseLong(value);
-            bundle = getSystemContext(context).getBundle(bundleId);
-        } catch (NumberFormatException ex) {
-            bundle = getBundleManager(context).getBundleByLocation(value);
-        }
+        Bundle bundle = findTargetBundle(context, operation);
         if (bundle == null)
-            throw MESSAGES.illegalArgumentCannotObtainBundleResource(value);
+            throw MESSAGES.illegalArgumentCannotObtainBundleResource(getTargetName(operation));
+        return bundle;
+    }
+
+    private static String getTargetName(ModelNode operation) {
+        ModelNode addr = operation.require(ModelDescriptionConstants.OP_ADDR);
+        return PathAddress.pathAddress(addr).getLastElement().getValue();
+    }
+
+    private Bundle findTargetBundle(OperationContext context, ModelNode operation) {
+        String value = getTargetName(operation);
+        // The resources are named by the bundle location, which may be a number: a bundle id addresses the bundle only
+        // when no bundle has the name as its location
+        BundleContext syscontext = getSystemContext(context);
+        Bundle bundle = syscontext.getBundle(value);
+        if (bundle == null) {
+            try {
+                bundle = syscontext.getBundle(Long.parseLong(value));
+            } catch (NumberFormatException ex) {
+                // not a bundle id
+            }
+        }
         return bundle;
     }
 
@@ -149,11 +170,6 @@ public class BundleResourceHandler extends AbstractRuntimeOnlyHandler {
             return "ACTIVE";
         }
         return null;
-    }
-
-    private BundleManager getBundleManager(OperationContext context) {
-        ServiceController<?> controller = context.getServiceRegistry(false).getService(Services.BUNDLE_MANAGER);
-        return controller != null ? (BundleManager)controller.getValue() : null;
     }
 
     private BundleContext getSystemContext(OperationContext context) {

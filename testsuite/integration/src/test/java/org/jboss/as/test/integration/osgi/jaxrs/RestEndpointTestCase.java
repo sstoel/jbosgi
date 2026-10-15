@@ -255,6 +255,7 @@ public class RestEndpointTestCase {
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(Produces.class, Application.class);
+                builder.addManifestHeader("Web-ContextPath", "/bundle-c");
                 return builder.openStream();
             }
         });
@@ -274,6 +275,7 @@ public class RestEndpointTestCase {
                 builder.addBundleActivator(DeferredFailActivator.class);
                 builder.addImportPackages(Produces.class, Application.class);
                 builder.addImportPackages(BundleActivator.class);
+                builder.addManifestHeader("Web-ContextPath", "/bundle-d");
                 return builder.openStream();
             }
         });

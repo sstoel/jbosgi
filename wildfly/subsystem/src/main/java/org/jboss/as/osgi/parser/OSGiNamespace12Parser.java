@@ -84,7 +84,10 @@ class OSGiNamespace12Parser implements Namespace12, XMLStreamConstants, XMLEleme
                         default:
                             throw unexpectedElement(reader);
                     }
+                    break;
                 }
+                default:
+                    throw unexpectedElement(reader);
             }
         }
     }

@@ -46,6 +46,10 @@ import org.osgi.service.http.HttpContext;
 @SuppressWarnings("serial")
 final class ResourceServlet extends HttpServlet {
 
+    // The resource of the request, from service to the method handlers of HttpServlet
+    private static final String TARGET_ATTRIBUTE = ResourceServlet.class.getName() + ".target";
+    private static final String URL_ATTRIBUTE = ResourceServlet.class.getName() + ".url";
+
     private final String alias;
     private final String name;
     private final HttpContext context;
@@ -73,6 +77,36 @@ final class ResourceServlet extends HttpServlet {
             res.sendError(HttpServletResponse.SC_NOT_FOUND, req.getRequestURI());
             return;
         }
+
+        // The method dispatch of HttpServlet: GET and HEAD serve the resource, with the conditional GET of
+        // getLastModified, OPTIONS answers the allowed methods, the other methods are rejected (405 or 501)
+        req.setAttribute(TARGET_ATTRIBUTE, target);
+        req.setAttribute(URL_ATTRIBUTE, resurl);
+        try {
+            super.service(req, res);
+        } finally {
+            req.removeAttribute(TARGET_ATTRIBUTE);
+            req.removeAttribute(URL_ATTRIBUTE);
+        }
+    }
+
+    @Override
+    protected long getLastModified(HttpServletRequest req) {
+        URL resurl = (URL) req.getAttribute(URL_ATTRIBUTE);
+        if (resurl == null)
+            return -1;
+        try {
+            long lastModified = resurl.openConnection().getLastModified();
+            return lastModified != 0 ? lastModified : -1;
+        } catch (IOException ex) {
+            return -1;
+        }
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        String target = (String) req.getAttribute(TARGET_ATTRIBUTE);
+        URL resurl = (URL) req.getAttribute(URL_ATTRIBUTE);
 
         URLConnection conn = resurl.openConnection();
         if (conn.getContentLength() != -1) {

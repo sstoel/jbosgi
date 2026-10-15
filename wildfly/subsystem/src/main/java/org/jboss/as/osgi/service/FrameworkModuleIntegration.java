@@ -55,6 +55,7 @@ import org.jboss.modules.filter.PathFilter;
 import org.jboss.modules.filter.PathFilters;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.StartContext;
+import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.osgi.framework.Services;
 import org.jboss.osgi.framework.spi.BundleManager;
@@ -94,9 +95,21 @@ final class FrameworkModuleIntegration extends FrameworkModuleProviderPlugin {
         return new FrameworkModuleProviderImpl();
     }
 
+    @Override
+    public void stop(StopContext context) {
+        FrameworkModuleProviderImpl provider = (FrameworkModuleProviderImpl) getValue();
+        super.stop(context);
+        // The copies of the extension content belong to this framework instance
+        if (provider != null) {
+            provider.releaseExtensionContent();
+        }
+    }
+
     class FrameworkModuleProviderImpl implements FrameworkModuleProvider {
 
         private final List<ResourceLoaderSpec> extensionLoaders = new ArrayList<ResourceLoaderSpec>();
+        private final List<ResourceLoader> contentLoaders = new ArrayList<ResourceLoader>();
+        private final List<File> contentFiles = new ArrayList<File>();
         private FrameworkModuleLoader moduleLoader;
         private volatile boolean hasExtensions;
         private Module frameworkModule;
@@ -128,8 +141,8 @@ final class FrameworkModuleIntegration extends FrameworkModuleProviderPlugin {
         /**
          * Copy the content of an extension to a jar file.
          *
-         * The content stays part of the framework until the server is stopped. It is given as the content of a
-         * deployment, which is not available any more when the extension is undeployed.
+         * The content stays part of the framework until the framework module provider is stopped. It is given as the
+         * content of a deployment, which is not available any more when the extension is undeployed.
          */
         private ResourceLoader copyContent(ResourceLoader resourceLoader) throws IOException {
             if (resourceLoader instanceof IterableResourceLoader == false)
@@ -138,6 +151,7 @@ final class FrameworkModuleIntegration extends FrameworkModuleProviderPlugin {
             tempDir.mkdirs();
             File file = File.createTempFile("osgi-extension", ".jar", tempDir);
             file.deleteOnExit();
+            contentFiles.add(file);
             JarOutputStream output = new JarOutputStream(new FileOutputStream(file));
             try {
                 Iterator<Resource> resources = ((IterableResourceLoader) resourceLoader).iterateResources("", true);
@@ -155,7 +169,23 @@ final class FrameworkModuleIntegration extends FrameworkModuleProviderPlugin {
             } finally {
                 output.close();
             }
-            return ResourceLoaders.createJarResourceLoader(new JarFile(file));
+            ResourceLoader loader = ResourceLoaders.createJarResourceLoader(new JarFile(file));
+            contentLoaders.add(loader);
+            return loader;
+        }
+
+        /**
+         * Close the copies of the extension content and delete their files.
+         */
+        synchronized void releaseExtensionContent() {
+            for (ResourceLoader loader : contentLoaders) {
+                loader.close();
+            }
+            contentLoaders.clear();
+            for (File file : contentFiles) {
+                file.delete();
+            }
+            contentFiles.clear();
         }
 
         @Override

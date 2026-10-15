@@ -411,6 +411,7 @@ public class WebAppTestCase {
                 builder.addImportPackages(PostConstruct.class, WebServlet.class);
                 builder.addImportPackages(Servlet.class, HttpServlet.class);
                 builder.addImportPackages(FrameworkUtil.class);
+                builder.addManifestHeader(WebExtension.WEB_CONTEXTPATH, "/bundle-c");
                 return builder.openStream();
             }
         });
@@ -474,6 +475,7 @@ public class WebAppTestCase {
                 builder.addImportPackages(PostConstruct.class, WebServlet.class);
                 builder.addImportPackages(Servlet.class, HttpServlet.class);
                 builder.addImportPackages(FrameworkUtil.class);
+                builder.addManifestHeader(WebExtension.WEB_CONTEXTPATH, "/bundle-f");
                 return builder.openStream();
             }
         });

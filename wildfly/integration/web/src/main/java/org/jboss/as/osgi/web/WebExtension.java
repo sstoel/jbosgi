@@ -84,6 +84,7 @@ public class WebExtension extends AbstractSubsystemExtension {
             protected void execute(DeploymentProcessorTarget processorTarget) {
                 processorTarget.addDeploymentProcessor(OSGiExtension.SUBSYSTEM_NAME, Phase.STRUCTURE, Phase.STRUCTURE_OSGI_WEBBUNDLE, new WebBundleStructureProcessor());
                 processorTarget.addDeploymentProcessor(OSGiExtension.SUBSYSTEM_NAME, Phase.STRUCTURE, Phase.STRUCTURE_REMOUNT_EXPLODED, new RemountDeploymentRootProcessor());
+                processorTarget.addDeploymentProcessor(OSGiExtension.SUBSYSTEM_NAME, Phase.STRUCTURE, Phase.STRUCTURE_WAR_DEPLOYMENT_INIT + 1, new WebBundleRecognitionProcessor());
                 processorTarget.addDeploymentProcessor(OSGiExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_WAR_MODULE, new WebBundleDependencyProcessor());
                 processorTarget.addDeploymentProcessor(OSGiExtension.SUBSYSTEM_NAME, Phase.CONFIGURE_MODULE, Phase.CONFIGURE_MODULE_SPEC, new WebBundleConfigurationProcessor());
                 processorTarget.addDeploymentProcessor(OSGiExtension.SUBSYSTEM_NAME, Phase.PARSE, Phase.PARSE_WAB_CONTEXT_FACTORY, new WebBundleContextProcessor());

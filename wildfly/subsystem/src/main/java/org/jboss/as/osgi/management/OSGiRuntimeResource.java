@@ -24,8 +24,11 @@ package org.jboss.as.osgi.management;
 import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
@@ -43,16 +46,23 @@ import org.osgi.framework.BundleContext;
  */
 public class OSGiRuntimeResource implements Resource {
 
+    // How long a listed bundle stays a child after it was uninstalled
+    private static final long LISTED_BUNDLE_RETENTION = TimeUnit.MINUTES.toMillis(1);
+
     private final InjectedValue<BundleManager> injectedBundleManager;
     private final Resource delegate;
+    // The names of the bundle children by the time they were listed last: a read that lists the children reads each of
+    // them after, a bundle that is uninstalled meanwhile stays a child for it (without attributes)
+    private final Map<String, Long> listedBundles;
 
     public OSGiRuntimeResource() {
-        this(Resource.Factory.create(), new InjectedValue<BundleManager>());
+        this(Resource.Factory.create(), new InjectedValue<BundleManager>(), new ConcurrentHashMap<String, Long>());
     }
 
-    private OSGiRuntimeResource(Resource resource, InjectedValue<BundleManager> injectedBundleManager) {
+    private OSGiRuntimeResource(Resource resource, InjectedValue<BundleManager> injectedBundleManager, Map<String, Long> listedBundles) {
         this.injectedBundleManager = injectedBundleManager;
         this.delegate = resource;
+        this.listedBundles = listedBundles;
     }
 
     public InjectedValue<BundleManager> getInjectedBundleManager() {
@@ -197,19 +207,24 @@ public class OSGiRuntimeResource implements Resource {
 
     @Override
     public Resource clone() {
-        return new OSGiRuntimeResource(delegate.clone(), injectedBundleManager);
+        return new OSGiRuntimeResource(delegate.clone(), injectedBundleManager, listedBundles);
     }
 
     private boolean hasBundle(PathElement element) {
+        Long listed = listedBundles.get(element.getValue());
+        if (listed != null && listed > System.currentTimeMillis() - LISTED_BUNDLE_RETENTION)
+            return true;
         boolean result = false;
         BundleManager bundleManager = injectedBundleManager.getOptionalValue();
         if (bundleManager != null) {
-            Bundle bundle;
-            try {
-                Long bundleId = Long.parseLong(element.getValue());
-                bundle = bundleManager.getBundleById(bundleId);
-            } catch (NumberFormatException ex) {
-                bundle = bundleManager.getBundleByLocation(element.getValue());
+            // The children are named by the bundle location, a bundle id addresses a bundle that no location matches
+            Bundle bundle = bundleManager.getBundleByLocation(element.getValue());
+            if (bundle == null) {
+                try {
+                    bundle = bundleManager.getBundleById(Long.parseLong(element.getValue()));
+                } catch (NumberFormatException ex) {
+                    // not a bundle id
+                }
             }
             result = (bundle != null);
         }
@@ -223,6 +238,11 @@ public class OSGiRuntimeResource implements Resource {
             for (Bundle b : context.getBundles()) {
                 result.add(b.getLocation());
             }
+        }
+        long now = System.currentTimeMillis();
+        listedBundles.values().removeIf(listed -> listed <= now - LISTED_BUNDLE_RETENTION);
+        for (String name : result) {
+            listedBundles.put(name, now);
         }
         return result;
     }

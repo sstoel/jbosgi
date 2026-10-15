@@ -92,6 +92,9 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
             XBundleRevision brev = bundleManager.installBundleRevision(syscontext, deployment, null);
             depUnit.putAttachment(OSGiConstants.BUNDLE_REVISION_KEY, brev);
             depUnit.putAttachment(BUNDLE_STATE_KEY, BundleState.INSTALLED);
+            // The bundle is started by the deployment, the framework may try to start it before (BundleActivateProcessor)
+            if (!brev.isFragment())
+                depUnit.putAttachment(BundleActivateProcessor.START_COORDINATOR_KEY, new BundleActivateProcessor.StartCoordinator());
         } catch (BundleException ex) {
             throw new DeploymentUnitProcessingException(ex);
         }

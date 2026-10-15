@@ -196,6 +196,7 @@ public class BundleResourceHandlerTestCase {
         startOp.get(ModelDescriptionConstants.OP).set(ModelConstants.STOP);
 
         Bundle testBundle = Mockito.mock(Bundle.class);
+        Mockito.when(testBundle.getBundleId()).thenReturn(Long.MAX_VALUE);
         Mockito.when(bundleContext.getBundle(Long.MAX_VALUE)).thenReturn(testBundle);
 
         Mockito.verifyNoInteractions(testBundle);

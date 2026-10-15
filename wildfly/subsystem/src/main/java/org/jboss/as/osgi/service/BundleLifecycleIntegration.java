@@ -60,6 +60,8 @@ import org.jboss.as.controller.client.helpers.standalone.ServerDeploymentPlanRes
 import org.jboss.as.controller.client.helpers.standalone.ServerUpdateActionResult;
 import org.jboss.as.controller.client.helpers.standalone.UndeployDeploymentPlanBuilder;
 import org.jboss.as.osgi.OSGiConstants;
+import org.jboss.as.osgi.deployment.BundleActivateProcessor;
+import org.jboss.as.osgi.deployment.BundleActivateProcessor.StartCoordinator;
 import org.jboss.as.osgi.deployment.BundleDeploymentProcessor;
 import org.jboss.as.osgi.management.OperationAssociation;
 import org.jboss.as.server.deployment.Attachments;
@@ -545,14 +547,14 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             // There is no deferred phase, activate using the default
             List<String> deferredModules = DeploymentUtils.getDeferredModules(depUnit);
             if (!deferredModules.contains(depUnit.getName())) {
-                bundleManager.startBundle(bundle, options);
+                startDeployedBundle(bundle, options, depUnit);
                 return;
             }
 
             // Get the INSTALL phase service and check whether we need to activate it
             ServiceController<Phase> phaseService = getDeferredPhaseService(depUnit);
             if (phaseService.getMode() != Mode.NEVER) {
-                bundleManager.startBundle(bundle, options);
+                startDeployedBundle(bundle, options, depUnit);
                 return;
             }
 
@@ -566,6 +568,23 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             ServiceContainer serviceContainer = bundleManager.getServiceContainer();
             ServiceController<DeploymentUnit> deploymentService = (ServiceController<DeploymentUnit>) serviceContainer.getRequiredService(deploymentServiceName);
             activateDeferredPhase(bundle, options, depUnit, phaseService, deploymentService);
+        }
+
+        /**
+         * The deployment of the bundle starts it. A transient start, e.g. by the start level service while the
+         * deployment is deployed at boot, does not start it before the deployment tried to, nor again when the
+         * deployment failed to start it. A lazy activation (the bundle is STARTING) is always done.
+         */
+        private void startDeployedBundle(XBundle bundle, int options, DeploymentUnit depUnit) throws BundleException {
+            StartCoordinator coordinator = depUnit.getAttachment(BundleActivateProcessor.START_COORDINATOR_KEY);
+            if (coordinator != null && (options & Bundle.START_TRANSIENT) != 0 && bundle.getState() != Bundle.STARTING
+                    && !coordinator.isTransientStartAllowed()) {
+                LOGGER.debugf("Bundle is started by its deployment: %s", bundle);
+                return;
+            }
+            bundleManager.startBundle(bundle, options);
+            if (coordinator != null)
+                coordinator.bundleStarted();
         }
 
         @Override

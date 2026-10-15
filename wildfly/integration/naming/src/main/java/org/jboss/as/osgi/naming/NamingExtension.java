@@ -26,13 +26,12 @@ import java.util.List;
 import javax.naming.spi.ObjectFactory;
 
 import org.jboss.as.controller.OperationContext;
-import org.jboss.as.controller.OperationFailedException;
-import org.jboss.as.controller.OperationStepHandler;
 import org.jboss.as.naming.InitialContextFactoryBuilder;
 import org.jboss.as.naming.NamingStore;
 import org.jboss.as.naming.service.NamingService;
 import org.jboss.as.osgi.AbstractSubsystemExtension;
 import org.jboss.as.osgi.parser.OSGiExtension;
+import org.jboss.as.osgi.parser.SubsystemState;
 import org.jboss.as.server.AbstractDeploymentChainStep;
 import org.jboss.as.server.DeploymentProcessorTarget;
 import org.jboss.as.server.deployment.Phase;
@@ -40,10 +39,11 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
+import org.jboss.osgi.framework.spi.FrameworkBuilder;
+import org.jboss.osgi.framework.spi.FrameworkBuilder.FrameworkPhase;
 import org.jboss.osgi.framework.spi.IntegrationServices;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -62,21 +62,18 @@ public class NamingExtension extends AbstractSubsystemExtension {
 
     @Override
     public void performBoottime(final OperationContext context, final ModelNode operation, final ModelNode model) {
-        context.addStep(new OperationStepHandler() {
-            @Override
-            public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                ServiceTarget serviceTarget = context.getCapabilityServiceTarget();
-                BundleContextBindingService.addService(serviceTarget);
-                context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
-            }
-        }, OperationContext.Stage.RUNTIME);
-
         context.addStep(new AbstractDeploymentChainStep() {
             @Override
             protected void execute(DeploymentProcessorTarget processorTarget) {
                 processorTarget.addDeploymentProcessor(OSGiExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, Phase.DEPENDENCIES_BUNDLE_CONTEXT_BINDING, new BundleContextBindingProcessor());
             }
         }, OperationContext.Stage.RUNTIME);
+    }
+
+    @Override
+    public void registerIntegrationServices(FrameworkBuilder builder, SubsystemState subsystemState) {
+        // The system context is bound while the framework is active
+        builder.registerIntegrationService(FrameworkPhase.ACTIVE, new BundleContextBindingService());
     }
 
     @Override

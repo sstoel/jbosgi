@@ -88,7 +88,10 @@ class OSGiNamespace11Parser implements Namespace11, XMLStreamConstants, XMLEleme
                         default:
                             throw unexpectedElement(reader);
                     }
+                    break;
                 }
+                default:
+                    throw unexpectedElement(reader);
             }
         }
     }

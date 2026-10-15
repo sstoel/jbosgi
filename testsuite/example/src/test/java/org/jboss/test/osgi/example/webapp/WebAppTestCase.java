@@ -406,6 +406,7 @@ public class WebAppTestCase {
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(PostConstruct.class, WebServlet.class);
                 builder.addImportPackages(Servlet.class, HttpServlet.class);
+                builder.addManifestHeader("Web-ContextPath", "/bundle-c");
                 return builder.openStream();
             }
         });
@@ -467,6 +468,7 @@ public class WebAppTestCase {
                 builder.addImportPackages(PostConstruct.class, WebServlet.class);
                 builder.addImportPackages(Servlet.class, HttpServlet.class);
                 builder.addImportPackages(BundleActivator.class);
+                builder.addManifestHeader("Web-ContextPath", "/bundle-f");
                 return builder.openStream();
             }
         });

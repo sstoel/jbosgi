@@ -106,8 +106,9 @@ public class BundleUpdateTestCase {
             BundleRevisions brevs = bundleA.adapt(BundleRevisions.class);
             Assert.assertEquals(1, brevs.getRevisions().size());
 
+            // The replaced revision is not in use, the update removes it
             bundleA.update(deployer.getDeployment(BUNDLE_V101_JAR));
-            Assert.assertEquals(2, brevs.getRevisions().size());
+            Assert.assertEquals(1, brevs.getRevisions().size());
         } finally {
             bundleA.uninstall();
         }
@@ -123,8 +124,9 @@ public class BundleUpdateTestCase {
             BundleRevisions brevs = bundleA.adapt(BundleRevisions.class);
             Assert.assertEquals(1, brevs.getRevisions().size());
 
+            // The replaced revision is not in use, the update removes it
             bundleA.update(deployer.getDeployment(BUNDLE_V101_JAR));
-            Assert.assertEquals(2, brevs.getRevisions().size());
+            Assert.assertEquals(1, brevs.getRevisions().size());
             Assert.assertEquals(Bundle.ACTIVE, bundleA.getState());
         } finally {
             bundleA.uninstall();
@@ -285,6 +287,7 @@ public class BundleUpdateTestCase {
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(BundleReference.class);
                 builder.addImportPackages(ResourceRevisionAccess.class);
+                builder.addManifestHeader("Web-ContextPath", "/bundle-v200");
                 return builder.openStream();
             }
         });

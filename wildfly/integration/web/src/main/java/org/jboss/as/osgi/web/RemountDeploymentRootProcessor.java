@@ -60,8 +60,8 @@ public class RemountDeploymentRootProcessor implements DeploymentUnitProcessor {
         if (manifest == null || MountExplodedMarker.isMountExploded(depUnit))
             return;
 
-        // Check for WAB
-        if (!WebApplicationBundleUtils.isWebApplicationBundle(depUnit))
+        // Check for WAB, a bundle without a valid Web-ContextPath is a plain bundle
+        if (!WebApplicationBundleUtils.isWebApplicationBundle(depUnit) || !WebBundleRecognitionProcessor.isValidWebApplicationBundle(depUnit))
             return;
 
         // Close the already mounted root

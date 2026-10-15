@@ -107,23 +107,28 @@ public class BundleContextInjectionTestCase {
     @Test
     public void testSimpleWar() throws Exception {
         String result = performCall("/webapp/servlet");
-        Assert.assertEquals("system.bundle:0.0.0", result);
+        assertSystemBundle(result);
     }
 
     @Test
     public void testSimpleEar() throws Exception {
         String result = performCall("/sub-webapp/servlet");
-        Assert.assertEquals("system.bundle:0.0.0", result);
+        assertSystemBundle(result);
     }
 
     @Test
     public void testManagedBeanEar() throws Exception {
         String result = performCall("/managed-webapp/servlet");
-        Assert.assertEquals("system.bundle:0.0.0", result);
+        assertSystemBundle(result);
     }
 
     private String performCall(String path) throws Exception {
         String urlspec = "http://localhost:8080" + path;
         return HttpRequest.get(urlspec, 5, TimeUnit.SECONDS);
+    }
+
+    // The canonical name of the system bundle: its implementation name and the framework version, system.bundle is an alias
+    private static void assertSystemBundle(String result) {
+        Assert.assertTrue("The system bundle, but was " + result, result != null && result.startsWith("org.jboss.osgi.framework:"));
     }
 }

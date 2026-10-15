@@ -65,6 +65,7 @@ import org.jboss.osgi.repository.XRepository;
 import org.jboss.osgi.resolver.XResolver;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.service.repository.Repository;
 import org.osgi.util.xml.XMLParserActivator;
 
@@ -75,6 +76,8 @@ import org.osgi.util.xml.XMLParserActivator;
  * @since 11-Sep-2010
  */
 final class SystemServicesIntegration extends SystemServicesPlugin {
+
+    static final String REPOSITORY_SERVICE_PID = "org.jboss.osgi.repository.persistent";
 
     private final InjectedValue<ModelControllerClientFactory> injectedModelControllerClientFactory = new InjectedValue<ModelControllerClientFactory>();
     private final InjectedValue<BundleManager> injectedBundleManager = new InjectedValue<BundleManager>();
@@ -185,7 +188,14 @@ final class SystemServicesIntegration extends SystemServicesPlugin {
     private void registerRepositoryServices(BundleContext syscontext) {
         XRepository repository = injectedRepository.getValue();
         String[] classes = new String[] { XRepository.class.getName(), Repository.class.getName() };
-        syscontext.registerService(classes, repository, null);
+        // The service.pid is mandatory for a Repository service (Compendium 132.3)
+        Dictionary<String, Object> props = new Hashtable<String, Object>();
+        props.put(Constants.SERVICE_PID, REPOSITORY_SERVICE_PID);
+        String name = repository.getName();
+        if (name != null) {
+            props.put(Constants.SERVICE_DESCRIPTION, name);
+        }
+        syscontext.registerService(classes, repository, props);
         ResourceInstaller installer = injectedResourceInstaller.getValue();
         syscontext.registerService(ResourceInstaller.class, installer, null);
     }

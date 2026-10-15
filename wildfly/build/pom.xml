@@ -62,8 +62,8 @@
             <artifactId>org.apache.aries.blueprint</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.aries.jmx</groupId>
-            <artifactId>org.apache.aries.jmx</artifactId>
+            <groupId>org.jboss.osgi.wildfly</groupId>
+            <artifactId>jbosgi-aries-jmx</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.aries.jndi</groupId>

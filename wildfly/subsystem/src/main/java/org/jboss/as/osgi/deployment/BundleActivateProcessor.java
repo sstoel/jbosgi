@@ -71,6 +71,11 @@ import org.osgi.framework.BundleException;
  */
 public class BundleActivateProcessor implements DeploymentUnitProcessor {
 
+    /**
+     * The {@link StartCoordinator} of the bundle of a deployment, attached when the bundle is installed
+     */
+    public static final AttachmentKey<StartCoordinator> START_COORDINATOR_KEY = AttachmentKey.create(StartCoordinator.class);
+
     @Override
     public void deploy(final DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
         DeploymentUnit depUnit = phaseContext.getDeploymentUnit();
@@ -111,6 +116,63 @@ public class BundleActivateProcessor implements DeploymentUnitProcessor {
                 current.destroy();
                 current = null;
             }
+        }
+    }
+
+    /**
+     * Two agents start a deployed bundle: the Activate service of its deployment, and the framework with a transient
+     * start, e.g. the start level service when the start level increases. At boot the start level service starts the
+     * persistently started bundles while their deployments are still deployed. The activator is called once: a
+     * transient start leaves the bundle to its deployment while the deployment has not tried to start it, and does not
+     * start it again when the deployment failed to start it.
+     */
+    public static final class StartCoordinator {
+
+        private boolean attempted;
+        private boolean skipped;
+        private BundleException failure;
+
+        synchronized void attemptStarted() {
+            attempted = false;
+            skipped = false;
+            failure = null;
+        }
+
+        /**
+         * The start attempt of the deployment is done. It is repeated (returns false) when a transient start was
+         * skipped meanwhile and the attempt did not start the bundle (its start level was not reached yet).
+         */
+        synchronized boolean attemptCompleted(XBundle bundle, BundleException ex) {
+            if (ex == null && skipped && (bundle.getState() & (Bundle.STARTING | Bundle.ACTIVE)) == 0) {
+                skipped = false;
+                return false;
+            }
+            attempted = true;
+            failure = ex;
+            return true;
+        }
+
+        synchronized void attemptEnded() {
+            attempted = true;
+        }
+
+        /**
+         * Whether a transient start may start the bundle: not before its deployment tried to start it, and not when
+         * that failed
+         */
+        public synchronized boolean isTransientStartAllowed() {
+            if (!attempted) {
+                skipped = true;
+                return false;
+            }
+            return failure == null;
+        }
+
+        /**
+         * The bundle was started: a later transient start may start it again
+         */
+        public synchronized void bundleStarted() {
+            failure = null;
         }
     }
 
@@ -158,21 +220,37 @@ public class BundleActivateProcessor implements DeploymentUnitProcessor {
             if (activatorComponent != null && deployment.getAttachment(BUNDLE_ACTIVATOR_FACTORY_KEY) == null) {
                 deployment.putAttachment(BUNDLE_ACTIVATOR_FACTORY_KEY, new ActivatorFactory(activatorComponent));
             }
-            if (bundle.getState() != Bundle.ACTIVE) {
-                // The activator runs within the deploy operation: a bundle that it installs is installed directly, a
-                // nested deploy operation would wait for the one that runs this service (AS7-5642)
-                boolean associated = OperationAssociation.INSTANCE.getAssociation() != null;
-                if (!associated)
-                    OperationAssociation.INSTANCE.setAssociation(new ModelNode(depUnit.getName()));
-                try {
-                    bundleManager.startBundle(bundle, Bundle.START_ACTIVATION_POLICY);
-                    depUnit.putAttachment(Attachments.BUNDLE_STATE_KEY, BundleState.ACTIVE);
-                } catch (BundleException ex) {
-                    throw MESSAGES.cannotStartBundle(ex, bundle);
-                } finally {
+            StartCoordinator coordinator = depUnit.getAttachment(START_COORDINATOR_KEY);
+            if (coordinator != null)
+                coordinator.attemptStarted();
+            try {
+                if (bundle.getState() != Bundle.ACTIVE) {
+                    // The activator runs within the deploy operation: a bundle that it installs is installed directly, a
+                    // nested deploy operation would wait for the one that runs this service (AS7-5642)
+                    boolean associated = OperationAssociation.INSTANCE.getAssociation() != null;
                     if (!associated)
-                        OperationAssociation.INSTANCE.removeAssociation();
+                        OperationAssociation.INSTANCE.setAssociation(new ModelNode(depUnit.getName()));
+                    try {
+                        BundleException failure;
+                        do {
+                            failure = null;
+                            try {
+                                bundleManager.startBundle(bundle, Bundle.START_ACTIVATION_POLICY);
+                            } catch (BundleException ex) {
+                                failure = ex;
+                            }
+                        } while (coordinator != null && !coordinator.attemptCompleted(bundle, failure));
+                        if (failure != null)
+                            throw MESSAGES.cannotStartBundle(failure, bundle);
+                        depUnit.putAttachment(Attachments.BUNDLE_STATE_KEY, BundleState.ACTIVE);
+                    } finally {
+                        if (!associated)
+                            OperationAssociation.INSTANCE.removeAssociation();
+                    }
                 }
+            } finally {
+                if (coordinator != null)
+                    coordinator.attemptEnded();
             }
         }
 

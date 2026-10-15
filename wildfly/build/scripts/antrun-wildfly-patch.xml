@@ -139,8 +139,9 @@
 		<copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/blueprint/main" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/org.apache.aries.blueprint-*.jar" />
 		</copy>
-		<copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/jmx/main" overwrite="true">
-			<fileset file="${deploy.artifacts.lib}/org.apache.aries.jmx-*.jar" />
+		<!-- The patched Aries JMX bundle, under the name of the original: a server that is patched again keeps one jar -->
+		<copy tofile="${wildfly.patch.dir}/bundles/org/apache/aries/jmx/main/org.apache.aries.jmx-${version.apache.aries.jmx}.jar" overwrite="true">
+			<fileset file="${deploy.artifacts.lib}/jbosgi-aries-jmx-*.jar" />
 		</copy>
 		<copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/jndi/main" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/org.apache.aries.jndi-*.jar" />

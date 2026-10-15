@@ -22,6 +22,12 @@
 
 package org.jboss.as.osgi.service;
 
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.jboss.modules.Module;
+import org.jboss.modules.ModuleLoadException;
+
 /**
  * System packages definition
  *
@@ -50,7 +56,7 @@ interface SystemPackagesIntegration  {
     };
 
     // Keep the versions in sync with the modules org.jboss.dmr, org.jboss.logging and org.slf4j
-    // The module org.jboss.osgi.repository provides org.osgi.util.promise
+    // The module org.jboss.osgi.repository provides org.osgi.util.promise and the Repository 1.1 API
     // The slf4j api is exported in version 1.7 as well, like the slf4j-api artefact does for the bundles that were built against 1.7
     String[] DEFAULT_INTEGRATION_PACKAGES = new String[] {
         "jakarta.inject",
@@ -63,7 +69,7 @@ interface SystemPackagesIntegration  {
         "org.jboss.logging;version=3.6",
         "org.jboss.osgi.provision;version=1.0",
         "org.jboss.osgi.repository;version=1.0",
-        "org.osgi.service.repository;version=1.0;uses:=\"org.osgi.resource\"",
+        "org.osgi.service.repository;version=1.1;uses:=\"org.osgi.resource,org.osgi.util.promise\"",
         "org.osgi.util.function;version=1.0",
         "org.osgi.util.promise;version=1.0;uses:=\"org.osgi.util.function\"",
         "org.slf4j;version=2.0",
@@ -80,8 +86,8 @@ interface SystemPackagesIntegration  {
         "jakarta.annotation.api"
     };
 
-    // Keep in sync with module javax.api
-    String[] JAVAX_API_PACKAGES = new String[] {
+    // The packages of module javax.api on Java 21, when the module cannot be loaded
+    String[] JAVAX_API_PACKAGES_JAVA21 = new String[] {
         "javax.accessibility",
         "javax.annotation.processing",
         "javax.crypto",
@@ -203,4 +209,32 @@ interface SystemPackagesIntegration  {
         "org.xml.sax.ext",
         "org.xml.sax.helpers"
     };
+
+    // The javax and org packages of module javax.api, which exports the packages of the running Java platform
+    String[] JAVAX_API_PACKAGES = JavaxApiPackages.getPackages();
+
+    /**
+     * The javax and org packages that module javax.api exports. The module is defined by the Java platform modules
+     * (java.se, java.xml ...), a later Java version adds packages (javax.sound in Java 25).
+     */
+    final class JavaxApiPackages {
+
+        private JavaxApiPackages() {
+        }
+
+        static String[] getPackages() {
+            Set<String> result = new TreeSet<String>();
+            try {
+                Module module = Module.getBootModuleLoader().loadModule("javax.api");
+                for (String path : module.getExportedPaths()) {
+                    String name = path.replace('/', '.');
+                    if (name.startsWith("javax.") || name.startsWith("org."))
+                        result.add(name);
+                }
+            } catch (ModuleLoadException ex) {
+                // not in the server
+            }
+            return result.isEmpty() ? JAVAX_API_PACKAGES_JAVA21 : result.toArray(new String[result.size()]);
+        }
+    }
 }

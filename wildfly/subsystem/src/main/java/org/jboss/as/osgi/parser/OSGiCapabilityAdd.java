@@ -21,6 +21,9 @@
  */
 package org.jboss.as.osgi.parser;
 
+import static org.jboss.as.osgi.OSGiMessages.MESSAGES;
+
+import java.io.File;
 import java.util.List;
 
 import org.jboss.as.controller.AbstractAddStepHandler;
@@ -29,8 +32,15 @@ import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.osgi.parser.SubsystemState.OSGiCapability;
+import org.jboss.as.osgi.service.LayeredBundlePathFactory;
+import org.jboss.as.server.ServerEnvironment;
 import org.jboss.dmr.ModelNode;
+import org.jboss.modules.Module;
+import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
 import org.jboss.msc.service.ServiceController;
+import org.jboss.osgi.resolver.MavenCoordinates;
+import org.wildfly.security.manager.WildFlySecurityManager;
 
 /**
  * @author David Bosschaert
@@ -52,6 +62,7 @@ public class OSGiCapabilityAdd extends AbstractAddStepHandler {
         final Integer startLevel = (operation.hasDefined(ModelConstants.STARTLEVEL) ? FrameworkCapabilityResource.STARTLEVEL.resolveModelAttribute(context, model).asInt() : null);
 
         String identifier = operation.get(ModelDescriptionConstants.OP_ADDR).asObject().get(ModelConstants.CAPABILITY).asString();
+        validateIdentifier(identifier);
         OSGiCapability module = new OSGiCapability(identifier, startLevel);
 
         SubsystemState subsystemState = SubsystemState.getSubsystemState(context);
@@ -60,6 +71,39 @@ public class OSGiCapabilityAdd extends AbstractAddStepHandler {
         }
         // The capabilities are installed when the framework is created
         context.reloadRequired();
+    }
+
+    /**
+     * A capability is a bundle of the bundles hierarchy or a module, as the framework installs it when it is created.
+     * Maven coordinates are resolved by the repository then.
+     */
+    private static void validateIdentifier(String identifier) throws OperationFailedException {
+        try {
+            MavenCoordinates.parse(identifier);
+            return;
+        } catch (IllegalArgumentException ex) {
+            // not Maven coordinates
+        }
+        ModuleIdentifier moduleId;
+        try {
+            moduleId = ModuleIdentifier.fromString(identifier);
+        } catch (IllegalArgumentException ex) {
+            throw MESSAGES.cannotFindCapability(ex, identifier);
+        }
+        // The bundles hierarchy and the modules are those of a server
+        String homeDir = WildFlySecurityManager.getPropertyPrivileged(ServerEnvironment.HOME_DIR, null);
+        if (homeDir == null)
+            return;
+        String identifierPath = moduleId.getName().replace('.', File.separatorChar) + File.separator + moduleId.getSlot();
+        for (File basePath : LayeredBundlePathFactory.resolveLayeredBundlePath(new File(homeDir, "bundles"))) {
+            if (new File(basePath, identifierPath).isDirectory())
+                return;
+        }
+        try {
+            Module.getBootModuleLoader().loadModule(moduleId);
+        } catch (ModuleLoadException ex) {
+            throw MESSAGES.cannotFindCapability(ex, identifier);
+        }
     }
 
     @Override

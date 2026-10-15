@@ -287,10 +287,10 @@ final class HttpServiceImpl implements HttpService {
         if (!exists && registry.exists(alias)) { throw new NamespaceException(OSGiMessages.MESSAGES.aliasMappingAlreadyExists(alias)); }
     }
 
-    private void validateName(String name) throws NamespaceException {
+    private void validateName(String name) {
         // The name parameter must also not end with slash ('/') with the exception
         // that a name of the form "/" is used to denote the root of the bundle.
-        if (name == null || (name.length() > 1 && name.endsWith("/"))) { throw new NamespaceException(OSGiMessages.MESSAGES.invalidResourceName(name)); }
+        if (name == null || (name.length() > 1 && name.endsWith("/"))) { throw new IllegalArgumentException(OSGiMessages.MESSAGES.invalidResourceName(name)); }
     }
 
     private void validateServlet(Servlet servlet) throws ServletException {

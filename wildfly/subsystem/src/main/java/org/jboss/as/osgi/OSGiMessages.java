@@ -131,4 +131,13 @@ public interface OSGiMessages {
 
     @Message(id = 11976, value = "'%s' is an invalid value for parameter %s. A framework property value can not be persisted if it starts or ends with whitespace or contains a control character other than tab and line feed")
     OperationFailedException invalidFrameworkPropertyValue(String value, String name);
+
+    @Message(id = 11977, value = "Cannot find a bundle or module for capability: %s")
+    OperationFailedException cannotFindCapability(@Cause Throwable cause, String identifier);
+
+    @Message(id = 11978, value = "The framework is not active, its start level cannot be changed")
+    OperationFailedException cannotChangeStartLevelFrameworkNotActive();
+
+    @Message(id = 11979, value = "The system bundle cannot be stopped, the framework stops with the server")
+    String cannotStopSystemBundle();
 }

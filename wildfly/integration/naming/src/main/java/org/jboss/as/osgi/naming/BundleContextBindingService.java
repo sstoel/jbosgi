@@ -25,40 +25,48 @@ import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.jboss.as.naming.ManagedReferenceFactory;
 import org.jboss.as.naming.ManagedReferenceInjector;
 import org.jboss.as.naming.ServiceBasedNamingStore;
 import org.jboss.as.naming.deployment.ContextNames;
 import org.jboss.as.naming.service.BinderService;
-import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceController.Mode;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 import org.jboss.osgi.framework.Services;
+import org.jboss.osgi.framework.spi.IntegrationService;
 import org.osgi.framework.BundleContext;
 
-final class BundleContextBindingService {
+/**
+ * Binds the system context to java:jboss/osgi/BundleContext.
+ *
+ * The binder is installed with the services of the active framework, also when a lazy framework is activated, and it
+ * is passive: the name is bound whenever the framework is active, also for a plain lookup that does not depend on the
+ * binder. A deployment with an injection point depends on the binder, it activates a lazy framework.
+ */
+final class BundleContextBindingService extends BinderService implements IntegrationService<ManagedReferenceFactory> {
 
     private static final String BUNDLE_CONTEXT_BINDING_NAME = "java:jboss/osgi/BundleContext";
 
-    static ServiceController<?> addService(final ServiceTarget serviceTarget) {
+    BundleContextBindingService() {
+        super(ContextNames.bindInfoFor(BUNDLE_CONTEXT_BINDING_NAME).getBindName());
+    }
+
+    @Override
+    public ServiceName getServiceName() {
+        return getBinderServiceName();
+    }
+
+    @Override
+    public ServiceController<ManagedReferenceFactory> install(ServiceTarget serviceTarget, LifecycleListener listener) {
         ContextNames.BindInfo bindInfo = ContextNames.bindInfoFor(BUNDLE_CONTEXT_BINDING_NAME);
         final AtomicBoolean bound = new AtomicBoolean();
-        BinderService binderService = new BinderService(bindInfo.getBindName()) {
-            @Override
-            public synchronized void start(StartContext context) throws StartException {
-                super.start(context);
-                ServiceController<?> controller = context.getController();
-                controller.setMode(Mode.ACTIVE);
-            }
-        };
-        ServiceBuilder<?> builder = serviceTarget.addService(getBinderServiceName(), binderService);
-        builder.addDependency(Services.FRAMEWORK_ACTIVE, BundleContext.class, new ManagedReferenceInjector<BundleContext>(binderService.getManagedObjectInjector()));
-        builder.addDependency(bindInfo.getParentContextServiceName(), ServiceBasedNamingStore.class, binderService.getNamingStoreInjector()).addListener((controller, event) -> {
+        ServiceBuilder<ManagedReferenceFactory> builder = serviceTarget.addService(getBinderServiceName(), this);
+        builder.addDependency(Services.FRAMEWORK_ACTIVE, BundleContext.class, new ManagedReferenceInjector<BundleContext>(getManagedObjectInjector()));
+        builder.addDependency(bindInfo.getParentContextServiceName(), ServiceBasedNamingStore.class, getNamingStoreInjector()).addListener((controller, event) -> {
             switch (event) {
                 case UP: {
                     bound.set(true);
@@ -73,7 +81,10 @@ final class BundleContextBindingService {
                 }
             }
         });
-        builder.setInitialMode(Mode.ON_DEMAND);
+        if (listener != null) {
+            builder.addListener(listener);
+        }
+        builder.setInitialMode(Mode.PASSIVE);
         return builder.install();
     }
 

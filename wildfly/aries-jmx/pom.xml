@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2026, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.jboss.osgi.wildfly</groupId>
+        <artifactId>jbosgi-wildfly</artifactId>
+        <version>2.14.0.Final</version>
+    </parent>
+
+    <name>JBossOSGi WildFly: Apache Aries JMX</name>
+    <description>
+        The Apache Aries JMX bundle of the server: org.apache.aries.jmx with the patched classes in src/main/java
+        (BundleStateMBean ActivationPolicyUsed item, BundleWiringStateMBean revisions without a wiring)
+    </description>
+
+    <artifactId>jbosgi-aries-jmx</artifactId>
+
+    <properties>
+        <aries.jmx.bundle.version>${version.apache.aries.jmx}.jbosgi-1</aries.jmx.bundle.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.aries.jmx</groupId>
+            <artifactId>org.apache.aries.jmx</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>osgi.core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- The content of the original bundle without the patched classes -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack-aries-jmx</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.aries.jmx</groupId>
+                                    <artifactId>org.apache.aries.jmx</artifactId>
+                                    <version>${version.apache.aries.jmx}</version>
+                                    <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                                    <excludes>org/apache/aries/jmx/codec/BundleData.class,org/apache/aries/jmx/codec/BundleData$Header.class,org/apache/aries/jmx/framework/wiring/BundleWiringState.class</excludes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- The manifest of the original bundle, with a version that tells the patched bundle apart -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>bundle-version</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <replace file="${project.build.outputDirectory}/META-INF/MANIFEST.MF" token="Bundle-Version: ${version.apache.aries.jmx}" value="Bundle-Version: ${aries.jmx.bundle.version}" />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

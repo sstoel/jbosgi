@@ -21,6 +21,8 @@
  */
 package org.jboss.as.osgi.management;
 
+import static org.jboss.as.osgi.OSGiMessages.MESSAGES;
+
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.OperationStepHandler;
@@ -30,6 +32,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.osgi.framework.Services;
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.startlevel.FrameworkStartLevel;
 
 /**
@@ -60,12 +63,9 @@ public abstract class StartLevelHandler implements OperationStepHandler {
             context.addStep(new OperationStepHandler() {
                 @Override
                 public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-                    ServiceController<?> controller = context.getServiceRegistry(true).getService(Services.SYSTEM_BUNDLE);
-                    if (controller == null || controller.getState() != ServiceController.State.UP) {
-                        context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
-                        return;
-                    }
-                    Bundle sysbundle = (Bundle) controller.getValue();
+                    Bundle sysbundle = getSystemBundle(context, true);
+                    if (sysbundle == null)
+                        throw MESSAGES.cannotChangeStartLevelFrameworkNotActive();
                     final FrameworkStartLevel frameworkStartLevel = sysbundle.adapt(FrameworkStartLevel.class);
                     final int previous = frameworkStartLevel.getStartLevel();
                     invokeOperation(sysbundle, context, operation);
@@ -94,15 +94,28 @@ public abstract class StartLevelHandler implements OperationStepHandler {
 
     @Override
     public void execute(OperationContext context, ModelNode operation) throws OperationFailedException {
-        ServiceController<?> controller = context.getServiceRegistry(false).getService(Services.SYSTEM_BUNDLE);
-        if (controller != null && controller.getState() == ServiceController.State.UP) {
-            Bundle sysbundle =  (Bundle) controller.getValue();
+        Bundle sysbundle = getSystemBundle(context, false);
+        if (sysbundle != null) {
             invokeOperation(sysbundle, context, operation);
         } else {
             // non-metric read-attribute handlers should not fail
             context.getResult().set(new ModelNode());
         }
         context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
+    }
+
+    /**
+     * The system bundle of the active framework, null when the framework is not active. A framework that is activated
+     * lazily does not demand the system bundle service, its system context is the value of the active framework.
+     */
+    static Bundle getSystemBundle(OperationContext context, boolean modify) {
+        ServiceController<?> controller = context.getServiceRegistry(modify).getService(Services.SYSTEM_BUNDLE);
+        if (controller != null && controller.getState() == ServiceController.State.UP)
+            return (Bundle) controller.getValue();
+        controller = context.getServiceRegistry(modify).getService(Services.FRAMEWORK_ACTIVE);
+        if (controller != null && controller.getState() == ServiceController.State.UP)
+            return ((BundleContext) controller.getValue()).getBundle();
+        return null;
     }
 
     abstract void invokeOperation(Bundle sysbundle, OperationContext context, ModelNode operation) throws OperationFailedException ;

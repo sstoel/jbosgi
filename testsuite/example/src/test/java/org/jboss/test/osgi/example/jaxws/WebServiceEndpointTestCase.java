@@ -277,6 +277,7 @@ public class WebServiceEndpointTestCase {
                 builder.addBundleSymbolicName(archive.getName());
                 builder.addBundleManifestVersion(2);
                 builder.addImportPackages(WebService.class, SOAPBinding.class);
+                builder.addManifestHeader("Web-ContextPath", "/bundle-c");
                 return builder.openStream();
             }
         });
@@ -296,6 +297,7 @@ public class WebServiceEndpointTestCase {
                 builder.addBundleActivator(DeferredFailActivator.class);
                 builder.addImportPackages(WebService.class, SOAPBinding.class);
                 builder.addImportPackages(BundleActivator.class);
+                builder.addManifestHeader("Web-ContextPath", "/bundle-d");
                 return builder.openStream();
             }
         });

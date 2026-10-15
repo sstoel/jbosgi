@@ -102,6 +102,7 @@
     </dependencyManagement>
 
     <modules>
+        <module>aries-jmx</module>
         <module>build</module>
         <module>subsystem</module>
         <module>integration</module>
