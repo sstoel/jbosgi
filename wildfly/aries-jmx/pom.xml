@@ -80,9 +80,30 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+                    <!-- The original manifest on its own, unpacked on every build: the manifest of the bundle is made from it -->
+                    <execution>
+                        <id>unpack-aries-jmx-manifest</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.aries.jmx</groupId>
+                                    <artifactId>org.apache.aries.jmx</artifactId>
+                                    <version>${version.apache.aries.jmx}</version>
+                                    <outputDirectory>${project.build.directory}/aries-jmx-manifest</outputDirectory>
+                                    <includes>META-INF/MANIFEST.MF</includes>
+                                    <overWrite>true</overWrite>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
-            <!-- The manifest of the original bundle, with a version that tells the patched bundle apart -->
+            <!-- The manifest of the original bundle, with a version that tells the patched bundle apart. It is copied from
+                 the original manifest first, so that a build without clean does not change the version again -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -95,6 +116,7 @@
                         </goals>
                         <configuration>
                             <target>
+                                <copy file="${project.build.directory}/aries-jmx-manifest/META-INF/MANIFEST.MF" tofile="${project.build.outputDirectory}/META-INF/MANIFEST.MF" overwrite="true" />
                                 <replace file="${project.build.outputDirectory}/META-INF/MANIFEST.MF" token="Bundle-Version: ${version.apache.aries.jmx}" value="Bundle-Version: ${aries.jmx.bundle.version}" />
                             </target>
                         </configuration>
