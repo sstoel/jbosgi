@@ -35,6 +35,7 @@ import org.jboss.as.ee.component.ComponentInstance;
 import org.jboss.as.ee.component.EEModuleDescription;
 import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.management.OperationAssociation;
+import org.jboss.as.osgi.service.BundleLifecycleIntegration;
 import org.jboss.as.server.deployment.AttachmentKey;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.Attachments.BundleState;
@@ -223,6 +224,11 @@ public class BundleActivateProcessor implements DeploymentUnitProcessor {
             StartCoordinator coordinator = depUnit.getAttachment(START_COORDINATOR_KEY);
             if (coordinator != null)
                 coordinator.attemptStarted();
+            // A deployed bundle that the activator uninstalls is undeployed after the operation that runs this service,
+            // not by a nested operation from this thread, which would wait for this service
+            boolean marked = BundleLifecycleIntegration.isDeploymentUndeploy();
+            if (!marked)
+                BundleLifecycleIntegration.setDeploymentUndeploy(true);
             try {
                 if (bundle.getState() != Bundle.ACTIVE) {
                     // The activator runs within the deploy operation: a bundle that it installs is installed directly, a
@@ -249,6 +255,8 @@ public class BundleActivateProcessor implements DeploymentUnitProcessor {
                     }
                 }
             } finally {
+                if (!marked)
+                    BundleLifecycleIntegration.setDeploymentUndeploy(false);
                 if (coordinator != null)
                     coordinator.attemptEnded();
             }
@@ -256,6 +264,20 @@ public class BundleActivateProcessor implements DeploymentUnitProcessor {
 
         @Override
         public void stop(StopContext context) {
+            // A deployed bundle that an activator uninstalls in its stop is undeployed after the operation that stops
+            // this service (an undeploy, a server stop), not by a nested operation from this thread
+            boolean marked = BundleLifecycleIntegration.isDeploymentUndeploy();
+            if (!marked)
+                BundleLifecycleIntegration.setDeploymentUndeploy(true);
+            try {
+                stopBundle();
+            } finally {
+                if (!marked)
+                    BundleLifecycleIntegration.setDeploymentUndeploy(false);
+            }
+        }
+
+        private void stopBundle() {
             // When the server stops, the framework moves to start level 0 first: the bundles are stopped by descending
             // start level, not in the order in which their deployments are stopped
             BundleManager manager = depUnit.getAttachment(OSGiConstants.BUNDLE_MANAGER_KEY);

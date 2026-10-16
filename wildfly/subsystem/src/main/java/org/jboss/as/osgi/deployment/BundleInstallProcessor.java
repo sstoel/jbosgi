@@ -30,9 +30,12 @@ import static org.jboss.msc.service.ServiceController.State.UP;
 import static org.jboss.osgi.framework.spi.IntegrationConstants.MODULE_IDENTIFIER_KEY;
 import static org.jboss.osgi.framework.spi.IntegrationConstants.STORAGE_STATE_KEY;
 
+import java.io.File;
+
 import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.service.BundleLifecycleIntegration;
 import org.jboss.as.osgi.service.InitialDeploymentTracker;
+import org.jboss.as.osgi.service.UninstalledDeployments;
 import org.jboss.as.server.Services;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.Attachments.BundleState;
@@ -40,6 +43,7 @@ import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
+import org.jboss.as.server.deployment.DeploymentUtils;
 import org.jboss.as.server.deployment.module.ResourceRoot;
 import org.jboss.msc.service.ServiceContainer;
 import org.jboss.msc.service.ServiceController;
@@ -78,6 +82,24 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
         final Deployment deployment = depUnit.getAttachment(OSGiConstants.DEPLOYMENT_KEY);
         if (deployment == null)
             return;
+
+        // The bundle of a deployment was uninstalled while the deployment could not be removed, e.g. while the server
+        // stopped: at boot the bundle is not installed again, the deployment stays inactive and is removed after the boot
+        String managementName = depUnit.getParent() == null ? depUnit.getAttachment(Attachments.MANAGEMENT_NAME) : null;
+        if (managementName != null) {
+            File storageArea = getStorageArea(phaseContext);
+            if (UninstalledDeployments.contains(storageArea, managementName)) {
+                if (!deploymentTracker.isComplete() && deploymentTracker.hasDeploymentName(depUnit.getName())) {
+                    LOGGER.infoRemoveDeploymentOfUninstalledBundle(managementName);
+                    depUnit.removeAttachment(OSGiConstants.DEPLOYMENT_KEY);
+                    DeploymentUtils.addDeferredModule(depUnit);
+                    BundleLifecycleIntegration.removeDeploymentOfUninstalledBundle(managementName);
+                    return;
+                }
+                // A deployment of the name is deployed again
+                UninstalledDeployments.remove(storageArea, managementName);
+            }
+        }
 
         try {
             BundleManager bundleManager = depUnit.getAttachment(OSGiConstants.BUNDLE_MANAGER_KEY);
@@ -129,8 +151,14 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
         if (uninstallRequired(depUnit, brev)) {
             BundleLifecycleIntegration.setDeploymentUndeploy(true);
             try {
-                int options = getUninstallOptions(bundleManager);
-                bundleManager.uninstallBundle(bundle, options);
+                if (isServerStopping(bundleManager)) {
+                    // The server stops or reloads, which stops the framework: the bundle is stopped and stays installed
+                    // with its persistent state (4.2.6), the framework goes away with the server
+                    if (bundle.getState() == Bundle.ACTIVE || bundle.getState() == Bundle.STARTING)
+                        bundleManager.stopBundle(bundle, Bundle.STOP_TRANSIENT);
+                } else {
+                    bundleManager.uninstallBundle(bundle, 0);
+                }
             } catch (BundleException ex) {
                 Deployment dep = depUnit.getAttachment(OSGiConstants.DEPLOYMENT_KEY);
                 LOGGER.errorFailedToUninstallDeployment(ex, dep);
@@ -143,6 +171,10 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
                 bundleManager.removeRevision(brev, 0);
             }
         }
+        // A revision that stays in use (removal pending) has no deployment any more: its removal does not undeploy a
+        // deployment of the same name that is deployed later. While the server stops the deployment stays in the model
+        if (brev.getState() != State.UNINSTALLED && !isServerStopping(bundleManager))
+            BundleLifecycleIntegration.setRevisionUndeployed(brev);
         retainContentOfRevisionInUse(depUnit, brev);
     }
 
@@ -204,14 +236,16 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
         return true;
     }
 
-    private int getUninstallOptions(BundleManager bundleManager) {
-        return isServerStopping(bundleManager) ? Bundle.STOP_TRANSIENT : 0;
+    private File getStorageArea(DeploymentPhaseContext phaseContext) {
+        ServiceController<?> controller = phaseContext.getServiceRegistry().getService(IntegrationServices.STORAGE_MANAGER_PLUGIN);
+        Object storageManager = controller != null && controller.getState() == UP ? controller.getValue() : null;
+        return storageManager instanceof StorageManager ? ((StorageManager) storageManager).getStorageArea() : null;
     }
 
     /**
      * True when the server stops or reloads
      */
-    static boolean isServerStopping(BundleManager bundleManager) {
+    public static boolean isServerStopping(BundleManager bundleManager) {
         ServiceContainer serviceContainer = bundleManager.getServiceContainer();
         ServiceController<?> controller = serviceContainer.getRequiredService(Services.JBOSS_SERVER_CONTROLLER);
         boolean stopRequested = controller.getState() == UP && (controller.getMode() == ServiceController.Mode.REMOVE || controller.getMode() == ServiceController.Mode.NEVER);

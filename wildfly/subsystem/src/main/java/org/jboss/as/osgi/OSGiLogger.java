@@ -129,4 +129,12 @@ public interface OSGiLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 11918, value = "Cannot apply strict boot delegation to module: %s")
     void warnCannotApplyStrictBootDelegation(@Cause Throwable cause, String moduleName);
+
+    @LogMessage(level = INFO)
+    @Message(id = 11919, value = "The bundle of deployment %s was uninstalled, the deployment is removed")
+    void infoRemoveDeploymentOfUninstalledBundle(String deploymentName);
+
+    @LogMessage(level = WARN)
+    @Message(id = 11920, value = "Cannot remove the deployment %s of an uninstalled bundle, it is removed after the next restart")
+    void warnCannotRemoveDeploymentOfUninstalledBundle(@Cause Throwable cause, String deploymentName);
 }

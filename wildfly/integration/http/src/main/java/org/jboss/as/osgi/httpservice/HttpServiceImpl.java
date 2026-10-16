@@ -145,6 +145,21 @@ final class HttpServiceImpl implements HttpService {
 
     @SuppressWarnings("rawtypes")
     private synchronized ServletBuilder registerInternal(String alias, Servlet servlet, Dictionary initparams, HttpContext httpContext, Type type) throws NamespaceException, ServletException {
+        // The alias is claimed before the web context exists, a registration that fails releases it
+        registry.reserve(alias, bundle);
+        boolean registered = false;
+        try {
+            ServletBuilder result = registerReserved(alias, servlet, initparams, httpContext, type);
+            registered = true;
+            return result;
+        } finally {
+            if (!registered)
+                registry.release(alias, bundle);
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private ServletBuilder registerReserved(String alias, Servlet servlet, Dictionary initparams, HttpContext httpContext, Type type) throws NamespaceException, ServletException {
         File storageDir = getDocumentRoot(alias);
         storageDir.mkdirs();
 
@@ -210,6 +225,9 @@ final class HttpServiceImpl implements HttpService {
         try {
             deploymentController.start();
         } catch (Exception ex) {
+            // The context that was created does not stay on the host
+            stopDeployment(deploymentController);
+            scWrapper.removeContext(servletWrapper.getContainerContext());
             throw new NamespaceException(WEB_LOGGER.startContextFailed(), ex);
         }
 
@@ -223,7 +241,13 @@ final class HttpServiceImpl implements HttpService {
             throw new ServletException(initFailure);
         }
 
-        registry.register(alias, bundle, deploymentController, servlet, type);
+        try {
+            registry.register(alias, bundle, deploymentController, servlet, type);
+        } catch (NamespaceException ex) {
+            stopDeployment(deploymentController);
+            scWrapper.removeContext(servletWrapper.getContainerContext());
+            throw ex;
+        }
         servletWrappers.put(alias, servletWrapper);
 
         // Must be added to the main mapper as no dynamic servlets usually

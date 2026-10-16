@@ -26,6 +26,7 @@ import static org.jboss.as.osgi.OSGiMessages.MESSAGES;
 import static org.jboss.as.server.Services.JBOSS_SERVER_CONTROLLER;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -41,13 +42,16 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ModelController;
 import org.jboss.as.controller.ModelControllerClientFactory;
+import org.jboss.as.controller.ProcessStateNotifier;
 import org.jboss.as.controller.client.ModelControllerClient;
 import org.jboss.as.controller.client.OperationBuilder;
 import org.jboss.as.controller.client.helpers.ClientConstants;
@@ -63,6 +67,7 @@ import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.deployment.BundleActivateProcessor;
 import org.jboss.as.osgi.deployment.BundleActivateProcessor.StartCoordinator;
 import org.jboss.as.osgi.deployment.BundleDeploymentProcessor;
+import org.jboss.as.osgi.deployment.BundleInstallProcessor;
 import org.jboss.as.osgi.management.OperationAssociation;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -139,6 +144,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     private static final ThreadLocal<Boolean> deploymentUndeploy = new ThreadLocal<Boolean>();
 
     private final InjectedValue<ModelControllerClientFactory> injectedModelControllerClientFactory = new InjectedValue<ModelControllerClientFactory>();
+    private final InjectedValue<ProcessStateNotifier> injectedProcessStateNotifier = new InjectedValue<ProcessStateNotifier>();
     private final InjectedValue<BundleManager> injectedBundleManager = new InjectedValue<BundleManager>();
     private final InjectedValue<XEnvironment> injectedEnvironment = new InjectedValue<XEnvironment>();
     private final InjectedValue<XResolver> injectedResolver = new InjectedValue<XResolver>();
@@ -154,6 +160,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     protected void addServiceDependencies(ServiceBuilder<BundleLifecycle> builder) {
         super.addServiceDependencies(builder);
         builder.addDependency(ServiceName.parse("org.wildfly.management.model-controller-client-factory"), ModelControllerClientFactory.class, injectedModelControllerClientFactory);
+        builder.addDependency(ServiceName.parse("org.wildfly.management.process-state-notifier"), ProcessStateNotifier.class, injectedProcessStateNotifier);
         builder.addDependency(IntegrationServices.STORAGE_MANAGER_PLUGIN, StorageManager.class, injectedStorageManager);
         builder.addDependency(IntegrationServices.DEPLOYMENT_PROVIDER_PLUGIN, DeploymentProvider.class, injectedDeploymentManager);
         builder.addDependency(IntegrationServices.LOCK_MANAGER_PLUGIN, LockManager.class, injectedLockManager);
@@ -178,10 +185,13 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 return thread;
             }
         });
+        current = this;
     }
 
     @Override
     public void stop(StopContext context) {
+        if (current == this)
+            current = null;
         undeployExecutor.shutdownNow();
         try {
             modelControllerClient.close();
@@ -195,6 +205,119 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     @Override
     protected BundleLifecycle createServiceValue(StartContext startContext) throws StartException {
         return new BundleLifecycleImpl();
+    }
+
+    private File getStorageArea() {
+        StorageManager storageManager = injectedStorageManager.getOptionalValue();
+        return storageManager != null ? storageManager.getStorageArea() : null;
+    }
+
+    /**
+     * Remove the deployment of an uninstalled bundle from the management model when the management operation that runs
+     * now is done. Until then the deployment is recorded as one to remove, also over a restart.
+     *
+     * @param deployment the deployment that is removed, null for the deployment that has the name
+     */
+    private void removeDeploymentLater(final String managementName, final Deployment deployment) {
+        final File storageArea = getStorageArea();
+        UninstalledDeployments.add(storageArea, managementName);
+        // While the server stops no operation runs, the deployment is removed after the next boot
+        final BundleManager bundleManager = injectedBundleManager.getValue();
+        if (BundleInstallProcessor.isServerStopping(bundleManager)) {
+            LOGGER.debugf("Remove the deployment of an uninstalled bundle after the next boot: %s", managementName);
+            return;
+        }
+        LOGGER.debugf("Remove the deployment of an uninstalled bundle later: %s", managementName);
+        Runnable remove = new Runnable() {
+            @Override
+            public void run() {
+                // An operation sees the model of the boot when the boot is done
+                try {
+                    awaitBootCompleted();
+                } catch (InterruptedException ex) {
+                    LOGGER.debugf("Remove the deployment of an uninstalled bundle after the next boot: %s", managementName);
+                    return;
+                }
+                if (BundleInstallProcessor.isServerStopping(bundleManager))
+                    return;
+                // The deployment was undeployed meanwhile, or a deployment of the same name replaced it
+                if (deployment != null && !isDeployed(bundleManager.getServiceContainer(), deployment)) {
+                    UninstalledDeployments.remove(storageArea, managementName);
+                    return;
+                }
+                try {
+                    undeployChecked(managementName);
+                    UninstalledDeployments.remove(storageArea, managementName);
+                } catch (Exception ex) {
+                    if (isInManagementModel(managementName)) {
+                        LOGGER.warnCannotRemoveDeploymentOfUninstalledBundle(ex, managementName);
+                    } else {
+                        UninstalledDeployments.remove(storageArea, managementName);
+                    }
+                }
+            }
+        };
+        try {
+            undeployExecutor.execute(remove);
+        } catch (RejectedExecutionException ex) {
+            // The server stops, the deployment is removed after the next boot
+            LOGGER.debugf("Remove the deployment of an uninstalled bundle after the next boot: %s", managementName);
+        }
+    }
+
+    private void awaitBootCompleted() throws InterruptedException {
+        ProcessStateNotifier processState = injectedProcessStateNotifier.getOptionalValue();
+        while (processState != null && processState.getCurrentState() == ControlledProcessState.State.STARTING)
+            Thread.sleep(100);
+    }
+
+    // Only a deployment that is not found is not in the model
+    private boolean isInManagementModel(String managementName) {
+        try {
+            ModelNode read = new ModelNode();
+            read.get(ClientConstants.OP).set("read-resource");
+            read.get(ClientConstants.OP_ADDR).add(ClientConstants.DEPLOYMENT, managementName);
+            ModelNode result = modelControllerClient.execute(read);
+            if (ClientConstants.SUCCESS.equals(result.get(ClientConstants.OUTCOME).asString()))
+                return true;
+            ModelNode failure = result.get(ClientConstants.FAILURE_DESCRIPTION);
+            return !(failure.isDefined() && failure.asString().contains("WFLYCTL0216"));
+        } catch (Exception ex) {
+            return true;
+        }
+    }
+
+    /**
+     * Undeploy and remove the deployment, an undeploy that is refused or rolled back fails
+     */
+    private void undeployChecked(String runtimeName) throws Exception {
+        DeploymentPlanBuilder builder = serverDeploymentManager.newDeploymentPlan();
+        UndeployDeploymentPlanBuilder undeployBuilder = builder.undeploy(runtimeName);
+        List<DeploymentAction> actions = new ArrayList<DeploymentAction>();
+        actions.add(undeployBuilder.getLastAction());
+        builder = undeployBuilder.andRemoveUndeployed();
+        actions.add(builder.getLastAction());
+        ServerDeploymentPlanResult planResult = serverDeploymentManager.execute(builder.build()).get();
+        for (DeploymentAction action : actions) {
+            ServerDeploymentActionResult actionResult = planResult.getDeploymentActionResult(action.getId());
+            if (actionResult == null)
+                throw new IllegalStateException("No result for: " + action.getType() + " " + runtimeName);
+            if (actionResult.getDeploymentException() != null)
+                throw new IllegalStateException(actionResult.getDeploymentException());
+            // A rolled back undeploy carries no exception
+            if (actionResult.getResult() != ServerUpdateActionResult.Result.EXECUTED)
+                throw new IllegalStateException(action.getType() + " of " + runtimeName + ": " + actionResult.getResult());
+        }
+    }
+
+    private static boolean isDeployed(ServiceContainer serviceContainer, Deployment deployment) {
+        DeploymentUnit depUnit = deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY);
+        if (depUnit == null || depUnit.getParent() != null)
+            return false;
+
+        // A deployment of the same name that was deployed again after this one has the same service name
+        ServiceController<?> controller = serviceContainer.getService(depUnit.getServiceName());
+        return controller != null && controller.getMode() != Mode.REMOVE && isServiceOf(controller, depUnit);
     }
 
     public static Deployment getDeployment(String runtimeName) {
@@ -222,7 +345,8 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     }
 
     /**
-     * Mark the current thread as the thread that undeploys a bundle deployment.
+     * Mark the current thread as the thread that undeploys a bundle deployment, or that starts or stops the bundle of a
+     * deployment.
      *
      * A management operation is active then. Other deployments cannot be undeployed before it completed.
      */
@@ -231,6 +355,25 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             deploymentUndeploy.set(Boolean.TRUE);
         else
             deploymentUndeploy.remove();
+    }
+
+    public static boolean isDeploymentUndeploy() {
+        return Boolean.TRUE.equals(deploymentUndeploy.get());
+    }
+
+    // The started service, which removes the deployments of uninstalled bundles that are found at boot
+    private static volatile BundleLifecycleIntegration current;
+
+    /**
+     * The bundle of the deployment was uninstalled while its deployment could not be removed, e.g. while the server
+     * stopped (see {@link UninstalledDeployments}). The deployment is removed when the operation that runs now (the
+     * boot) is done.
+     */
+    public static void removeDeploymentOfUninstalledBundle(String managementName) {
+        BundleLifecycleIntegration service = current;
+        if (service != null && service.undeployExecutor != null && !service.undeployExecutor.isShutdown()) {
+            service.removeDeploymentLater(managementName, null);
+        }
     }
 
     // The undeployed revisions in use that keep the content of their deployment, by deployment name
@@ -265,6 +408,14 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             retainedContents.values().remove(brev);
             VFSUtils.safeClose(brev.removeAttachment(RETAINED_CONTENT_KEY));
         }
+    }
+
+    /**
+     * The deployment of the revision is undeployed by a management operation (undeploy, replace, refresh): a later
+     * removal of the revision does not undeploy a deployment of the name
+     */
+    public static void setRevisionUndeployed(XBundleRevision brev) {
+        brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
     }
 
     public static boolean isBundleRefreshing(XBundle bundle) {
@@ -597,7 +748,14 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             XBundleRevision brev = bundle.getBundleRevision();
             Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
             if (deployment == null || !isUndeployRequired(bundle, deployment)) {
+                // A deployment that cannot be undeployed now is removed after the operation that runs now, also when
+                // the bundle stays in use (removal pending): the uninstall survives a restart
+                String managementName = deployment != null && isUndeployDeferred(bundle, deployment) ? getManagementName(deployment) : null;
                 bundleManager.uninstallBundle(bundle, options);
+                if (managementName != null && bundle.getState() == Bundle.UNINSTALLED && !Boolean.TRUE.equals(brev.getAttachment(REVISION_UNDEPLOYED_KEY))) {
+                    brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
+                    removeDeploymentLater(managementName, deployment);
+                }
                 return;
             }
 
@@ -622,32 +780,33 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         private boolean isUndeployRequired(XBundle bundle, Deployment deployment) {
             if (bundle.getState() == Bundle.UNINSTALLED || isBundleRefreshing(bundle) || getManagementName(deployment) == null)
                 return false;
-            // Within a management operation or under the locks of the framework the undeploy cannot complete
-            if (OperationAssociation.INSTANCE.getAssociation() != null || injectedLockManager.getValue().getCurrentLockContext() != null)
-                return false;
-            if (Boolean.TRUE.equals(deploymentUndeploy.get()))
+            if (isUndeployDeferred())
                 return false;
             return isDeployed(deployment);
         }
 
-        private void undeployChecked(String runtimeName) throws Exception {
-            DeploymentPlanBuilder builder = serverDeploymentManager.newDeploymentPlan();
-            UndeployDeploymentPlanBuilder undeployBuilder = builder.undeploy(runtimeName);
-            List<DeploymentAction> actions = new ArrayList<DeploymentAction>();
-            actions.add(undeployBuilder.getLastAction());
-            builder = undeployBuilder.andRemoveUndeployed();
-            actions.add(builder.getLastAction());
-            ServerDeploymentPlanResult planResult = serverDeploymentManager.execute(builder.build()).get();
-            for (DeploymentAction action : actions) {
-                ServerDeploymentActionResult actionResult = planResult.getDeploymentActionResult(action.getId());
-                if (actionResult == null)
-                    throw new IllegalStateException("No result for: " + action.getType() + " " + runtimeName);
-                if (actionResult.getDeploymentException() != null)
-                    throw new IllegalStateException(actionResult.getDeploymentException());
-                // A rolled back undeploy carries no exception
-                if (actionResult.getResult() != ServerUpdateActionResult.Result.EXECUTED)
-                    throw new IllegalStateException(action.getType() + " of " + runtimeName + ": " + actionResult.getResult());
-            }
+        /**
+         * The bundle has a deployment of its own that cannot be undeployed now
+         */
+        private boolean isUndeployDeferred(XBundle bundle, Deployment deployment) {
+            if (bundle.getState() == Bundle.UNINSTALLED || isBundleRefreshing(bundle) || getManagementName(deployment) == null)
+                return false;
+            // While the server stops the deployment stays in the management model, also when its services are gone
+            if (BundleInstallProcessor.isServerStopping(bundleManager))
+                return !Boolean.TRUE.equals(bundle.getBundleRevision().getAttachment(REVISION_UNDEPLOYED_KEY));
+            return isUndeployDeferred() && isDeployed(deployment);
+        }
+
+        /**
+         * Within a management operation, under the locks of the framework, in the start or stop of a bundle by its
+         * deployment, or while the server stops a server undeploy cannot complete now
+         */
+        private boolean isUndeployDeferred() {
+            if (OperationAssociation.INSTANCE.getAssociation() != null || injectedLockManager.getValue().getCurrentLockContext() != null)
+                return true;
+            if (Boolean.TRUE.equals(deploymentUndeploy.get()))
+                return true;
+            return BundleInstallProcessor.isServerStopping(bundleManager);
         }
 
         @Override
@@ -663,45 +822,38 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         }
 
         private void undeployRevision(final XBundleRevision brev) {
-            // Bundle.uninstall undeployed the deployment already
+            // Bundle.uninstall undeployed the deployment already, or it is removed after the operation that runs now
             if (Boolean.TRUE.equals(brev.getAttachment(REVISION_UNDEPLOYED_KEY)))
                 return;
 
-            final Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
-            final boolean deferred = Boolean.TRUE.equals(deploymentUndeploy.get());
-            Runnable undeploy = new Runnable() {
-                @Override
-                public void run() {
-                    // The deployment may be gone already, or it is part of another deployment
-                    String managementName = getManagementName(deployment);
-                    if (managementName == null || isDeployed(deployment) == false)
-                        return;
+            // The deployment may be gone already, or it is part of another deployment. While the server stops the
+            // deployment stays in the management model, also when its services are gone
+            Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
+            String managementName = getManagementName(deployment);
+            boolean serverStopping = BundleInstallProcessor.isServerStopping(bundleManager);
+            if (managementName == null || (!serverStopping && isDeployed(deployment) == false))
+                return;
 
-                    ServerDeploymentHelper server = new ServerDeploymentHelper(serverDeploymentManager);
-                    try {
-                        server.undeploy(managementName);
-                    } catch (Exception ex) {
-                        LOGGER.warnCannotUndeployBundleRevision(ex, brev);
-                    }
-                }
-            };
+            // A bundle that was uninstalled while it was in use is removed when another bundle gets undeployed. A bundle
+            // is also uninstalled in the start or stop of the bundle of a deployment, within a management operation, or
+            // while the server stops. Its deployment can only be undeployed after that operation
+            if (Boolean.TRUE.equals(deploymentUndeploy.get()) || OperationAssociation.INSTANCE.getAssociation() != null || serverStopping) {
+                brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
+                removeDeploymentLater(managementName, deployment);
+                return;
+            }
 
-            // A bundle that was uninstalled while it was in use is removed when another bundle gets undeployed.
-            // Its deployment can only be undeployed after that operation
-            if (deferred)
-                undeployExecutor.execute(undeploy);
-            else
-                undeploy.run();
+            ServerDeploymentHelper server = new ServerDeploymentHelper(serverDeploymentManager);
+            try {
+                server.undeploy(managementName);
+                brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
+            } catch (Exception ex) {
+                LOGGER.warnCannotUndeployBundleRevision(ex, brev);
+            }
         }
 
         private boolean isDeployed(Deployment deployment) {
-            DeploymentUnit depUnit = deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY);
-            if (depUnit == null || depUnit.getParent() != null)
-                return false;
-
-            // A deployment of the same name that was deployed again after this one has the same service name
-            ServiceController<?> controller = bundleManager.getServiceContainer().getService(depUnit.getServiceName());
-            return controller != null && controller.getMode() != Mode.REMOVE && isServiceOf(controller, depUnit);
+            return BundleLifecycleIntegration.isDeployed(bundleManager.getServiceContainer(), deployment);
         }
 
         @Override
@@ -718,6 +870,80 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 if (!related)
                     it.remove();
             }
+        }
+
+        /**
+         * Wait until the activated deferred phase of the deployment started its bundle: the Activate service of the
+         * deployment is UP. A service of the deployment that fails to start fails the activation, and so does a
+         * deployment that is undeployed meanwhile. When the services of the deployment do not come up within the blocking
+         * timeout of the management operations, the activation fails with those that have unavailable dependencies.
+         */
+        private void awaitDeferredPhase(DeploymentUnit depUnit, ServiceController<Phase> phaseService, ServiceController<?> parentDeploymentService,
+                Set<ServiceController<?>> failed, Set<ServiceController<?>> problems) {
+            ServiceContainer serviceContainer = phaseService.getServiceContainer();
+            ServiceName activateName = depUnit.getServiceName().append("Activate");
+            long timeout = TimeUnit.SECONDS.toMillis(Long.getLong("jboss.as.management.blocking.timeout", 300));
+            long deadline = System.currentTimeMillis() + timeout;
+            for (int round = 0;; round++) {
+                ServiceController<?> activate = serviceContainer.getService(activateName);
+                if (activate != null && isServiceOf(activate, depUnit)) {
+                    State state = activate.getState();
+                    if (state == State.UP)
+                        return;
+                    if (state == State.START_FAILED) {
+                        failed.add(activate);
+                        return;
+                    }
+                }
+                // The deployment was undeployed, or its phase deactivated again
+                if (phaseService.getState() == State.REMOVED || phaseService.getMode() != Mode.ACTIVE) {
+                    problems.add(phaseService);
+                    return;
+                }
+                // Another service of the deployment that failed to start keeps the Activate service down
+                if (round % 10 == 0) {
+                    for (ServiceController<?> controller : getDeploymentServices(serviceContainer, depUnit)) {
+                        if (controller.getState() == State.START_FAILED)
+                            failed.add(controller);
+                    }
+                    retainDeploymentServices(failed, phaseService, parentDeploymentService);
+                    if (!failed.isEmpty())
+                        return;
+                }
+                if (System.currentTimeMillis() > deadline) {
+                    for (ServiceController<?> controller : getDeploymentServices(serviceContainer, depUnit)) {
+                        if (!controller.getUnavailableDependencies().isEmpty())
+                            problems.add(controller);
+                    }
+                    retainDeploymentServices(problems, phaseService, parentDeploymentService);
+                    if (problems.isEmpty())
+                        problems.add(phaseService);
+                    LOGGER.debugf("Deferred module phase not activated in %d ms: %s", timeout, problems);
+                    return;
+                }
+                try {
+                    Thread.sleep(20);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    problems.add(phaseService);
+                    return;
+                }
+            }
+        }
+
+        // The services of the deployment of the unit, by their names
+        private List<ServiceController<?>> getDeploymentServices(ServiceContainer serviceContainer, DeploymentUnit depUnit) {
+            DeploymentUnit rootUnit = depUnit.getParent() != null ? depUnit.getParent() : depUnit;
+            ServiceName rootName = rootUnit.getServiceName();
+            List<ServiceController<?>> result = new ArrayList<ServiceController<?>>();
+            for (ServiceName serviceName : serviceContainer.getServiceNames()) {
+                if (rootName.isParentOf(serviceName)) {
+                    ServiceController<?> controller = serviceContainer.getService(serviceName);
+                    if (controller != null)
+                        result.add(controller);
+                }
+            }
+            return result;
         }
 
         private void activateDeferredPhase(XBundle bundle, int options, DeploymentUnit depUnit, ServiceController<Phase> phaseService,
@@ -746,19 +972,17 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             Set<ServiceController<?>> failed = new HashSet<>();
             Set<ServiceController<?>> problems = new HashSet<>();
 
-            try {
-                phaseService.setMode(Mode.ACTIVE);
-                phaseService.getServiceContainer().awaitStability(failed, problems);
-            } catch (final InterruptedException ex) {
-                // ignore
-            }
+            // Wait for this deployment only. The caller may run in the start of a service (the activator of another
+            // bundle, a web application that starts), the container is not stable before that start returns
+            phaseService.setMode(Mode.ACTIVE);
+            awaitDeferredPhase(depUnit, phaseService, parentDeploymentService, failed, problems);
 
             // The count of activations is that of the completed ones: the processors of the first activation install the
             // bindings of the module (java:module/env), only a later activation finds them installed
             if (failed.isEmpty() && problems.isEmpty())
                 depUnit.getAttachment(Attachments.DEFERRED_ACTIVATION_COUNT).incrementAndGet();
 
-            // The container reports every service that failed or has a problem, only those of this deployment are relevant
+            // Only the services of this deployment are relevant
             retainDeploymentServices(failed, phaseService, parentDeploymentService);
             retainDeploymentServices(problems, phaseService, parentDeploymentService);
 

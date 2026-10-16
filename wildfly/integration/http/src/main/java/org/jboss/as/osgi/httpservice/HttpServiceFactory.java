@@ -85,12 +85,32 @@ final class HttpServiceFactory implements ServiceFactory<HttpService> {
 
         static GlobalRegistry INSTANCE = new GlobalRegistry();
         private Map<String, Registration> registrations = new HashMap<String, Registration>();
+        // The aliases of the registrations in progress, by the bundle that registers them
+        private Map<String, Bundle> reservations = new HashMap<String, Bundle>();
 
         private GlobalRegistry() {
         }
 
+        /**
+         * Claim the alias for a registration of the bundle before its web context is created: of two registrations of
+         * an alias at the same time only one gets that far, the other fails without side effects (102.4)
+         */
+        synchronized void reserve(String alias, Bundle bundle) throws NamespaceException {
+            if (exists(alias) || reservations.containsKey(alias)) { throw new NamespaceException(OSGiMessages.MESSAGES.aliasMappingAlreadyExists(alias)); }
+            reservations.put(alias, bundle);
+        }
+
+        /**
+         * The registration of the alias by the bundle failed
+         */
+        synchronized void release(String alias, Bundle bundle) {
+            reservations.remove(alias, bundle);
+        }
+
         synchronized Registration register(String alias, Bundle bundle, WebDeploymentController context, Servlet servlet, Registration.Type type) throws NamespaceException {
-            if (exists(alias)) { throw new NamespaceException(OSGiMessages.MESSAGES.aliasMappingAlreadyExists(alias)); }
+            Bundle reservedBy = reservations.get(alias);
+            if (exists(alias) || (reservedBy != null && reservedBy != bundle)) { throw new NamespaceException(OSGiMessages.MESSAGES.aliasMappingAlreadyExists(alias)); }
+            reservations.remove(alias);
 
             LOGGER.infoRegisterHttpServiceAlias(alias);
 

@@ -38,6 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.deployment.BundleDeploymentProcessor;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -445,10 +446,11 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
          */
         @Override
         public void removeModule(XBundleRevision brev) {
-            deactivateDeferredPhase(brev);
-
             // The services belong to another revision when that has taken over the identifier
             ModuleIdentifier identifier = brev.getModuleIdentifier();
+            XBundleRevision owner = moduleOwners.get(identifier.toString());
+            deactivateDeferredPhase(brev, owner == null || owner == brev);
+
             if (moduleOwners.remove(identifier.toString(), brev) == false && moduleOwners.containsKey(identifier.toString()))
                 return;
 
@@ -495,18 +497,26 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
         }
 
         /**
-         * The activated deferred phase of a deployment depends on the module of the bundle.
+         * The FIRST_MODULE_USE phase of every bundle deployment depends on the module of the bundle, also when it was
+         * not deferred (DeferredPhaseProcessor).
          *
-         * A bundle that is uninstalled while it is in use stays deployed. Its module is removed when it is not in
-         * use any more, the deployment must not have a missing dependency then.
+         * The module is removed while the deployment is still deployed: a refresh unresolves the bundle before its
+         * deployment is replaced, an uninstall in the start or stop of a deployment or within a management operation
+         * undeploys the deployment after that operation, a bundle that is uninstalled while it is in use stays deployed
+         * until it is not in use any more. The deployment must not have a missing dependency meanwhile: the management
+         * operation that runs at that moment would fail for it and roll back.
          */
-        private void deactivateDeferredPhase(XBundleRevision brev) {
+        private void deactivateDeferredPhase(XBundleRevision brev, boolean moduleRemoved) {
             // The deployment of the revision, the bundle has the deployment of its current revision
             Deployment deployment = brev.getAttachment(IntegrationConstants.DEPLOYMENT_KEY);
             if (deployment == null)
                 deployment = brev.getBundle().adapt(Deployment.class);
             DeploymentUnit depUnit = deployment != null ? deployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY) : null;
-            if (depUnit == null || DeploymentUtils.getDeferredModules(depUnit).contains(depUnit.getName()) == false)
+            if (depUnit == null)
+                return;
+            // A phase that was not deferred depends on the module of the revision of the deployment, which is removed now
+            boolean deferred = DeploymentUtils.getDeferredModules(depUnit).contains(depUnit.getName());
+            if (!deferred && (!moduleRemoved || depUnit.getAttachment(OSGiConstants.BUNDLE_REVISION_KEY) != brev))
                 return;
 
             ServiceName phaseName = DeploymentUtils.getDeploymentUnitPhaseServiceName(depUnit, Phase.FIRST_MODULE_USE);
