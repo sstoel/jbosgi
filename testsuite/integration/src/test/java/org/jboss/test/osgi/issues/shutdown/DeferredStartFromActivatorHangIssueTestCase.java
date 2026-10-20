@@ -511,6 +511,11 @@ public class DeferredStartFromActivatorHangIssueTestCase {
                 return FileVisitResult.CONTINUE;
             }
         });
+        // Without the deployments that the Arquillian server persisted: their content is in standalone/data, which is not
+        // copied, and the server would not boot (WFLYSRV0137)
+        Path config = target.toPath().resolve("standalone/configuration/standalone-osgi.xml");
+        String xml = new String(Files.readAllBytes(config), StandardCharsets.UTF_8);
+        Files.write(config, xml.replaceAll("(?s)\\s*<deployments>.*?</deployments>", "").getBytes(StandardCharsets.UTF_8));
         new File(target, "bin/standalone.sh").setExecutable(true);
         return home = target.getCanonicalFile();
     }

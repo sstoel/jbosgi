@@ -99,10 +99,10 @@ import org.osgi.framework.BundleContext;
  * </pre>
  * (Prerequisite: the patched org.wildfly:wildfly-dist:41.0.1.Final:tar.gz of the RTR WildFly fork build in the local
  * Maven repository. The test is not an Arquillian test: it starts and stops its own copy of the server with port
- * offset 500 (management 10490), so -Darq... options have no effect on it.)
- * The port offset can be overridden with the system property issue.port.offset (default 500; management 9990+n,
- * HTTP 8080+n), e.g. append {@code -Dissue.port.offset=300} to the mvn command to run the test beside a server that
- * uses offset 500.
+ * offset 1300 (management 11290), so -Darq... options have no effect on it.)
+ * The port offset can be overridden with the system property issue.port.offset (default 1300; management 9990+n,
+ * HTTP 8080+n). The default is not 500, the offset that the reproduction of the Arquillian issue tests gives the
+ * Arquillian server: the test would shut that server down.
  * <h2>Observed</h2>
  * <pre>
  * testNewBundleDoesNotGetDataOfAnotherBundle: Expected the new bundle datamix-b to start with an empty data area,
@@ -135,7 +135,7 @@ import org.osgi.framework.BundleContext;
  */
 public class ScannerBundleDataMixupIssueTestCase {
 
-    static final int OFFSET = Integer.getInteger("issue.port.offset", 500);
+    static final int OFFSET = Integer.getInteger("issue.port.offset", 1300);
     static final int MGMT_PORT = 9990 + OFFSET;
 
     /** Writes its own symbolic name into owner.txt of its data area once, records what it finds on every start */
@@ -191,6 +191,11 @@ public class ScannerBundleDataMixupIssueTestCase {
                 return FileVisitResult.CONTINUE;
             }
         });
+        // Without the deployments that the Arquillian server persisted: their content is in standalone/data, which is not
+        // copied, and the server would not boot (WFLYSRV0137)
+        Path config = target.toPath().resolve("standalone/configuration/standalone-osgi.xml");
+        String xml = new String(Files.readAllBytes(config), StandardCharsets.UTF_8);
+        Files.write(config, xml.replaceAll("(?s)\\s*<deployments>.*?</deployments>", "").getBytes(StandardCharsets.UTF_8));
         new File(target, "bin/standalone.sh").setExecutable(true);
         return home = target.getCanonicalFile();
     }
