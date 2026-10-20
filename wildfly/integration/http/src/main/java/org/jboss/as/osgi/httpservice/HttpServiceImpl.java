@@ -90,6 +90,8 @@ final class HttpServiceImpl implements HttpService {
     private final Map<HttpContext, ShareableContextWrapper> contexts = new WeakHashMap<HttpContext, ShareableContextWrapper>();
     // The servlet wrappers of the registrations by alias
     private final Map<String, SecurityServletWrapper> servletWrappers = new ConcurrentHashMap<String, SecurityServletWrapper>();
+    // The bundle released the service, its registrations are unregistered
+    private volatile boolean released;
 
     HttpServiceImpl(ServerEnvironment serverEnvironment, CommonWebServer webServer, WebHost virtualHost, Bundle bundle) {
         this.registry = GlobalRegistry.INSTANCE;
@@ -242,13 +244,21 @@ final class HttpServiceImpl implements HttpService {
         }
 
         try {
-            registry.register(alias, bundle, deploymentController, servlet, type);
+            registry.register(alias, bundle, deploymentController, servletWrapper.getContainerContext(), servlet, type);
         } catch (NamespaceException ex) {
             stopDeployment(deploymentController);
             scWrapper.removeContext(servletWrapper.getContainerContext());
             throw ex;
         }
         servletWrappers.put(alias, servletWrapper);
+
+        // The bundle released the service while the registration was in progress, its registrations are gone
+        if (released) {
+            Registration reg = registry.unregister(alias, bundle);
+            if (reg != null)
+                unregisterInternal(reg);
+            throw new IllegalStateException(WEB_LOGGER.httpServiceReleased(bundle));
+        }
 
         // Must be added to the main mapper as no dynamic servlets usually
         /*Mapper mapper = webServer.getService().getMapper();
@@ -275,6 +285,10 @@ final class HttpServiceImpl implements HttpService {
     @Override
     public HttpContext createDefaultHttpContext() {
         return new DefaultHttpContext(bundle);
+    }
+
+    void release() {
+        released = true;
     }
 
     void unregisterInternal(Registration reg) {

@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import org.jboss.as.osgi.OSGiConstants;
@@ -50,6 +51,7 @@ import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.moduleservice.ModuleDefinition;
 import org.jboss.as.server.moduleservice.ModuleLoadService;
+import org.jboss.as.server.moduleservice.ModuleResolvePhaseService;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.modules.DependencySpec;
 import org.jboss.modules.Module;
@@ -84,6 +86,7 @@ import org.jboss.osgi.resolver.XBundle;
 import org.jboss.osgi.resolver.XBundleRevision;
 import org.jboss.osgi.resolver.XIdentityCapability;
 import org.jboss.osgi.resolver.spi.AbstractBundleWiring;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleRevisions;
 import org.osgi.framework.wiring.BundleWire;
 import org.osgi.framework.wiring.BundleWiring;
@@ -101,6 +104,8 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
     private final Set<String> bundleModules = ConcurrentHashMap.newKeySet();
     private final Set<String> strictModules = new HashSet<String>();
     private final Map<String, XBundleRevision> moduleOwners = new ConcurrentHashMap<String, XBundleRevision>();
+    // The module of a deployment name whose current revision has an identifier of its own: alias -> identifier
+    private final Map<String, String> moduleAliases = new ConcurrentHashMap<String, String>();
     private final boolean strictBootDelegation;
     private ServiceContainer serviceContainer;
     private ServiceTarget serviceTarget;
@@ -327,7 +332,8 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
             // that has it is in use (see getModuleIdentifier), otherwise the revision that is deployed now takes it over
             XBundleRevision previous = moduleOwners.put(identifier, brev);
             if (previous != brev && serviceContainer.getService(moduleSpecName) != null) {
-                LOGGER.debugf("Module %s is taken over from: %s", identifier, previous);
+                LOGGER.debugf("Module %s is taken over from: %s", identifier, previous != null ? previous : "the alias to " + moduleAliases.get(identifier));
+                moduleAliases.remove(identifier);
                 removeModuleServices(brev.getModuleIdentifier(), true);
             }
 
@@ -459,6 +465,81 @@ final class ModuleLoaderIntegration extends FrameworkModuleLoaderPlugin {
                 strictModules.remove(identifier.toString());
             }
             removeModuleServices(identifier, false);
+
+            // An alias to the module goes with it
+            for (Map.Entry<String, String> entry : moduleAliases.entrySet()) {
+                if (entry.getValue().equals(identifier.toString()) && moduleAliases.remove(entry.getKey(), entry.getValue())) {
+                    LOGGER.debugf("Remove module alias %s to: %s", entry.getKey(), identifier);
+                    removeModuleServices(ModuleIdentifier.fromString(entry.getKey()), false);
+                }
+            }
+
+            // The revision that held the identifier of a deployment is gone: the current revision of that deployment
+            // got an identifier of its own meanwhile, the deployments that name the module get it through an alias
+            aliasToCurrentRevision(identifier.toString());
+        }
+
+        /**
+         * The module of a deployment name, deployment.&lt;name&gt;, is an alias to the module of the current revision of the
+         * deployment when that has an identifier of its own: it was installed while a revision that is removed now held the
+         * name (an uninstalled bundle or the revision before an update, in use). The deployments that name the module, e.g.
+         * a WAR with Dependencies: deployment.&lt;name&gt;, get the current revision; they lose the module otherwise and
+         * no deployment of that name could be deployed again.
+         */
+        private void aliasToCurrentRevision(final String alias) {
+            String target = null;
+            for (Map.Entry<String, XBundleRevision> entry : moduleOwners.entrySet()) {
+                XBundleRevision owner = entry.getValue();
+                XBundle bundle = owner.getBundle();
+                if (entry.getKey().equals(alias) || bundle.getState() == Bundle.UNINSTALLED || bundle.getBundleRevision() != owner)
+                    continue;
+                Deployment deployment = bundle.adapt(Deployment.class);
+                ModuleIdentifier deploymentIdentifier = deployment != null ? deployment.getAttachment(MODULE_IDENTIFIER_KEY) : null;
+                if (deploymentIdentifier != null && alias.equals(deploymentIdentifier.toString())) {
+                    target = entry.getKey();
+                    break;
+                }
+            }
+            if (target == null)
+                return;
+
+            // The alias gets the service names of the module, once the services of the removed module are gone
+            final String aliasTarget = target;
+            final AtomicBoolean installed = new AtomicBoolean();
+            ServiceController<?> specController = serviceContainer.getService(ServiceModuleLoader.moduleSpecServiceName(alias));
+            if (specController != null) {
+                specController.addListener(new LifecycleListener() {
+                    @Override
+                    public void handleEvent(ServiceController<?> controller, LifecycleEvent event) {
+                        if (event == LifecycleEvent.REMOVED && installed.compareAndSet(false, true))
+                            installModuleAlias(alias, aliasTarget);
+                    }
+                });
+            }
+            if (serviceContainer.getService(ServiceModuleLoader.moduleSpecServiceName(alias)) == null && installed.compareAndSet(false, true))
+                installModuleAlias(alias, aliasTarget);
+        }
+
+        private void installModuleAlias(String alias, String target) {
+            // The name was taken meanwhile, or the module went away
+            if (moduleOwners.containsKey(alias) || moduleOwners.containsKey(target) == false || moduleAliases.putIfAbsent(alias, target) != null)
+                return;
+            LOGGER.debugf("Add module alias %s to: %s", alias, target);
+            try {
+                ServiceName specName = ServiceModuleLoader.moduleSpecServiceName(alias);
+                Set<ModuleDependency> dependencies = Collections.singleton(new ModuleDependency(null, target, false, false, false, false));
+                ModuleDefinition definition = new ModuleDefinition(alias, dependencies, ModuleSpec.buildAlias(alias, target).create());
+                ServiceBuilder sb = serviceTarget.addService(specName);
+                Consumer<ModuleDefinition> c = sb.provides(specName);
+                sb.requires(ServiceModuleLoader.moduleSpecServiceName(target));
+                sb.setInstance(new ModuleDefinitionService(c, definition));
+                sb.install();
+                ModuleLoadService.installAliases(serviceTarget, alias, Collections.singletonList(target));
+                ModuleResolvePhaseService.installService(serviceTarget, definition);
+            } catch (RuntimeException ex) {
+                moduleAliases.remove(alias, target);
+                LOGGER.debugf(ex, "Cannot add module alias %s to: %s", alias, target);
+            }
         }
 
         private void removeModuleServices(ModuleIdentifier identifier, boolean awaitRemoval) {

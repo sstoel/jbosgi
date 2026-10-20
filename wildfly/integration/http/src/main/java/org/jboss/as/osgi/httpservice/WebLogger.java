@@ -63,4 +63,7 @@ public interface WebLogger extends BasicLogger {
 
     @Message(id = 18040, value = "Failed to start context")
     String startContextFailed();
+
+    @Message(id = 18041, value = "The HttpService of %s was released")
+    String httpServiceReleased(Object bundle);
 }

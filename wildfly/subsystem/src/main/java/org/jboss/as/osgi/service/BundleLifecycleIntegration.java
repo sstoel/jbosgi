@@ -31,6 +31,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,6 +50,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 
 import org.jboss.as.controller.ControlledProcessState;
 import org.jboss.as.controller.ModelController;
@@ -75,6 +79,7 @@ import org.jboss.as.server.deployment.DeploymentUtils;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.msc.service.LifecycleEvent;
 import org.jboss.msc.service.LifecycleListener;
@@ -444,6 +449,21 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         return name + "-rev" + revid;
     }
 
+    // The runtime name of the deployment of a bundle location: the location without the query of a URI
+    static String toRuntimeName(String location) {
+        String runtimeName = location;
+        try {
+            new URI(runtimeName);
+            int queryIndex = runtimeName.indexOf('?');
+            if (queryIndex > 0) {
+                runtimeName = runtimeName.substring(0, queryIndex);
+            }
+        } catch (URISyntaxException ex) {
+            // not a URI
+        }
+        return runtimeName;
+    }
+
     /**
      * Whether the runtime name is one that {@link #getRevisionRuntimeName(String, int)} gives for the name
      */
@@ -467,9 +487,11 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
     }
 
     /**
-     * The location of the bundle of a deployment: its runtime name, or the name of the deployment in the management
-     * model when the deployment has the runtime name of an updated revision. An updated bundle keeps its location
-     * (4.4.1), also when the server starts again with the deployment of the update.
+     * The location of the bundle of a deployment: its runtime name, or the runtime name that the deployment had before
+     * an update when it has the runtime name of an updated revision. An updated bundle keeps its location (4.4.1), also
+     * when the server starts again with the deployment of the update. The runtime name of a revision is that of the
+     * bundle location with -revN: when the deployment has the name of the location in the management model, else when
+     * the deployment has a runtime name of its own of that form.
      */
     public static String getBundleLocation(DeploymentUnit depUnit) {
         String runtimeName = depUnit.getName();
@@ -477,8 +499,29 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             String managementName = depUnit.getAttachment(Attachments.MANAGEMENT_NAME);
             if (managementName != null && isRevisionRuntimeName(runtimeName, managementName))
                 return managementName;
+            String location = getRevisionBaseName(runtimeName);
+            if (managementName != null && !managementName.equals(runtimeName) && location != null)
+                return location;
         }
         return runtimeName;
+    }
+
+    /**
+     * The name that {@link #getRevisionRuntimeName(String, int)} gave the runtime name for, null when the runtime name is
+     * not of that form
+     */
+    static String getRevisionBaseName(String runtimeName) {
+        int dotindex = runtimeName.length() - 4;
+        String suffix = dotindex > 0 && runtimeName.charAt(dotindex) == '.' ? runtimeName.substring(dotindex) : "";
+        String base = runtimeName.substring(0, runtimeName.length() - suffix.length());
+        int index = base.lastIndexOf("-rev");
+        if (index <= 0 || index + 4 == base.length())
+            return null;
+        for (int i = index + 4; i < base.length(); i++) {
+            if (!Character.isDigit(base.charAt(i)))
+                return null;
+        }
+        return base.substring(0, index) + suffix;
     }
 
     /**
@@ -592,8 +635,14 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 return bundleManager.installBundleRevision(context, deployment, null);
             }
 
+            // The runtime name of the revision is derived from the runtime name of the bundle's deployment, its location: not
+            // from the name of the deployment, which may differ. It is not the runtime name of the current revision
+            String baseName = toRuntimeName(bundle.getLocation());
+            DeploymentUnit originUnit = originDeployment.getAttachment(BundleDeploymentProcessor.DEPLOYMENT_UNIT_KEY);
             int revid = bundle.adapt(BundleRevisions.class).getRevisions().size();
-            String runtimeName = getRevisionRuntimeName(managementName, revid);
+            String runtimeName = getRevisionRuntimeName(baseName, revid);
+            while (originUnit != null && runtimeName.equals(originUnit.getName()))
+                runtimeName = getRevisionRuntimeName(baseName, ++revid);
             deployment.putAttachment(RUNTIME_NAME_KEY, runtimeName);
             LOGGER.debugf("Update deployment %s with: %s", managementName, deployment);
             putDeployment(runtimeName, deployment);
@@ -607,6 +656,8 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 }
                 // The deployment of the old revision is gone, the revision is removed with the next refresh
                 origin.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
+                // The deployment scanner deploys its file again when the server starts: the file gets the update
+                writeScannedFile(managementName, deployment);
             } catch (RuntimeException rte) {
                 throw rte;
             } catch (Exception ex) {
@@ -634,6 +685,8 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             ModelNode readResult = modelControllerClient.execute(read);
             boolean persistent = !ClientConstants.SUCCESS.equals(readResult.get(ClientConstants.OUTCOME).asString())
                     || !readResult.get(ClientConstants.RESULT).isDefined() || readResult.get(ClientConstants.RESULT).asBoolean();
+            // A deployment of a deployment scanner stays one: the scanner undeploys it when its file is removed
+            ModelNode owner = getDeploymentOwner(managementName);
 
             ModelNode op = new ModelNode();
             op.get(ClientConstants.OP).set(ClientConstants.DEPLOYMENT_FULL_REPLACE_OPERATION);
@@ -641,6 +694,8 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             op.get(ClientConstants.NAME).set(managementName);
             op.get(ClientConstants.RUNTIME_NAME).set(runtimeName);
             op.get("persistent").set(persistent);
+            if (owner != null)
+                op.get("owner").set(owner);
             op.get(ClientConstants.CONTENT).add().get(ClientConstants.INPUT_STREAM_INDEX).set(0);
             OperationBuilder builder = OperationBuilder.create(op);
             builder.addInputStream(input);
@@ -649,6 +704,83 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 ModelNode failure = result.get(ClientConstants.FAILURE_DESCRIPTION);
                 throw new IllegalStateException(ClientConstants.DEPLOYMENT_FULL_REPLACE_OPERATION + " of " + managementName + " with " + runtimeName + ": "
                         + (failure.isDefined() ? failure.asString() : "rolled back"));
+            }
+        }
+
+        // The owner of the deployment in the management model, e.g. a deployment scanner; null when it has none
+        private ModelNode getDeploymentOwner(String managementName) throws IOException {
+            ModelNode result = readAttribute(new ModelNode().add(ClientConstants.DEPLOYMENT, managementName), "owner");
+            return result != null && result.isDefined() ? result : null;
+        }
+
+        private ModelNode readAttribute(ModelNode address, String name) throws IOException {
+            ModelNode read = new ModelNode();
+            read.get(ClientConstants.OP).set(ClientConstants.READ_ATTRIBUTE_OPERATION);
+            read.get(ClientConstants.OP_ADDR).set(address);
+            read.get(ClientConstants.NAME).set(name);
+            read.get("resolve-expressions").set(true);
+            ModelNode result = modelControllerClient.execute(read);
+            return ClientConstants.SUCCESS.equals(result.get(ClientConstants.OUTCOME).asString()) ? result.get(ClientConstants.RESULT) : null;
+        }
+
+        /**
+         * The update of a bundle that a deployment scanner deployed from an archive is written to that archive: the
+         * scanner deploys the archive again when the server starts, the update stays (4.4.9). The archive keeps its
+         * time stamp, the scanner does not deploy it again now. The archive is replaced at once, an exploded deployment
+         * is not changed.
+         */
+        private void writeScannedFile(String managementName, Deployment deployment) {
+            File file = null;
+            try {
+                // The owner is the address of the scanner, a map
+                ModelNode owner = getDeploymentOwner(managementName);
+                ModelNode scanner = new ModelNode().setEmptyList();
+                for (Property property : owner != null ? owner.asPropertyList() : Collections.<Property>emptyList())
+                    scanner.add(property.getName(), property.getValue().asString());
+                if (scanner.asList().isEmpty() || !"deployment-scanner".equals(scanner.asList().get(0).asProperty().getValue().asString()))
+                    return;
+                File directory = getScannedDirectory(scanner);
+                file = directory != null ? findScannedFile(directory, managementName) : null;
+                if (file == null)
+                    return;
+                long lastModified = file.lastModified();
+                File temp = new File(file.getParentFile(), "." + file.getName() + ".osgi-update");
+                InputStream input = deployment.getRoot().openStream();
+                try {
+                    Files.copy(input, temp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                } finally {
+                    VFSUtils.safeClose(input);
+                }
+                temp.setLastModified(lastModified);
+                Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                file.setLastModified(lastModified);
+                LOGGER.infoUpdateWrittenToScannedFile(managementName, file.getPath());
+            } catch (Exception ex) {
+                LOGGER.warnCannotWriteUpdateToScannedFile(ex, managementName, file != null ? file.getPath() : "?");
+            }
+        }
+
+        // The directory of the deployment scanner
+        private File getScannedDirectory(ModelNode scanner) throws IOException {
+            ModelNode path = readAttribute(scanner, "path");
+            if (path == null || !path.isDefined())
+                return null;
+            ModelNode relativeTo = readAttribute(scanner, "relative-to");
+            if (relativeTo == null || !relativeTo.isDefined())
+                return new File(path.asString());
+            ModelNode base = readAttribute(new ModelNode().add("path", relativeTo.asString()), "path");
+            return base != null && base.isDefined() ? new File(base.asString(), path.asString()) : null;
+        }
+
+        // The archive of the deployment in the scanned directory or one of its subdirectories
+        private File findScannedFile(File directory, final String name) throws IOException {
+            File file = new File(directory, name);
+            if (file.isFile())
+                return file;
+            if (file.exists() || !directory.isDirectory())
+                return null;
+            try (Stream<Path> paths = Files.walk(directory.toPath())) {
+                return paths.filter(p -> p.getFileName().toString().equals(name) && Files.isRegularFile(p)).map(Path::toFile).findFirst().orElse(null);
             }
         }
 
@@ -759,10 +891,25 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 return;
             }
 
+            // Another management operation waits for the services of the server, e.g. the undeploy of a web application
+            // whose ServletContextListener or EJB @PreDestroy uninstalls the bundle. An undeploy now would wait for that
+            // operation, which waits for this thread: the bundle is uninstalled now and its deployment removed after that
+            // operation. The caller must be allowed to undeploy it
+            String managementName = getManagementName(deployment);
+            if (isOtherOperationAwaitingStability()) {
+                if (!isUndeployPermitted(managementName))
+                    throw MESSAGES.cannotUninstallDeployedBundle(new SecurityException("undeploy of " + managementName + " is not permitted"), bundle, managementName);
+                bundleManager.uninstallBundle(bundle, options);
+                if (bundle.getState() == Bundle.UNINSTALLED && !Boolean.TRUE.equals(brev.getAttachment(REVISION_UNDEPLOYED_KEY))) {
+                    brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
+                    removeDeploymentLater(managementName, deployment);
+                }
+                return;
+            }
+
             // The deployment is undeployed first, without the locks of the framework: the undeploy may be refused (RBAC)
             // or rolled back (a deployment depends on the bundle), the bundle is then not uninstalled. The deployments of
             // older revisions are undeployed when these are removed
-            String managementName = getManagementName(deployment);
             bundle.putAttachment(BUNDLE_UNDEPLOYING_KEY, Boolean.TRUE);
             try {
                 undeployChecked(managementName);
@@ -837,7 +984,8 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             // A bundle that was uninstalled while it was in use is removed when another bundle gets undeployed. A bundle
             // is also uninstalled in the start or stop of the bundle of a deployment, within a management operation, or
             // while the server stops. Its deployment can only be undeployed after that operation
-            if (Boolean.TRUE.equals(deploymentUndeploy.get()) || OperationAssociation.INSTANCE.getAssociation() != null || serverStopping) {
+            if (Boolean.TRUE.equals(deploymentUndeploy.get()) || OperationAssociation.INSTANCE.getAssociation() != null || serverStopping
+                    || isOtherOperationAwaitingStability()) {
                 brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
                 removeDeploymentLater(managementName, deployment);
                 return;
@@ -854,6 +1002,50 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
 
         private boolean isDeployed(Deployment deployment) {
             return BundleLifecycleIntegration.isDeployed(bundleManager.getServiceContainer(), deployment);
+        }
+
+        /**
+         * Another management operation waits for the service container to become stable: a management operation of this
+         * thread would wait for that one, which may wait for a service that this thread runs. The active operations are
+         * read without the lock of the controller.
+         */
+        private boolean isOtherOperationAwaitingStability() {
+            try {
+                ModelNode op = new ModelNode();
+                op.get(ClientConstants.OP).set("read-children-resources");
+                op.get(ClientConstants.OP_ADDR).add("core-service", "management").add("service", "management-operations");
+                op.get(ClientConstants.CHILD_TYPE).set("active-operation");
+                op.get(ClientConstants.INCLUDE_RUNTIME).set(true);
+                ModelNode result = modelControllerClient.execute(op);
+                if (!ClientConstants.SUCCESS.equals(result.get(ClientConstants.OUTCOME).asString()) || !result.get(ClientConstants.RESULT).isDefined())
+                    return false;
+                for (Property property : result.get(ClientConstants.RESULT).asPropertyList()) {
+                    if ("awaiting-stability".equals(property.getValue().get("execution-status").asString()))
+                        return true;
+                }
+            } catch (Exception ex) {
+                LOGGER.debugf(ex, "Cannot read the active management operations");
+            }
+            return false;
+        }
+
+        // Whether the caller may undeploy the deployment (RBAC), read without the lock of the controller
+        private boolean isUndeployPermitted(String managementName) {
+            try {
+                ModelNode op = new ModelNode();
+                op.get(ClientConstants.OP).set("read-resource-description");
+                op.get(ClientConstants.OP_ADDR).add(ClientConstants.DEPLOYMENT, managementName);
+                op.get("operations").set(true);
+                op.get("access-control").set("trim-descriptions");
+                ModelNode result = modelControllerClient.execute(op);
+                if (!ClientConstants.SUCCESS.equals(result.get(ClientConstants.OUTCOME).asString()))
+                    return false;
+                ModelNode execute = result.get(ClientConstants.RESULT, "access-control", "default", "operations", ClientConstants.DEPLOYMENT_UNDEPLOY_OPERATION, "execute");
+                return execute.isDefined() && execute.asBoolean();
+            } catch (Exception ex) {
+                LOGGER.debugf(ex, "Cannot read the access control of deployment %s", managementName);
+                return false;
+            }
         }
 
         @Override
@@ -1036,17 +1228,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         private String getRuntimeName(Deployment deployment) {
             String runtimeName = deployment.getAttachment(RUNTIME_NAME_KEY);
             if (runtimeName == null) {
-                runtimeName = deployment.getLocation();
-                try {
-                    // Strip the query off the location if it is a valid URI
-                    new URI(runtimeName);
-                    int queryIndex = runtimeName.indexOf('?');
-                    if (queryIndex > 0) {
-                        runtimeName = runtimeName.substring(0, queryIndex);
-                    }
-                } catch (URISyntaxException ex) {
-                    // ignore
-                }
+                runtimeName = toRuntimeName(deployment.getLocation());
                 deployment.putAttachment(RUNTIME_NAME_KEY, runtimeName);
             }
             return runtimeName;
@@ -1108,8 +1290,9 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                     return;
                 }
 
-                // The deployment gets the runtime name of the bundle again
-                String runtimeName = managementName;
+                // The deployment gets the runtime name of the bundle again, the one of its location: not the name of the
+                // deployment, which may differ
+                String runtimeName = toRuntimeName(bundle.getLocation());
                 deployment.putAttachment(RUNTIME_NAME_KEY, runtimeName);
 
                 // Deployments that depend on the module of the bundle lost it with the old revisions. The new revision
@@ -1138,6 +1321,12 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             @Override
             public void endBundleRefresh(XBundle bundle) {
                 bundle.removeAttachment(BUNDLE_REFRESHING_KEY);
+            }
+
+            // The deployment is replaced with an operation of the server, which must not wait for the framework wiring lock
+            @Override
+            public boolean isWiringLockAllowed() {
+                return false;
             }
         }
     }

@@ -137,4 +137,12 @@ public interface OSGiLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 11920, value = "Cannot remove the deployment %s of an uninstalled bundle, it is removed after the next restart")
     void warnCannotRemoveDeploymentOfUninstalledBundle(@Cause Throwable cause, String deploymentName);
+
+    @LogMessage(level = INFO)
+    @Message(id = 11921, value = "The update of the bundle of deployment %s is written to the scanned file: %s")
+    void infoUpdateWrittenToScannedFile(String deploymentName, String file);
+
+    @LogMessage(level = WARN)
+    @Message(id = 11922, value = "Cannot write the update of the bundle of deployment %s to the scanned file %s, the server deploys the file as it is when it starts again")
+    void warnCannotWriteUpdateToScannedFile(@Cause Throwable cause, String deploymentName, String file);
 }

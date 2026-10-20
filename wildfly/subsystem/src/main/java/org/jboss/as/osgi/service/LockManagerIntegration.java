@@ -167,11 +167,11 @@ public final class LockManagerIntegration extends LockManagerPlugin {
                     for (LockableItem item : context.getItems()) {
                         if (item instanceof Attachable) {
                             Attachable attachableItem = (Attachable) item;
+                            // A context that is not the last one may be unlocked first
                             Stack<?> stack = attachableItem.getAttachment(LOCK_CONTEXT_KEY);
-                            if (stack.size() == 1) {
+                            stack.remove(context);
+                            if (stack.isEmpty()) {
                                 attachableItem.removeAttachment(LOCK_CONTEXT_KEY);
-                            } else {
-                                stack.pop();
                             }
                         }
                     }

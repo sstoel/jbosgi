@@ -35,6 +35,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.jboss.as.osgi.httpservice.HttpServiceFactory.GlobalRegistry;
+import org.jboss.as.osgi.httpservice.HttpServiceFactory.Registration;
 import org.osgi.service.http.HttpContext;
 
 /**
@@ -144,7 +145,11 @@ final class ResourceServlet extends HttpServlet {
         String fallbackAlias = GlobalRegistry.INSTANCE.findMatchingAlias(requestPath, alias);
         if (fallbackAlias == null || fallbackAlias.length() >= alias.length())
             return false;
-        ServletContext fallbackContext = req.getServletContext().getContext("/".equals(fallbackAlias) ? "" : fallbackAlias);
+        // The web context of that registration: ServletContext.getContext finds a context by its path on any host, e.g. a
+        // web application with that context path on another host, which would get the request without its security
+        // constraints
+        Registration fallback = GlobalRegistry.INSTANCE.getRegistration(fallbackAlias);
+        ServletContext fallbackContext = fallback != null ? fallback.getContainerContext() : null;
         if (fallbackContext == null)
             return false;
         String remaining = "/".equals(fallbackAlias) ? requestPath : requestPath.substring(fallbackAlias.length());

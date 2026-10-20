@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import jakarta.servlet.Servlet;
+import jakarta.servlet.ServletContext;
 
 import org.jboss.as.osgi.OSGiMessages;
 import org.jboss.as.server.ServerEnvironment;
@@ -73,11 +74,12 @@ final class HttpServiceFactory implements ServiceFactory<HttpService> {
 
     @Override
     public void ungetService(Bundle bundle, ServiceRegistration<HttpService> registration, HttpService service) {
-        synchronized (registry) {
-            HttpServiceImpl httpService = (HttpServiceImpl) service;
-            for (Registration reg : registry.unregister(bundle)) {
-                httpService.unregisterInternal(reg);
-            }
+        // Not under the monitor of the registry: a registration in progress holds the monitor of its HttpService and then
+        // takes the registry's. It unregisters itself when it finds the service released
+        HttpServiceImpl httpService = (HttpServiceImpl) service;
+        httpService.release();
+        for (Registration reg : registry.unregister(bundle)) {
+            httpService.unregisterInternal(reg);
         }
     }
 
@@ -107,14 +109,15 @@ final class HttpServiceFactory implements ServiceFactory<HttpService> {
             reservations.remove(alias, bundle);
         }
 
-        synchronized Registration register(String alias, Bundle bundle, WebDeploymentController context, Servlet servlet, Registration.Type type) throws NamespaceException {
+        synchronized Registration register(String alias, Bundle bundle, WebDeploymentController context, ServletContext containerContext, Servlet servlet,
+                Registration.Type type) throws NamespaceException {
             Bundle reservedBy = reservations.get(alias);
             if (exists(alias) || (reservedBy != null && reservedBy != bundle)) { throw new NamespaceException(OSGiMessages.MESSAGES.aliasMappingAlreadyExists(alias)); }
             reservations.remove(alias);
 
             LOGGER.infoRegisterHttpServiceAlias(alias);
 
-            Registration result = new Registration(alias, bundle, context, servlet, type);
+            Registration result = new Registration(alias, bundle, context, containerContext, servlet, type);
             registrations.put(alias, result);
 
             return result;
@@ -129,6 +132,10 @@ final class HttpServiceFactory implements ServiceFactory<HttpService> {
 
         synchronized boolean exists(String alias) {
             return registrations.get(alias) != null;
+        }
+
+        synchronized Registration getRegistration(String alias) {
+            return registrations.get(alias);
         }
 
         /**
@@ -179,13 +186,15 @@ final class HttpServiceFactory implements ServiceFactory<HttpService> {
         private final String alias;
         private final Bundle bundle;
         private final WebDeploymentController context;
+        private final ServletContext containerContext;
         private final Servlet servlet;
         private final Type type;
 
-        Registration(String alias, Bundle bundle, WebDeploymentController context, Servlet servlet, Type type) {
+        Registration(String alias, Bundle bundle, WebDeploymentController context, ServletContext containerContext, Servlet servlet, Type type) {
             this.alias = alias;
             this.bundle = bundle;
             this.context = context;
+            this.containerContext = containerContext;
             this.servlet = servlet;
             this.type = type;
         }
@@ -200,6 +209,11 @@ final class HttpServiceFactory implements ServiceFactory<HttpService> {
 
         WebDeploymentController getContext() {
             return context;
+        }
+
+        // The ServletContext of the web context of the registration, on the host of the Http Service
+        ServletContext getContainerContext() {
+            return containerContext;
         }
 
         Servlet getServlet() {
