@@ -43,8 +43,8 @@ Upgrading a server from the WF41 build
 --------------------------------------
 
 The framework provides the OSGi Log Service now, the Felix Log Service bundle is not part of the server any more.
-Remove its capability from the OSGi subsystem of a configuration that was written for the WF41 build, the subsystem
-does not start otherwise
+The OSGi subsystem skips its capability in a configuration that was written for the WF41 build and logs a warning
+(JBAS011923). Remove the capability from the configuration to avoid the warning
 
 <pre>
 &lt;capability name="org.apache.felix.log" startlevel="1"/&gt;

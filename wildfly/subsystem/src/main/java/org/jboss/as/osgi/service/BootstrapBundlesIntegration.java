@@ -130,6 +130,13 @@ class BootstrapBundlesIntegration extends BootstrapBundlesInstall<Void> {
         while (iterator.hasNext()) {
             OSGiCapability configcap = iterator.next();
             String identifier = configcap.getIdentifier();
+            // A capability that a release removed, in a configuration that was written for an earlier release
+            String replacement = RetiredCapabilities.getReplacement(identifier);
+            if (replacement != null) {
+                LOGGER.warnRetiredCapability(identifier, replacement);
+                iterator.remove();
+                continue;
+            }
             if (isValidModuleIdentifier(identifier)) {
                 try {
                     XBundle bundle = installInitialModuleCapability(configcap);

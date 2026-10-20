@@ -9,6 +9,7 @@ jakarta.ws.rs.api
 jakarta.xml.bind.api
 jakarta.xml.ws.api
 org.glassfish.jaxb
+org.apache.felix.log
 org.jboss.osgi.logging
 org.apache.felix.configadmin
 org.apache.felix.metatype

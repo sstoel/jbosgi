@@ -33,6 +33,7 @@ import org.jboss.as.controller.descriptions.ModelDescriptionConstants;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.as.osgi.parser.SubsystemState.OSGiCapability;
 import org.jboss.as.osgi.service.LayeredBundlePathFactory;
+import org.jboss.as.osgi.service.RetiredCapabilities;
 import org.jboss.as.server.ServerEnvironment;
 import org.jboss.dmr.ModelNode;
 import org.jboss.modules.Module;
@@ -78,6 +79,9 @@ public class OSGiCapabilityAdd extends AbstractAddStepHandler {
      * Maven coordinates are resolved by the repository then.
      */
     private static void validateIdentifier(String identifier) throws OperationFailedException {
+        // A capability that a release removed is skipped with a warning when the framework is created
+        if (RetiredCapabilities.getReplacement(identifier) != null)
+            return;
         try {
             MavenCoordinates.parse(identifier);
             return;

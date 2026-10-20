@@ -132,6 +132,16 @@
 
     <!-- Profiles -->
     <profiles>
+        <!-- A JDK 24 or later refuses to start with a Security Manager (JEP 486): there the test JVMs run without one -->
+        <profile>
+            <id>no-security-manager</id>
+            <activation>
+                <jdk>[24,)</jdk>
+            </activation>
+            <properties>
+                <surefire.security.args></surefire.security.args>
+            </properties>
+        </profile>
 
         <profile>
             <id>embedded-testing</id>

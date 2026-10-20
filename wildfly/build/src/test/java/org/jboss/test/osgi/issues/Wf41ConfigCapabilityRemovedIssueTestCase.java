@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jboss.as.osgi.service.RetiredCapabilities;
 import org.junit.Test;
 
 /**
@@ -92,9 +93,9 @@ import org.junit.Test;
  * yes (upgrade path; a WF41 server boots with this configuration).
  *
  * <h2>Resolution</h2>
- * Documented migration step (README, "Upgrading a server from the WF41 build"): the capability org.apache.felix.log
- * is removed from a WF41 configuration, the framework provides the Log Service. It is not in the capability list of
- * this test any more; the test guards that every other capability of the WF41 configuration still resolves.
+ * The subsystem skips a capability that a release removed with a warning (RetiredCapabilities, JBAS011923), here
+ * org.apache.felix.log: the framework provides the Log Service. Every capability of the WF41 configuration resolves
+ * or is skipped that way; Wf41CapabilityBootIssueTestCase of the integration testsuite boots a server with it.
  */
 public class Wf41ConfigCapabilityRemovedIssueTestCase {
 
@@ -129,10 +130,11 @@ public class Wf41ConfigCapabilityRemovedIssueTestCase {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"))) {
             for (String line = reader.readLine(); line != null; line = reader.readLine()) {
                 line = line.trim();
-                if (line.length() > 0 && resolves(home, line) == false)
+                // A capability that a release removed is skipped by the subsystem
+                if (line.length() > 0 && resolves(home, line) == false && RetiredCapabilities.getReplacement(line) == null)
                     missing.add(line);
             }
         }
-        assertTrue("Expected every capability of the WF41 standalone-osgi.xml (without the removed org.apache.felix.log) to resolve in the r8 server, but these do not: " + missing, missing.isEmpty());
+        assertTrue("Expected every capability of the WF41 standalone-osgi.xml to resolve in the r8 server, or to be one that the subsystem skips, but these do not: " + missing, missing.isEmpty());
     }
 }

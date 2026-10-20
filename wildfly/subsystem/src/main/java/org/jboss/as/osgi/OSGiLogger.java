@@ -145,4 +145,8 @@ public interface OSGiLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 11922, value = "Cannot write the update of the bundle of deployment %s to the scanned file %s, the server deploys the file as it is when it starts again")
     void warnCannotWriteUpdateToScannedFile(@Cause Throwable cause, String deploymentName, String file);
+
+    @LogMessage(level = WARN)
+    @Message(id = 11923, value = "The capability %s of the OSGi subsystem is not available any more, %s: remove it from the configuration")
+    void warnRetiredCapability(String identifier, String replacement);
 }
