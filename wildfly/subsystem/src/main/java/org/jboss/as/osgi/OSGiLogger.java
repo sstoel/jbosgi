@@ -149,4 +149,20 @@ public interface OSGiLogger extends BasicLogger {
     @LogMessage(level = WARN)
     @Message(id = 11923, value = "The capability %s of the OSGi subsystem is not available any more, %s: remove it from the configuration")
     void warnRetiredCapability(String identifier, String replacement);
+
+    @LogMessage(level = WARN)
+    @Message(id = 11924, value = "The stored state of deployment %s belongs to another bundle (%s), the bundle %s is installed as a new bundle")
+    void warnStoredStateOfOtherBundle(String deploymentName, String storedSymbolicName, String symbolicName);
+
+    @LogMessage(level = INFO)
+    @Message(id = 11925, value = "Removed the stored state of bundle %d, its deployment %s was not deployed again")
+    void infoRemovedStaleStorageState(long bundleId, String deploymentName);
+
+    @LogMessage(level = ERROR)
+    @Message(id = 11927, value = "Cannot install the capability %s of the OSGi subsystem, the framework starts without it")
+    void errorCapabilityUnavailable(@Cause Throwable cause, String identifier);
+
+    @LogMessage(level = WARN)
+    @Message(id = 11926, value = "The bundle of deployment %s was uninstalled on a managed server: the domain deploys it again when the server starts, remove the deployment from the server group")
+    void warnUninstalledBundleOfDomainDeployment(String deploymentName);
 }

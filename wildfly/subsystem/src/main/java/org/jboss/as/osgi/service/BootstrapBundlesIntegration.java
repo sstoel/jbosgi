@@ -45,6 +45,7 @@ import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.ServiceTarget;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
 import org.jboss.msc.value.InjectedValue;
 import org.jboss.osgi.deployment.deployer.Deployment;
 import org.jboss.osgi.deployment.deployer.DeploymentFactory;
@@ -145,7 +146,8 @@ class BootstrapBundlesIntegration extends BootstrapBundlesInstall<Void> {
                         iterator.remove();
                     }
                 } catch (Exception ex) {
-                    throw MESSAGES.startFailedToProcessInitialCapability(ex, identifier);
+                    capabilityUnavailable(context, identifier, ex);
+                    iterator.remove();
                 }
             }
         }
@@ -156,12 +158,42 @@ class BootstrapBundlesIntegration extends BootstrapBundlesInstall<Void> {
                 Deployment dep = getInitialBundleDeployment(configcap);
                 deployments.add(dep);
             } catch (Exception ex) {
-                throw MESSAGES.startFailedToProcessInitialCapability(ex, identifier);
+                capabilityUnavailable(context, identifier, ex);
             }
         }
 
         // Install the bundles from the given locations
         installBootstrapBundles(context.getChildTarget(), deployments);
+    }
+
+    /**
+     * A capability that cannot be found or installed, a missing module or a Maven artifact that cannot be downloaded,
+     * does not take down the framework: it starts without it (subrepos/65). The failure is visible to management, as a
+     * failed service: the server reports that it started with errors (services/21, M04)
+     */
+    private static void capabilityUnavailable(StartContext context, String identifier, Throwable cause) {
+        LOGGER.errorCapabilityUnavailable(cause, identifier);
+        installUnavailableService(context.getChildTarget(), identifier, cause);
+    }
+
+    static void installUnavailableService(ServiceTarget serviceTarget, final String identifier, final Throwable cause) {
+        ServiceName serviceName = IntegrationServices.BOOTSTRAP_BUNDLES.append("UNAVAILABLE", identifier);
+        ServiceBuilder<?> builder = serviceTarget.addService(serviceName);
+        builder.setInstance(new org.jboss.msc.Service() {
+            @Override
+            public void start(StartContext startContext) throws StartException {
+                throw MESSAGES.startFailedToProcessInitialCapability(cause, identifier);
+            }
+
+            @Override
+            public void stop(StopContext stopContext) {
+            }
+        });
+        try {
+            builder.install();
+        } catch (RuntimeException ex) {
+            // the capability was reported already
+        }
     }
 
     @Override
@@ -295,8 +327,11 @@ class BootstrapBundlesIntegration extends BootstrapBundlesInstall<Void> {
 
     class BootstrapResolveIntegration extends BootstrapBundlesResolve<Void> {
 
+        private final Set<XBundleRevision> installedRevisions;
+
         BootstrapResolveIntegration(ServiceName baseName, Set<XBundleRevision> installedRevisions) {
             super(baseName, installedRevisions);
+            this.installedRevisions = installedRevisions;
         }
 
         @Override
@@ -307,6 +342,15 @@ class BootstrapBundlesIntegration extends BootstrapBundlesInstall<Void> {
 
         @Override
         protected ServiceController<Void> installActivateService(ServiceTarget serviceTarget, Set<XBundle> resolvedBundles) {
+            // A capability that cannot be resolved is not started, the server reports it as a failed service (M04)
+            for (XBundleRevision brev : installedRevisions) {
+                XBundle bundle = brev.getBundle();
+                Deployment dep = bundle.adapt(Deployment.class);
+                if (dep != null && dep.isAutoStart() && !brev.isFragment() && !bundle.isResolved()) {
+                    String identifier = bundle.getSymbolicName() + ":" + bundle.getVersion();
+                    installUnavailableService(serviceTarget, identifier, MESSAGES.cannotResolveInitialCapability(null, identifier));
+                }
+            }
             return new BootstrapActivateIntegration(getServiceName().getParent(), resolvedBundles).install(serviceTarget, getServiceListener());
         }
     }

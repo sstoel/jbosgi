@@ -45,19 +45,25 @@ public class OSGiCapabilityRemove extends AbstractRemoveStepHandler {
         if (subsystemState == null) {
             // cannot complete
             context.setRollbackOnly();
-            context.completeStep(OperationContext.RollbackHandler.NOOP_ROLLBACK_HANDLER);
             return;
         }
-
-        final OSGiCapability oldVal = subsystemState.removeCapability(identifier);
+        subsystemState.removeCapability(identifier);
         // The capabilities are installed when the framework is created
         context.reloadRequired();
-        context.completeStep(new OperationContext.RollbackHandler() {
-            @Override
-            public void handleRollback(OperationContext context, ModelNode operation) {
-                subsystemState.addCapability(oldVal);
-                context.revertReloadRequired();
-            }
-        });
+    }
+
+    /**
+     * The rollback of the remove gives the capability back (services/21). The step of the remove handler completes
+     * with this, a rollback handler of its own would not be called
+     */
+    @Override
+    protected void recoverServices(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        SubsystemState subsystemState = SubsystemState.getSubsystemState(context);
+        if (subsystemState == null)
+            return;
+        String identifier = operation.get(ModelDescriptionConstants.OP_ADDR).asObject().get(ModelConstants.CAPABILITY).asString();
+        Integer startLevel = model.hasDefined(ModelConstants.STARTLEVEL) ? FrameworkCapabilityResource.STARTLEVEL.resolveModelAttribute(context, model).asInt() : null;
+        subsystemState.addCapability(new OSGiCapability(identifier, startLevel));
+        context.revertReloadRequired();
     }
 }

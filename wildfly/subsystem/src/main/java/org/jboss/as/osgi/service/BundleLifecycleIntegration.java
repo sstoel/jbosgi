@@ -73,6 +73,8 @@ import org.jboss.as.osgi.deployment.BundleActivateProcessor.StartCoordinator;
 import org.jboss.as.osgi.deployment.BundleDeploymentProcessor;
 import org.jboss.as.osgi.deployment.BundleInstallProcessor;
 import org.jboss.as.osgi.management.OperationAssociation;
+import org.jboss.as.server.ServerEnvironment;
+import org.jboss.as.server.ServerEnvironmentService;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentUnit;
 import org.jboss.as.server.deployment.DeploymentUtils;
@@ -107,6 +109,7 @@ import org.jboss.osgi.framework.spi.IntegrationConstants;
 import org.jboss.osgi.framework.spi.IntegrationServices;
 import org.jboss.osgi.framework.spi.LockManager;
 import org.jboss.osgi.framework.spi.StorageManager;
+import org.jboss.osgi.framework.spi.StorageState;
 import org.jboss.osgi.resolver.XBundle;
 import org.jboss.osgi.resolver.XBundleRevision;
 import org.jboss.osgi.resolver.XEnvironment;
@@ -150,6 +153,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
 
     private final InjectedValue<ModelControllerClientFactory> injectedModelControllerClientFactory = new InjectedValue<ModelControllerClientFactory>();
     private final InjectedValue<ProcessStateNotifier> injectedProcessStateNotifier = new InjectedValue<ProcessStateNotifier>();
+    private final InjectedValue<ServerEnvironment> injectedServerEnvironment = new InjectedValue<ServerEnvironment>();
     private final InjectedValue<BundleManager> injectedBundleManager = new InjectedValue<BundleManager>();
     private final InjectedValue<XEnvironment> injectedEnvironment = new InjectedValue<XEnvironment>();
     private final InjectedValue<XResolver> injectedResolver = new InjectedValue<XResolver>();
@@ -166,6 +170,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
         super.addServiceDependencies(builder);
         builder.addDependency(ServiceName.parse("org.wildfly.management.model-controller-client-factory"), ModelControllerClientFactory.class, injectedModelControllerClientFactory);
         builder.addDependency(ServiceName.parse("org.wildfly.management.process-state-notifier"), ProcessStateNotifier.class, injectedProcessStateNotifier);
+        builder.addDependency(ServerEnvironmentService.SERVICE_NAME, ServerEnvironment.class, injectedServerEnvironment);
         builder.addDependency(IntegrationServices.STORAGE_MANAGER_PLUGIN, StorageManager.class, injectedStorageManager);
         builder.addDependency(IntegrationServices.DEPLOYMENT_PROVIDER_PLUGIN, DeploymentProvider.class, injectedDeploymentManager);
         builder.addDependency(IntegrationServices.LOCK_MANAGER_PLUGIN, LockManager.class, injectedLockManager);
@@ -191,6 +196,46 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             }
         });
         current = this;
+        removeStaleStorageStatesAfterBoot();
+    }
+
+    /**
+     * Every bundle of the server is a deployment. The stored state of a bundle whose deployment was not deployed again
+     * at boot, e.g. a scanned file that was deleted while the server was down, is removed when the boot is done: it
+     * would stay in the storage area for good (tests/08)
+     */
+    private void removeStaleStorageStatesAfterBoot() {
+        final BundleManager bundleManager = injectedBundleManager.getValue();
+        Runnable remove = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    awaitBootCompleted();
+                } catch (InterruptedException ex) {
+                    return;
+                }
+                StorageManager storageManager = injectedStorageManager.getOptionalValue();
+                if (storageManager == null || BundleInstallProcessor.isServerStopping(bundleManager))
+                    return;
+                for (StorageState storageState : storageManager.getStorageStates()) {
+                    String location = storageState.getLocation();
+                    if (storageState.getBundleId() == 0 || bundleManager.getBundleByLocation(location) != null)
+                        continue;
+                    // A deployment that failed, or that is deployed right now, keeps its state
+                    if (isInManagementModel(location))
+                        continue;
+                    if (bundleManager.getBundleByLocation(location) != null || BundleInstallProcessor.isServerStopping(bundleManager))
+                        continue;
+                    LOGGER.infoRemovedStaleStorageState(storageState.getBundleId(), location);
+                    storageManager.deleteStorageState(storageState);
+                }
+            }
+        };
+        try {
+            undeployExecutor.execute(remove);
+        } catch (RejectedExecutionException ex) {
+            // the server stops
+        }
     }
 
     @Override
@@ -224,8 +269,10 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
      * @param deployment the deployment that is removed, null for the deployment that has the name
      */
     private void removeDeploymentLater(final String managementName, final Deployment deployment) {
-        final File storageArea = getStorageArea();
-        UninstalledDeployments.add(storageArea, managementName);
+        final File storageArea = recordUninstalledDeployment(managementName);
+        // A managed server cannot remove a deployment of the domain
+        if (isManagedServer())
+            return;
         // While the server stops no operation runs, the deployment is removed after the next boot
         final BundleManager bundleManager = injectedBundleManager.getValue();
         if (BundleInstallProcessor.isServerStopping(bundleManager)) {
@@ -268,6 +315,45 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             // The server stops, the deployment is removed after the next boot
             LOGGER.debugf("Remove the deployment of an uninstalled bundle after the next boot: %s", managementName);
         }
+    }
+
+    /**
+     * Record the deployment of an uninstalled bundle as one to remove, also over a restart. A managed server cannot remove
+     * a deployment of the domain: the uninstall is not recorded there, the domain deploys the bundle again at the next
+     * start of the server until the deployment is removed from the server group (shutdown/15)
+     *
+     * @return the storage area of the record, null if nothing was recorded
+     */
+    private File recordUninstalledDeployment(String managementName) {
+        if (isManagedServer()) {
+            LOGGER.warnUninstalledBundleOfDomainDeployment(managementName);
+            return null;
+        }
+        File storageArea = getStorageArea();
+        UninstalledDeployments.add(storageArea, managementName);
+        return storageArea;
+    }
+
+    private boolean isManagedServer() {
+        ServerEnvironment environment = injectedServerEnvironment.getOptionalValue();
+        return environment != null && environment.getLaunchType() == ServerEnvironment.LaunchType.DOMAIN;
+    }
+
+    /**
+     * True while the server boots
+     */
+    public static boolean isServerBooting() {
+        BundleLifecycleIntegration service = current;
+        ProcessStateNotifier processState = service != null ? service.injectedProcessStateNotifier.getOptionalValue() : null;
+        return processState != null && processState.getCurrentState() == ControlledProcessState.State.STARTING;
+    }
+
+    /**
+     * True on a thread of the service container: it runs the start or stop of a service, which a management operation
+     * may wait for
+     */
+    static boolean isServiceContainerThread() {
+        return Thread.currentThread().getName().startsWith("MSC service thread");
     }
 
     private void awaitBootCompleted() throws InterruptedException {
@@ -577,7 +663,9 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
 
             // Do the install directly if we have a running management op
             // https://issues.jboss.org/browse/AS7-5642
-            if (OperationAssociation.INSTANCE.getAssociation() != null) {
+            // The same on an MSC thread, e.g. an activator that a lazy activation runs while another deployment starts:
+            // a deploy would wait for the operation that waits for this thread (lifecycle/04)
+            if (OperationAssociation.INSTANCE.getAssociation() != null || isServiceContainerThread()) {
                 LOGGER.warnCannotDeployBundleFromManagementOperation(deployment);
                 return bundleManager.installBundleRevision(context, deployment, null);
             }
@@ -883,11 +971,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
                 // A deployment that cannot be undeployed now is removed after the operation that runs now, also when
                 // the bundle stays in use (removal pending): the uninstall survives a restart
                 String managementName = deployment != null && isUndeployDeferred(bundle, deployment) ? getManagementName(deployment) : null;
-                bundleManager.uninstallBundle(bundle, options);
-                if (managementName != null && bundle.getState() == Bundle.UNINSTALLED && !Boolean.TRUE.equals(brev.getAttachment(REVISION_UNDEPLOYED_KEY))) {
-                    brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
-                    removeDeploymentLater(managementName, deployment);
-                }
+                uninstallWithDeferredUndeploy(bundle, options, managementName, deployment);
                 return;
             }
 
@@ -899,11 +983,7 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             if (isOtherOperationAwaitingStability()) {
                 if (!isUndeployPermitted(managementName))
                     throw MESSAGES.cannotUninstallDeployedBundle(new SecurityException("undeploy of " + managementName + " is not permitted"), bundle, managementName);
-                bundleManager.uninstallBundle(bundle, options);
-                if (bundle.getState() == Bundle.UNINSTALLED && !Boolean.TRUE.equals(brev.getAttachment(REVISION_UNDEPLOYED_KEY))) {
-                    brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
-                    removeDeploymentLater(managementName, deployment);
-                }
+                uninstallWithDeferredUndeploy(bundle, options, managementName, deployment);
                 return;
             }
 
@@ -921,6 +1001,29 @@ public final class BundleLifecycleIntegration extends BundleLifecyclePlugin {
             }
             if (bundle.getState() != Bundle.UNINSTALLED) {
                 bundleManager.uninstallBundle(bundle, options);
+            }
+        }
+
+        /**
+         * Uninstall the bundle, its deployment is removed later. The deployment is recorded as one to remove before the
+         * bundle is uninstalled: a crash right after the uninstall does not install the bundle again (shutdown/15). The
+         * record goes when the uninstall fails.
+         */
+        private void uninstallWithDeferredUndeploy(XBundle bundle, int options, String managementName, Deployment deployment) throws BundleException {
+            XBundleRevision brev = bundle.getBundleRevision();
+            boolean undeployed = Boolean.TRUE.equals(brev.getAttachment(REVISION_UNDEPLOYED_KEY));
+            File storageArea = managementName != null && !undeployed && !isManagedServer() ? recordUninstalledDeployment(managementName) : null;
+            boolean uninstalled = false;
+            try {
+                bundleManager.uninstallBundle(bundle, options);
+                uninstalled = bundle.getState() == Bundle.UNINSTALLED;
+            } finally {
+                if (storageArea != null && !uninstalled)
+                    UninstalledDeployments.remove(storageArea, managementName);
+            }
+            if (managementName != null && uninstalled && !undeployed) {
+                brev.putAttachment(REVISION_UNDEPLOYED_KEY, Boolean.TRUE);
+                removeDeploymentLater(managementName, deployment);
             }
         }
 

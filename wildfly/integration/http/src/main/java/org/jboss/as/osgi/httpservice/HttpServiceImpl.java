@@ -37,8 +37,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -52,6 +54,7 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 import org.jboss.as.osgi.OSGiMessages;
 import org.jboss.as.osgi.httpservice.HttpServiceFactory.GlobalRegistry;
@@ -339,15 +342,43 @@ final class HttpServiceImpl implements HttpService {
     }
 
     /**
-     * The ServletContext of an HttpContext: one object for all its servlets, with shared attributes, whose MIME types
-     * and resources come from the HttpContext. The other methods go to the context of a registration that is up.
+     * The ServletContext of an HttpContext: one object for all its servlets (102.10), with shared attributes, whose MIME
+     * types and resources come from the HttpContext. The other methods go to the context of the servlet that runs on the
+     * current thread, its init or a request to it, and otherwise to the context of a registration that is up
+     * (wildfly/11). The attributes of the container, e.g. the temporary directory, are visible too.
      */
     static class ShareableContextWrapper implements ApplicationContextWrapper {
+
+        // The container context of the servlet that runs on this thread
+        private static final ThreadLocal<ServletContext> currentContext = new ThreadLocal<ServletContext>();
 
         private final HttpContext httpContext;
         private final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
         private final List<ServletContext> containerContexts = new CopyOnWriteArrayList<ServletContext>();
         private ServletContext sharedContext;
+
+        /**
+         * Make the container context the one of this thread, the previous one is returned to restore it
+         */
+        static ServletContext enter(ServletContext containerContext) {
+            ServletContext previous = currentContext.get();
+            currentContext.set(containerContext);
+            return previous;
+        }
+
+        static void leave(ServletContext previous) {
+            if (previous != null)
+                currentContext.set(previous);
+            else
+                currentContext.remove();
+        }
+
+        private ServletContext getDelegate() {
+            ServletContext current = currentContext.get();
+            if (current != null && containerContexts.contains(current))
+                return current;
+            return containerContexts.isEmpty() ? null : containerContexts.get(0);
+        }
 
         ShareableContextWrapper(HttpContext httpContext) {
             this.httpContext = httpContext;
@@ -391,10 +422,18 @@ final class HttpServiceImpl implements HttpService {
                 return System.identityHashCode(proxy);
             if (name.equals("toString") && argc == 0)
                 return "ServletContext[" + httpContext + "]";
-            if (name.equals("getAttribute") && argc == 1)
-                return attributes.get((String) args[0]);
-            if (name.equals("getAttributeNames") && argc == 0)
-                return Collections.enumeration(new ArrayList<String>(attributes.keySet()));
+            if (name.equals("getAttribute") && argc == 1) {
+                Object value = attributes.get((String) args[0]);
+                ServletContext container = value == null ? getDelegate() : null;
+                return container != null ? container.getAttribute((String) args[0]) : value;
+            }
+            if (name.equals("getAttributeNames") && argc == 0) {
+                Set<String> names = new LinkedHashSet<String>(attributes.keySet());
+                ServletContext container = getDelegate();
+                if (container != null)
+                    names.addAll(Collections.list(container.getAttributeNames()));
+                return Collections.enumeration(names);
+            }
             if (name.equals("setAttribute") && argc == 2) {
                 if (args[1] == null)
                     attributes.remove((String) args[0]);
@@ -417,7 +456,7 @@ final class HttpServiceImpl implements HttpService {
                 URL url = httpContext.getResource((String) args[0]);
                 return url != null ? url.openStream() : null;
             }
-            ServletContext delegate = containerContexts.isEmpty() ? null : containerContexts.get(0);
+            ServletContext delegate = getDelegate();
             if (delegate == null)
                 throw new IllegalStateException("No servlet is registered with " + httpContext);
             try {
@@ -495,11 +534,14 @@ final class HttpServiceImpl implements HttpService {
                     return sc.getInitParameterNames();
                 }
             };
+            ServletContext previous = ShareableContextWrapper.enter(containerContext);
             try {
                 delegate.init(config);
             } catch (ServletException | RuntimeException | Error ex) {
                 initFailure = ex;
                 throw ex;
+            } finally {
+                ShareableContextWrapper.leave(previous);
             }
         }
 
@@ -515,34 +557,78 @@ final class HttpServiceImpl implements HttpService {
                 Object a = httpRequest.getAttribute(HttpContext.AUTHENTICATION_TYPE);
                 String authType = a instanceof String ? (String) a : null;
 
-                if (remoteUser != null || authType != null) {
-                    request = new SecurityRequestWrapper(remoteUser, authType, httpRequest);
-                }
+                // The request and its session give the ServletContext of the HttpContext, like the ServletConfig
+                ServletContext servletContext = containerContext != null ? contextWrapper.getServletContext(containerContext) : null;
+                request = new HttpServiceRequestWrapper(remoteUser, authType, servletContext, httpRequest);
             }
-            delegate.service(request, response);
+            ServletContext previous = ShareableContextWrapper.enter(containerContext);
+            try {
+                delegate.service(request, response);
+            } finally {
+                ShareableContextWrapper.leave(previous);
+            }
         }
     }
 
-    /* This wrapper class can provide the remote user and auth type information if provided through the HttpContext.
+    /* This wrapper class can provide the remote user and auth type information if provided through the HttpContext,
+     * and the ServletContext of the HttpContext.
      */
-    static class SecurityRequestWrapper extends HttpServletRequestWrapper implements HttpServletRequest {
+    static class HttpServiceRequestWrapper extends HttpServletRequestWrapper implements HttpServletRequest {
         private final String remoteUser;
         private final String authType;
+        private final ServletContext servletContext;
 
-        SecurityRequestWrapper(String remoteUser, String authType, HttpServletRequest request) {
+        HttpServiceRequestWrapper(String remoteUser, String authType, ServletContext servletContext, HttpServletRequest request) {
             super(request);
             this.remoteUser = remoteUser;
             this.authType = authType;
+            this.servletContext = servletContext;
         }
 
         @Override
         public String getAuthType() {
-            return authType;
+            return remoteUser != null || authType != null ? authType : super.getAuthType();
         }
 
         @Override
         public String getRemoteUser() {
-            return remoteUser;
+            return remoteUser != null || authType != null ? remoteUser : super.getRemoteUser();
+        }
+
+        @Override
+        public ServletContext getServletContext() {
+            return servletContext != null ? servletContext : super.getServletContext();
+        }
+
+        @Override
+        public HttpSession getSession() {
+            return wrapSession(super.getSession());
+        }
+
+        @Override
+        public HttpSession getSession(boolean create) {
+            return wrapSession(super.getSession(create));
+        }
+
+        private HttpSession wrapSession(final HttpSession session) {
+            if (session == null || servletContext == null)
+                return session;
+            return (HttpSession) Proxy.newProxyInstance(HttpSession.class.getClassLoader(), new Class<?>[] { HttpSession.class },
+                    new InvocationHandler() {
+                        @Override
+                        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                            int argc = args != null ? args.length : 0;
+                            if (method.getName().equals("getServletContext") && argc == 0)
+                                return servletContext;
+                            if (method.getName().equals("equals") && argc == 1)
+                                return proxy == args[0] || session.equals(args[0]);
+                            try {
+                                return method.invoke(session, args);
+                            } catch (InvocationTargetException ex) {
+                                throw ex.getCause();
+                            }
+                        }
+                    });
         }
     }
 }

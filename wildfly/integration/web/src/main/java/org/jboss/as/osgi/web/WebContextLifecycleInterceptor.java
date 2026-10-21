@@ -146,6 +146,11 @@ class WebContextLifecycleInterceptor extends AbstractLifecycleInterceptor implem
         synchronized (deployed) {
             if (deployed.get(contextPath) == bundle && activator.getServletContext() != null)
                 return;
+            // The undeploy of a bundle that stops waits for this monitor: a bundle that is not ready any more is not
+            // deployed (lifecycle/03)
+            int state = bundle.getState();
+            if (state != Bundle.ACTIVE && state != Bundle.STARTING)
+                return;
             postEvent(bundle, "DEPLOYING", contextPath, null);
             XBundle owner = deployed.get(contextPath);
             if (owner != null && owner != bundle) {
@@ -176,8 +181,15 @@ class WebContextLifecycleInterceptor extends AbstractLifecycleInterceptor implem
                 postEvent(bundle, "FAILED", contextPath, null);
                 throw new LifecycleInterceptorException(OSGiMessages.MESSAGES.startContextFailed());
             }
+            // A bundle that stopped meanwhile has no context any more, its web application is stopped again
+            BundleContext bundleContext = bundle.getBundleContext();
+            if (bundleContext == null) {
+                activator.stopContext();
+                postEvent(bundle, "FAILED", contextPath, null);
+                return;
+            }
             deployed.put(contextPath, bundle);
-            injectBundleContext(activator.getServletContext(), bundle.getBundleContext());
+            injectBundleContext(activator.getServletContext(), bundleContext);
             postEvent(bundle, "DEPLOYED", contextPath, null);
         }
     }

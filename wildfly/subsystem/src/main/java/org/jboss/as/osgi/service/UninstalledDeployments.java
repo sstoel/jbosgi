@@ -28,9 +28,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.util.Properties;
 
 /**
@@ -70,6 +71,7 @@ public final class UninstalledDeployments {
         return names != null && names.containsKey(managementName);
     }
 
+    // Null if the list cannot be read: a list that was only read in part is not written back (shutdown/15)
     private static Properties read(File storageArea) {
         if (storageArea == null)
             return null;
@@ -78,11 +80,21 @@ public final class UninstalledDeployments {
         if (file.isFile()) {
             try (InputStream input = new FileInputStream(file)) {
                 names.load(input);
-            } catch (IOException ex) {
+            } catch (IOException | IllegalArgumentException ex) {
                 LOGGER.warnf(ex, "Cannot read: %s", file);
+                return null;
             }
         }
         return names;
+    }
+
+    // The rename is on the disk too. Not every platform can sync a directory
+    private static void syncDirectory(File dir) {
+        try (FileChannel channel = FileChannel.open(dir.toPath(), StandardOpenOption.READ)) {
+            channel.force(true);
+        } catch (IOException | RuntimeException ex) {
+            // ignore
+        }
     }
 
     private static void write(File storageArea, Properties names) {
@@ -95,14 +107,17 @@ public final class UninstalledDeployments {
             storageArea.mkdirs();
             // Written to a new file that replaces the old one: a crash leaves the old or the new list
             File temp = new File(storageArea, FILE_NAME + ".tmp");
-            try (OutputStream output = new FileOutputStream(temp)) {
+            try (FileOutputStream output = new FileOutputStream(temp)) {
                 names.store(output, "The deployments of uninstalled bundles that are still to be removed");
+                // On the disk before it replaces the old list, also after a power loss
+                output.getFD().sync();
             }
             try {
                 Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             } catch (IOException ex) {
                 Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
+            syncDirectory(storageArea);
         } catch (IOException ex) {
             LOGGER.warnf(ex, "Cannot write: %s", file);
         }

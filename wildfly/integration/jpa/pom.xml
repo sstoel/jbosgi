@@ -66,7 +66,7 @@
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Export-Package>
-                        	org.osgi.service.jpa;version="1.0",
+                        	org.osgi.service.jpa;version="1.1",
                         </Export-Package>
                         <Import-Package>
                             jakarta.persistence;version="1.0",

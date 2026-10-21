@@ -133,9 +133,6 @@
 		<copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/scr/main" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/org.apache.felix.scr-*.jar" />
 		</copy>
-		<copy todir="${wildfly.patch.dir}/bundles/org/apache/felix/webconsole/main" overwrite="true">
-			<fileset file="${deploy.artifacts.lib}/org.apache.felix.webconsole-*.jar" />
-		</copy>
 		<copy todir="${wildfly.patch.dir}/bundles/org/apache/aries/blueprint/main" overwrite="true">
 			<fileset file="${deploy.artifacts.lib}/org.apache.aries.blueprint-*.jar" />
 		</copy>

@@ -21,11 +21,16 @@
  */
 package org.jboss.as.osgi.jpa;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jakarta.persistence.EntityManagerFactory;
 
@@ -53,6 +58,7 @@ import org.jboss.osgi.resolver.XBundle;
 import org.jboss.osgi.resolver.XBundleRevision;
 import org.jipijapa.plugin.spi.PersistenceUnitMetadata;
 import org.jipijapa.plugin.spi.PersistenceUnitService;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
@@ -159,18 +165,83 @@ public class PersistenceUnitProcessor implements DeploymentUnitProcessor {
             properties.put(EntityManagerFactoryBuilder.JPA_UNIT_NAME, unitName);
             properties.put(EntityManagerFactoryBuilder.JPA_UNIT_VERSION, bundle.getVersion().toString());
             properties.put(EntityManagerFactoryBuilder.JPA_UNIT_PROVIDER, provider != null ? provider : DEFAULT_PROVIDER);
-            registration = bundleContext.registerService(EntityManagerFactory.class, emf, properties);
+            // The EntityManagerFactory of the container is shared by the components of the deployment: a client that
+            // closes the service does not close it (127.4.8)
+            registration = bundleContext.registerService(EntityManagerFactory.class, unclosable(emf), properties);
 
-            // The persistence unit is managed by the container, the builder gives its EntityManagerFactory (127.4.3)
+            // The persistence unit is managed by the container, the builder gives an EntityManagerFactory of its own to
+            // each caller. Its close closes only that one, the factory of the container stays open (127.4.9, wildfly/19)
+            final String providerName = provider != null ? provider : DEFAULT_PROVIDER;
+            final Bundle providerBundle = bundleContext.getBundle(0);
             EntityManagerFactoryBuilder builder = new EntityManagerFactoryBuilder() {
                 @Override
                 public EntityManagerFactory createEntityManagerFactory(Map<String, Object> props) {
                     if (props != null && props.isEmpty() == false)
                         throw new IllegalArgumentException("The persistence unit is managed by the container, its properties cannot be changed: " + props);
-                    return emf;
+                    return closableView(emf);
+                }
+
+                @Override
+                public String getPersistenceProviderName() {
+                    return providerName;
+                }
+
+                // The provider of the server is a module, not a bundle: the system bundle loads it
+                @Override
+                public Bundle getPersistenceProviderBundle() {
+                    return providerBundle;
                 }
             };
             builderRegistration = bundleContext.registerService(EntityManagerFactoryBuilder.class, builder, properties);
+        }
+
+        // An EntityManagerFactory whose close does nothing
+        private static EntityManagerFactory unclosable(final EntityManagerFactory emf) {
+            return (EntityManagerFactory) Proxy.newProxyInstance(EntityManagerFactory.class.getClassLoader(), new Class<?>[] { EntityManagerFactory.class },
+                    new InvocationHandler() {
+                        @Override
+                        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                            if (method.getName().equals("close") && method.getParameterCount() == 0)
+                                return null;
+                            return invokeDelegate(proxy, emf, method, args);
+                        }
+                    });
+        }
+
+        // An EntityManagerFactory of a client: after its close it is not open, the factory of the container stays open
+        private static EntityManagerFactory closableView(final EntityManagerFactory emf) {
+            final AtomicBoolean closed = new AtomicBoolean();
+            return (EntityManagerFactory) Proxy.newProxyInstance(EntityManagerFactory.class.getClassLoader(), new Class<?>[] { EntityManagerFactory.class },
+                    new InvocationHandler() {
+                        @Override
+                        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                            String name = method.getName();
+                            int argc = args != null ? args.length : 0;
+                            if (name.equals("close") && argc == 0) {
+                                if (closed.getAndSet(true))
+                                    throw new IllegalStateException("The EntityManagerFactory is closed");
+                                return null;
+                            }
+                            if (name.equals("isOpen") && argc == 0)
+                                return closed.get() == false && emf.isOpen();
+                            if (closed.get() && !name.equals("equals") && !name.equals("hashCode") && !name.equals("toString"))
+                                throw new IllegalStateException("The EntityManagerFactory is closed");
+                            return invokeDelegate(proxy, emf, method, args);
+                        }
+                    });
+        }
+
+        private static Object invokeDelegate(Object proxy, EntityManagerFactory emf, Method method, Object[] args) throws Throwable {
+            int argc = args != null ? args.length : 0;
+            if (method.getName().equals("equals") && argc == 1)
+                return proxy == args[0];
+            if (method.getName().equals("hashCode") && argc == 0)
+                return System.identityHashCode(proxy);
+            try {
+                return method.invoke(emf, args);
+            } catch (InvocationTargetException ex) {
+                throw ex.getCause();
+            }
         }
 
         @Override

@@ -31,6 +31,9 @@ import static org.jboss.osgi.framework.spi.IntegrationConstants.MODULE_IDENTIFIE
 import static org.jboss.osgi.framework.spi.IntegrationConstants.STORAGE_STATE_KEY;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import org.jboss.as.osgi.OSGiConstants;
 import org.jboss.as.osgi.service.BundleLifecycleIntegration;
@@ -60,6 +63,7 @@ import org.jboss.osgi.resolver.XResource.State;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 import org.osgi.framework.wiring.BundleWiring;
 
 /**
@@ -89,7 +93,10 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
         if (managementName != null) {
             File storageArea = getStorageArea(phaseContext);
             if (UninstalledDeployments.contains(storageArea, managementName)) {
-                if (!deploymentTracker.isComplete() && deploymentTracker.hasDeploymentName(depUnit.getName())) {
+                // A deployment of the persisted model, or of the deployment scanner, that the server deploys at boot is
+                // the deployment of the uninstalled bundle (shutdown/15)
+                boolean bootDeployment = !deploymentTracker.isComplete() && deploymentTracker.hasDeploymentName(depUnit.getName());
+                if (bootDeployment || BundleLifecycleIntegration.isServerBooting()) {
                     LOGGER.infoRemoveDeploymentOfUninstalledBundle(managementName);
                     depUnit.removeAttachment(OSGiConstants.DEPLOYMENT_KEY);
                     DeploymentUtils.addDeferredModule(depUnit);
@@ -207,9 +214,40 @@ public class BundleInstallProcessor implements DeploymentUnitProcessor {
         ServiceRegistry serviceRegistry = phaseContext.getServiceRegistry();
         StorageManager storageProvider = (StorageManager) serviceRegistry.getRequiredService(IntegrationServices.STORAGE_MANAGER_PLUGIN).getValue();
         StorageState storageState = storageProvider.getStorageState(deployment.getLocation());
-        if (storageState != null) {
-            deployment.setAutoStart(storageState.isPersistentlyStarted());
-            deployment.putAttachment(STORAGE_STATE_KEY, storageState);
+        if (storageState == null)
+            return;
+        // The stored state of a deployment that was removed while the server was down does not go to another bundle
+        // that is deployed with the same name: its id, data area and autostart setting are not this bundle's (tests/08)
+        String storedName = getStoredSymbolicName(storageState);
+        String symbolicName = deployment.getSymbolicName();
+        if (storedName != null && symbolicName != null && !storedName.equals(symbolicName)) {
+            LOGGER.warnStoredStateOfOtherBundle(deployment.getLocation(), storedName, symbolicName);
+            storageProvider.deleteStorageState(storageState);
+            return;
+        }
+        deployment.setAutoStart(storageState.isPersistentlyStarted());
+        deployment.putAttachment(STORAGE_STATE_KEY, storageState);
+    }
+
+    // The symbolic name of the stored state, else that of the stored content, null if there is none or it cannot be read
+    private static String getStoredSymbolicName(StorageState storageState) {
+        if (storageState.getSymbolicName() != null)
+            return storageState.getSymbolicName();
+        String bundleFile = storageState.getProperties().getProperty(StorageState.PROPERTY_BUNDLE_FILE);
+        if (bundleFile == null)
+            return null;
+        File file = new File(storageState.getStorageDir(), bundleFile);
+        if (!file.isFile())
+            return null;
+        try (JarFile jar = new JarFile(file, false)) {
+            Manifest manifest = jar.getManifest();
+            String value = manifest != null ? manifest.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME) : null;
+            if (value == null)
+                return null;
+            int index = value.indexOf(';');
+            return (index < 0 ? value : value.substring(0, index)).trim();
+        } catch (IOException ex) {
+            return null;
         }
     }
 

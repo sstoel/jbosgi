@@ -143,4 +143,7 @@ public interface OSGiMessages {
 
     @Message(id = 11980, value = "The start level of the framework cannot be undefined")
     OperationFailedException cannotUndefineStartLevel();
+
+    @Message(id = 11981, value = "The capability %s of the OSGi subsystem is not available any more: %s")
+    OperationFailedException retiredCapability(String identifier, String replacement);
 }

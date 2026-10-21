@@ -22,7 +22,6 @@
 
 package org.jboss.as.osgi.service;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -32,8 +31,10 @@ import java.util.Map;
 public final class RetiredCapabilities {
 
     // capability (module name) -> what replaces it
-    private static final Map<String, String> RETIRED = Collections.singletonMap("org.apache.felix.log",
-            "the framework provides the OSGi Log Service");
+    private static final Map<String, String> RETIRED = Map.of(
+            "org.apache.felix.log", "the framework provides the OSGi Log Service",
+            // Version 4.2 needs javax.servlet, which the server does not provide; its default user is admin/admin (security/02)
+            "org.apache.felix.webconsole", "the Felix Web Console 4.2 does not run on Jakarta EE and is not shipped any more");
 
     private RetiredCapabilities() {
     }

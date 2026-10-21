@@ -34,7 +34,6 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessingException;
 import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.osgi.metadata.OSGiMetaData;
 import org.jboss.osgi.spi.BundleInfo;
-import org.jboss.osgi.vfs.AbstractVFS;
 import org.jboss.vfs.VirtualFile;
 import org.osgi.framework.BundleException;
 
@@ -65,7 +64,7 @@ public class OSGiBundleInfoParseProcessor implements DeploymentUnitProcessor {
                 VirtualFile virtualFile = depUnit.getAttachment(Attachments.DEPLOYMENT_ROOT).getRoot();
                 // The location of an updated bundle is the name of its deployment, not the runtime name of the revision
                 String location = BundleLifecycleIntegration.getBundleLocation(depUnit);
-                BundleInfo info = BundleInfo.createBundleInfo(AbstractVFS.adapt(virtualFile), location, metadata);
+                BundleInfo info = BundleInfo.createBundleInfo(BundleContentRoot.getBundleRoot(depUnit, virtualFile), location, metadata);
                 depUnit.putAttachment(OSGiConstants.BUNDLE_INFO_KEY, info);
             } catch (BundleException ex) {
                 throw MESSAGES.cannotCreateBundleDeployment(ex, depUnit);

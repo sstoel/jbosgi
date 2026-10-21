@@ -19,6 +19,8 @@ import java.util.Map;
 
 import jakarta.persistence.EntityManagerFactory;
 
+import org.osgi.framework.Bundle;
+
 /**
  * This service interface offers JPA clients the ability to create instances of EntityManagerFactory for a given named
  * persistence unit. A service instance will be created for each named persistence unit and can be filtered by comparing the
@@ -46,6 +48,20 @@ public interface EntityManagerFactoryBuilder {
     String JPA_UNIT_PROVIDER = "osgi.unit.provider";
 
     /**
+     * The name of the JPA extender capability.
+     *
+     * @since 1.1
+     */
+    String JPA_CAPABILITY_NAME = "osgi.jpa";
+
+    /**
+     * The version of the extender capability for the JPA Service specification
+     *
+     * @since 1.1
+     */
+    String JPA_SPECIFICATION_VERSION = "1.1";
+
+    /**
      * Return an EntityManagerFactory instance configured according to the properties defined in the corresponding persistence
      * descriptor, as well as the properties passed into the method.
      *
@@ -55,4 +71,27 @@ public interface EntityManagerFactoryBuilder {
      * @return An EntityManagerFactory for the persistence unit associated with this service. Must not be null.
      */
     EntityManagerFactory createEntityManagerFactory(Map<String, Object> props);
+
+    /**
+     * This method returns the name of the PersistenceProvider implementation that is used by this
+     * EntityManagerFactoryBuilder. The returned value will be the same as the value of the {@link #JPA_UNIT_PROVIDER}
+     * service property.
+     *
+     * @since 1.1
+     * @return the name of the PersistenceProvider implementation
+     */
+    String getPersistenceProviderName();
+
+    /**
+     * This method returns the {@link Bundle} which provides the PersistenceProvider implementation that is used by this
+     * EntityManagerFactoryBuilder.
+     * <p>
+     * If the PersistenceProvider is provided as an OSGi service then this method must return the bundle which
+     * registered the service. Otherwise this method must return the bundle which loaded the PersistenceProvider
+     * implementation class.
+     *
+     * @since 1.1
+     * @return The Bundle which provides the PersistenceProvider implementation used by this EntityManagerFactoryBuilder.
+     */
+    Bundle getPersistenceProviderBundle();
 }

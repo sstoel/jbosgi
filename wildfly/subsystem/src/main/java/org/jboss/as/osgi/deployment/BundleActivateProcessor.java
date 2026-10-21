@@ -282,6 +282,8 @@ public class BundleActivateProcessor implements DeploymentUnitProcessor {
             // start level, not in the order in which their deployments are stopped
             BundleManager manager = depUnit.getAttachment(OSGiConstants.BUNDLE_MANAGER_KEY);
             if (manager != null && BundleInstallProcessor.isServerStopping(manager)) {
+                // The start level increase of the boot is cut short, the stop does not wait for the rest of it (shutdown/17)
+                manager.frameworkServicesStopping();
                 ServiceController<?> controller = manager.getServiceContainer().getService(IntegrationServices.START_LEVEL_PLUGIN);
                 Object startLevelManager = controller != null ? controller.getValue() : null;
                 if (startLevelManager instanceof StartLevelManager)

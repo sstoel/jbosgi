@@ -50,6 +50,19 @@ The OSGi subsystem skips its capability in a configuration that was written for 
 &lt;capability name="org.apache.felix.log" startlevel="1"/&gt;
 </pre>
 
+The Apache Felix Web Console is not shipped any more: version 4.2 needs javax.servlet, which the server does not
+provide, and its default user is admin/admin. A configuration that lists its capability boots with the same warning,
+the capability cannot be added any more (JBAS011981)
+
+<pre>
+&lt;capability name="org.apache.felix.webconsole" startlevel="1"/&gt;
+</pre>
+
+A capability that cannot be installed or resolved, e.g. a module that is missing or a Maven artifact that cannot be
+downloaded, does not stop the framework any more. The framework starts without it, the server logs an error
+(JBAS011927) and reports that it started with errors: the failed service is named
+jbosgi.BootstrapBundles.UNAVAILABLE."capability".
+
 WildFly 41 does not support the JACC policy of Elytron any more (ELYEE01000: No legacy Policy access from Jakarta EE 11
 and later). Remove it from the Elytron subsystem of that configuration, the server starts with errors otherwise
 
@@ -58,6 +71,20 @@ and later). Remove it from the Elytron subsystem of that configuration, the serv
     &lt;jacc-policy/&gt;
 &lt;/policy&gt;
 </pre>
+
+Limits of the OSGi subsystem
+----------------------------
+
+* Domain mode: Bundle.update and Bundle.uninstall of a bundle that is a deployment of a server group change only the
+  managed server. The domain controller deploys the original content again when the server starts. Update or remove the
+  deployment in the server group instead (JBAS011926).
+* Bundle.refresh with the framework of the server: the bundles of the refresh keep their locks while their deployments
+  are deployed again. A management operation on one of these deployments waits until the refresh is done, at most for
+  the lock timeout of the framework (60 s).
+* A bundle that is installed from a thread of the service container, e.g. by an activator that a lazy activation runs
+  while another deployment starts, is installed directly. It is not a deployment of the management model and is not
+  installed again after a restart (JBAS011915).
+* A denied write of the start level of the framework is audited with the patched wildfly-core of this build only.
 
 Build with Maven
 ----------------

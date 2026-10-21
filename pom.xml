@@ -47,7 +47,6 @@
         <version.apache.felix.scr>2.1.30</version.apache.felix.scr>
         <version.apache.felix.scr.ds.annotations>1.2.10</version.apache.felix.scr.ds.annotations>
         <version.apache.felix.scr.generator>1.26.4</version.apache.felix.scr.generator>
-        <version.apache.felix.webconsole>4.2.14</version.apache.felix.webconsole>
         <version.codehaus.izpack>5.2.1</version.codehaus.izpack>
         <version.glassfish.hk2.osgi.resource.locator>2.5.0-b42</version.glassfish.hk2.osgi.resource.locator>
         <version.jboss.osgi.deployment>5.8.0.Final</version.jboss.osgi.deployment>
@@ -282,12 +281,6 @@
                     </exclusion>
                 </exclusions>
                 <version>${version.apache.felix.scr.generator}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>org.apache.felix.webconsole</artifactId>
-                <version>${version.apache.felix.webconsole}</version>
-                <classifier>all</classifier>
             </dependency>
         </dependencies>
     </dependencyManagement>

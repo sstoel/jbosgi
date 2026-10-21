@@ -63,7 +63,7 @@ public class OSGiCapabilityAdd extends AbstractAddStepHandler {
         final Integer startLevel = (operation.hasDefined(ModelConstants.STARTLEVEL) ? FrameworkCapabilityResource.STARTLEVEL.resolveModelAttribute(context, model).asInt() : null);
 
         String identifier = operation.get(ModelDescriptionConstants.OP_ADDR).asObject().get(ModelConstants.CAPABILITY).asString();
-        validateIdentifier(identifier);
+        validateIdentifier(identifier, context.isBooting());
         OSGiCapability module = new OSGiCapability(identifier, startLevel);
 
         SubsystemState subsystemState = SubsystemState.getSubsystemState(context);
@@ -78,10 +78,15 @@ public class OSGiCapabilityAdd extends AbstractAddStepHandler {
      * A capability is a bundle of the bundles hierarchy or a module, as the framework installs it when it is created.
      * Maven coordinates are resolved by the repository then.
      */
-    private static void validateIdentifier(String identifier) throws OperationFailedException {
-        // A capability that a release removed is skipped with a warning when the framework is created
-        if (RetiredCapabilities.getReplacement(identifier) != null)
-            return;
+    private static void validateIdentifier(String identifier, boolean booting) throws OperationFailedException {
+        // A capability that a release removed is skipped with a warning when the framework is created, a configuration
+        // that names it still boots. It cannot be added any more
+        String replacement = RetiredCapabilities.getReplacement(identifier);
+        if (replacement != null) {
+            if (booting)
+                return;
+            throw MESSAGES.retiredCapability(identifier, replacement);
+        }
         try {
             MavenCoordinates.parse(identifier);
             return;

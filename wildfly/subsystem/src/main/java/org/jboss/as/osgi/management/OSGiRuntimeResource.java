@@ -23,13 +23,14 @@ package org.jboss.as.osgi.management;
 
 import static org.jboss.as.osgi.OSGiLogger.LOGGER;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
+import org.jboss.as.controller.CurrentOperationIdHolder;
 import org.jboss.as.controller.PathAddress;
 import org.jboss.as.controller.PathElement;
 import org.jboss.as.controller.registry.Resource;
@@ -46,20 +47,26 @@ import org.osgi.framework.BundleContext;
  */
 public class OSGiRuntimeResource implements Resource {
 
-    // How long a listed bundle stays a child after it was uninstalled
-    private static final long LISTED_BUNDLE_RETENTION = TimeUnit.MINUTES.toMillis(1);
+    // The listings of the operations that run at the same time that are kept
+    private static final int LISTINGS = 16;
 
     private final InjectedValue<BundleManager> injectedBundleManager;
     private final Resource delegate;
-    // The names of the bundle children by the time they were listed last: a read that lists the children reads each of
-    // them after, a bundle that is uninstalled meanwhile stays a child for it (without attributes)
-    private final Map<String, Long> listedBundles;
+    // The names of the bundle children that an operation listed, by the id of the operation: a read that lists the
+    // children reads each of them after, a bundle that is uninstalled meanwhile stays a child for that read (without
+    // attributes), not for other operations (services/27)
+    private final Map<Integer, Set<String>> listedBundles;
 
     public OSGiRuntimeResource() {
-        this(Resource.Factory.create(), new InjectedValue<BundleManager>(), new ConcurrentHashMap<String, Long>());
+        this(Resource.Factory.create(), new InjectedValue<BundleManager>(), Collections.synchronizedMap(new LinkedHashMap<Integer, Set<String>>(LISTINGS, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<Integer, Set<String>> eldest) {
+                return size() > LISTINGS;
+            }
+        }));
     }
 
-    private OSGiRuntimeResource(Resource resource, InjectedValue<BundleManager> injectedBundleManager, Map<String, Long> listedBundles) {
+    private OSGiRuntimeResource(Resource resource, InjectedValue<BundleManager> injectedBundleManager, Map<Integer, Set<String>> listedBundles) {
         this.injectedBundleManager = injectedBundleManager;
         this.delegate = resource;
         this.listedBundles = listedBundles;
@@ -211,8 +218,9 @@ public class OSGiRuntimeResource implements Resource {
     }
 
     private boolean hasBundle(PathElement element) {
-        Long listed = listedBundles.get(element.getValue());
-        if (listed != null && listed > System.currentTimeMillis() - LISTED_BUNDLE_RETENTION)
+        Integer operationId = getCurrentOperationId();
+        Set<String> listed = operationId != null ? listedBundles.get(operationId) : null;
+        if (listed != null && listed.contains(element.getValue()))
             return true;
         boolean result = false;
         BundleManager bundleManager = injectedBundleManager.getOptionalValue();
@@ -239,12 +247,16 @@ public class OSGiRuntimeResource implements Resource {
                 result.add(b.getLocation());
             }
         }
-        long now = System.currentTimeMillis();
-        listedBundles.values().removeIf(listed -> listed <= now - LISTED_BUNDLE_RETENTION);
-        for (String name : result) {
-            listedBundles.put(name, now);
-        }
+        Integer operationId = getCurrentOperationId();
+        if (operationId != null)
+            listedBundles.put(operationId, Collections.unmodifiableSet(new HashSet<String>(result)));
         return result;
+    }
+
+    // The id of the management operation of this thread, null outside of one
+    @SuppressWarnings("deprecation")
+    private static Integer getCurrentOperationId() {
+        return CurrentOperationIdHolder.getCurrentOperationID();
     }
 
     private BundleContext getBundleContext() {
